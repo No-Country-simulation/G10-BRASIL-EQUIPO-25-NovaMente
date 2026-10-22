@@ -70,9 +70,10 @@ describe('IngestionForm', () => {
 
   it('rejeita extensão não suportada no upload', async () => {
     const { criarPorArquivo } = renderizar();
+    const user = userEvent.setup({ applyAccept: false });
     await userEvent.type(titulo(), 'Manual interno');
     await userEvent.click(screen.getByRole('tab', { name: /enviar arquivo/i }));
-    await userEvent.upload(
+    await user.upload(
       screen.getByLabelText(/arraste o arquivo/i),
       new File(['x'], 'manual.docx'),
     );

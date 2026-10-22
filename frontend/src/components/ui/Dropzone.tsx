@@ -67,13 +67,10 @@ export function Dropzone({ arquivo, aoSelecionar, erro, desabilitado }: Props) {
             <span className="text-xs text-[var(--fg-muted)]">{M.formulario.dropzoneAjuda}</span>
           </label>
         )}
-        {/*
-          Sem `accept`: o filtro nativo silenciaria um arquivo de extensão inválida
-          sem dar retorno ao usuário. A validação (zod) é a fonte da mensagem.
-        */}
         <input
           id={id}
           type="file"
+          accept=".pdf,.md,.txt"
           className="sr-only"
           disabled={desabilitado}
           aria-invalid={Boolean(erro)}
