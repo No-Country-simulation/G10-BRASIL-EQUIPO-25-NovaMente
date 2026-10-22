@@ -218,3 +218,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# NovaMente: variantes de .env e vector store local
+.env.*
+!.env.example
+backend/data/chroma/
