@@ -1,3 +1,5 @@
+import { AppShell } from '@/components/layout/AppShell';
+
 export default function Home() {
-  return <main className="p-8">NovaMente</main>;
+  return <AppShell>Em construção</AppShell>;
 }
