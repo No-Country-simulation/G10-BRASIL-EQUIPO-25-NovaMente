@@ -46,10 +46,11 @@ export function FlashcardDeck({ itens }: Props) {
       aria-label={M.flashcards.regiao(total)}
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === 'ArrowRight') {
+        // preventDefault só quando a seta de fato navega; nas bordas o evento segue.
+        if (e.key === 'ArrowRight' && indiceAtual < ultimo) {
           e.preventDefault();
           irPara(indiceAtual + 1);
-        } else if (e.key === 'ArrowLeft') {
+        } else if (e.key === 'ArrowLeft' && indiceAtual > 0) {
           e.preventDefault();
           irPara(indiceAtual - 1);
         }

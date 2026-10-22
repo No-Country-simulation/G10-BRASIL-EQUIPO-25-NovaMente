@@ -34,6 +34,11 @@ describe('FlashcardDeck com prefers-reduced-motion', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /mostrar verso/i }));
 
+    // O palco não gira no modo reduzido: a troca é só por opacidade.
+    const palco = screen.getByTestId('flashcard-palco');
+    expect(palco.style.transform).not.toContain('180deg');
+    // framer-motion grava `none` quando a rotação é 0.
+    expect(palco.style.transform).toMatch(/^(none|rotateY\(0deg\))?$/);
     expect(screen.getByRole('button', { name: /mostrar frente/i })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('Frente 1').closest('[data-ativa]')).toHaveStyle({ opacity: '0' });
     expect(screen.getByText('Verso 1').closest('[data-ativa]')).toHaveStyle({ opacity: '1' });

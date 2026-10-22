@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { FlashcardDeck } from './FlashcardDeck';
@@ -24,6 +24,26 @@ describe('FlashcardDeck', () => {
     expect(screen.getByRole('button', { name: /mostrar frente/i })).toHaveAttribute('aria-pressed', 'true');
     await userEvent.keyboard('{Enter}');
     expect(screen.getByRole('button', { name: /mostrar verso/i })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('gira o palco com as faces estáticas e descreve a face ativa', async () => {
+    render(<FlashcardDeck itens={itens} />);
+    const palco = screen.getByTestId('flashcard-palco');
+    const frente = screen.getByText('Frente 1').closest('[data-ativa]') as HTMLElement;
+    const verso = screen.getByText('Verso 1').closest('[data-ativa]') as HTMLElement;
+
+    expect(palco).toHaveStyle({ transformStyle: 'preserve-3d' });
+    expect(frente).toHaveStyle({ transform: 'rotateY(0deg)' });
+    expect(verso).toHaveStyle({ transform: 'rotateY(180deg)' });
+    expect(palco).toHaveAttribute('aria-describedby', frente.id);
+
+    await userEvent.click(screen.getByRole('button', { name: /mostrar verso/i }));
+
+    // Só o palco anima: a frente e o verso seguem estáticos em 0° e 180°.
+    await waitFor(() => expect(palco.style.transform).toContain('rotateY(180deg)'));
+    expect(frente.style.transform).toBe('rotateY(0deg)');
+    expect(verso.style.transform).toBe('rotateY(180deg)');
+    expect(palco).toHaveAttribute('aria-describedby', verso.id);
   });
 
   it('navega com as setas e reseta o flip', async () => {

@@ -73,7 +73,7 @@ export const M = {
   flashcards: {
     regiao: (total: number) => `Flashcards, ${total} cartões`,
     contador: (atual: number, total: number) => `${atual} / ${total}`,
-    instrucao: 'Clique ou pressione Enter para virar',
+    instrucao: 'Clique, Enter ou Espaço para virar',
     frente: 'Frente',
     verso: 'Verso',
     mostrarFrente: 'Mostrar frente',
