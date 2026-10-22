@@ -437,7 +437,7 @@ Expected: FAIL — módulos `SkinProvider`, `useSkin` e `SkinSwitcher` não exis
   --fg: #e8eaf2;
   --fg-muted: #9aa1b5;
   --accent: #8b5cf6;
-  --accent-fg: #f8f7ff;
+  --accent-fg: #0b0d14;
   --accent-muted: #2a2145;
   --success: #34d399;
   --warning: #fbbf24;
@@ -484,6 +484,9 @@ export const M = {
     nome: 'NovaMente',
     navGerar: 'Gerar',
     navHistorico: 'Histórico',
+    navPrincipal: 'Principal',
+    tema: 'Tema',
+    emConstrucao: 'Em construção',
   },
   comum: {
     carregando: 'Carregando…',
@@ -654,36 +657,34 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 }
 ```
 
-`src/app/globals.css` (substitui o conteúdo gerado pelo shadcn):
+`src/app/globals.css` — **não substitua o arquivo inteiro**. O gerador atual usa `tw-animate-css`, `shadcn/tailwind.css` e `@custom-variant dark`, dos quais os componentes Radix dependem. Edite o arquivo:
+
+1. mantenha os três `@import` iniciais e o `@custom-variant dark`;
+2. acrescente `@plugin '@tailwindcss/typography';` e `@import '../themes/tokens.css';` logo após os imports;
+3. **não** remova o bloco `@theme inline` existente; altere só a linha `--color-accent: var(--accent);` para `--color-accent: var(--accent-muted);`;
+4. acrescente o bloco de alias abaixo **depois** do `@theme inline` — ele liga os nomes do shadcn aos nossos tokens, mantendo `--accent` como cor de marca e usando `--accent-muted` no hover;
+5. acrescente o `@layer base` no fim.
 
 ```css
-@import 'tailwindcss';
-@plugin '@tailwindcss/typography';
-@import '../themes/tokens.css';
-
-@theme inline {
-  --color-background: var(--bg);
-  --color-foreground: var(--fg);
-  --color-card: var(--surface);
-  --color-card-foreground: var(--fg);
-  --color-popover: var(--surface-elevated);
-  --color-popover-foreground: var(--fg);
-  --color-primary: var(--accent);
-  --color-primary-foreground: var(--accent-fg);
-  --color-secondary: var(--surface-elevated);
-  --color-secondary-foreground: var(--fg);
-  --color-muted: var(--surface-elevated);
-  --color-muted-foreground: var(--fg-muted);
-  --color-accent: var(--accent-muted);
-  --color-accent-foreground: var(--fg);
-  --color-destructive: var(--danger);
-  --color-border: var(--border);
-  --color-input: var(--border);
-  --color-ring: var(--ring);
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-jetbrains);
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
+/* Aliases: shadcn/ui → tokens NovaMente */
+:root,
+.dark {
+  --background: var(--bg);
+  --foreground: var(--fg);
+  --card: var(--surface);
+  --card-foreground: var(--fg);
+  --popover: var(--surface-elevated);
+  --popover-foreground: var(--fg);
+  --primary: var(--accent);
+  --primary-foreground: var(--accent-fg);
+  --secondary: var(--surface-elevated);
+  --secondary-foreground: var(--fg);
+  --muted: var(--surface-elevated);
+  --muted-foreground: var(--fg-muted);
+  --accent-foreground: var(--fg);
+  --destructive: var(--danger);
+  --input: var(--border);
+  --radius: 0.75rem;
 }
 
 @layer base {
@@ -841,20 +842,27 @@ describe('AdaptacaoInputSchema', () => {
   });
 });
 
+const baseUpload = {
+  documento_titulo: entradaValida.documento_titulo,
+  perfil_destinatario: entradaValida.perfil_destinatario,
+  formato_saida: entradaValida.formato_saida,
+  nicho_setor: entradaValida.nicho_setor,
+  nivel_detalhe: entradaValida.nivel_detalhe,
+};
+
 describe('AdaptacaoUploadInputSchema', () => {
   it('aceita arquivo .pdf pequeno', () => {
     const arquivo = new File(['conteudo'], 'manual.pdf', { type: 'application/pdf' });
-    const r = AdaptacaoUploadInputSchema.safeParse({ ...entradaValida, documento_conteudo: undefined, arquivo });
-    expect(r.success).toBe(true);
+    expect(AdaptacaoUploadInputSchema.safeParse({ ...baseUpload, arquivo }).success).toBe(true);
   });
 
   it('rejeita extensão não suportada, arquivo vazio e arquivo grande', () => {
     const docx = new File(['x'], 'manual.docx');
     const vazio = new File([''], 'manual.md');
     const grande = new File([new Uint8Array(LIMITES.arquivoMaxBytes + 1)], 'manual.pdf');
-    expect(AdaptacaoUploadInputSchema.safeParse({ ...entradaValida, arquivo: docx }).success).toBe(false);
-    expect(AdaptacaoUploadInputSchema.safeParse({ ...entradaValida, arquivo: vazio }).success).toBe(false);
-    expect(AdaptacaoUploadInputSchema.safeParse({ ...entradaValida, arquivo: grande }).success).toBe(false);
+    expect(AdaptacaoUploadInputSchema.safeParse({ ...baseUpload, arquivo: docx }).success).toBe(false);
+    expect(AdaptacaoUploadInputSchema.safeParse({ ...baseUpload, arquivo: vazio }).success).toBe(false);
+    expect(AdaptacaoUploadInputSchema.safeParse({ ...baseUpload, arquivo: grande }).success).toBe(false);
   });
 });
 
@@ -960,7 +968,7 @@ const pacote = {
   adaptacao_id: '01JAVCNFLCARD00000000001',
   documento: { titulo: 'Introdução à Arquitetura de Redes VCN — Ação & Cia' },
   metadados: { perfil_aplicado: 'LiderTecnico', formato_gerado: 'ResumoExecutivo' },
-} as AdaptacaoPacote;
+} as unknown as AdaptacaoPacote;
 
 describe('slugify', () => {
   it('remove acentos e normaliza separadores', () => {
@@ -1453,6 +1461,9 @@ export const M = {
     nome: 'NovaMente',
     navGerar: 'Gerar',
     navHistorico: 'Histórico',
+    navPrincipal: 'Principal',
+    tema: 'Tema',
+    emConstrucao: 'Em construção',
   },
   comum: {
     carregando: 'Carregando…',
@@ -2740,7 +2751,7 @@ export const handlersAdaptacoes = [
 ];
 
 // Semeia o histórico com um pacote já concluído, para a demo nunca abrir vazia.
-registrarPacote(flashcards as AdaptacaoPacote);
+registrarPacote(flashcards as unknown as AdaptacaoPacote);
 ```
 
 `src/mocks/handlers/jobs.ts`:
@@ -2899,7 +2910,7 @@ return (
 `.storybook/preview.ts` — substituir por:
 
 ```ts
-import type { Preview } from '@storybook/nextjs';
+import type { Preview } from '@storybook/nextjs-vite';
 import { initialize, mswLoader } from 'msw-storybook-addon';
 import { handlers } from '../src/mocks/handlers';
 import '../src/app/globals.css';
@@ -3743,7 +3754,7 @@ import { ErroApi } from '@/services/api/erros';
 import type { NovaMenteApi } from '@/services/api/NovaMenteApi';
 import type { AdaptacaoPacote, JobResposta } from '@/types/novamente';
 
-const pacote = { adaptacao_id: 'a1' } as AdaptacaoPacote;
+const pacote = { adaptacao_id: 'a1' } as unknown as AdaptacaoPacote;
 
 const emAndamento = (progresso: number): JobResposta => ({
   job_id: 'j1',
@@ -4423,7 +4434,7 @@ Expected: PASS (5 testes).
 `src/components/views/FlashcardDeck.stories.tsx`:
 
 ```tsx
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { FlashcardDeck } from './FlashcardDeck';
 import flashcards from '@/mocks/fixtures/flashcards-vcn-iniciante.json';
 
@@ -4724,7 +4735,7 @@ Expected: PASS (5 testes).
 `src/components/views/InteractiveQuiz.stories.tsx`:
 
 ```tsx
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { InteractiveQuiz } from './InteractiveQuiz';
 import quiz from '@/mocks/fixtures/quiz-vcn-desenvolvedor.json';
 
@@ -5090,7 +5101,7 @@ Expected: PASS (4 + 3 testes). Se o `dynamic` atrasar, os `findBy` já cobrem.
 `src/components/views/MarkdownView.stories.tsx`:
 
 ```tsx
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { MarkdownView } from './MarkdownView';
 import tutorial from '@/mocks/fixtures/tutorial-vcn-lider.json';
 
@@ -5111,7 +5122,7 @@ export const Tutorial: Story = {};
 `src/components/views/OCIPanel.stories.tsx`:
 
 ```tsx
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { OCIPanel } from './OCIPanel';
 import flashcards from '@/mocks/fixtures/flashcards-vcn-iniciante.json';
 
@@ -5204,7 +5215,7 @@ const pacote = {
   adaptacao_id: '01JAVCNFLCARD00000000001',
   documento: { titulo: 'Introdução à VCN', origem: 'texto' },
   metadados: { perfil_aplicado: 'Iniciante', formato_gerado: 'Flashcards' },
-} as AdaptacaoPacote;
+} as unknown as AdaptacaoPacote;
 
 function montar(conteudo: AdaptacaoPacote['conteudo_adaptado']) {
   const api = {
@@ -5212,7 +5223,7 @@ function montar(conteudo: AdaptacaoPacote['conteudo_adaptado']) {
     baixarJson: vi.fn().mockResolvedValue(new Blob(['{}'])),
   } as unknown as NovaMenteApi;
   const wrapper = ({ children }: { children: React.ReactNode }) => <ApiProvider client={api}>{children}</ApiProvider>;
-  const completo = { ...pacote, conteudo_adaptado: conteudo } as AdaptacaoPacote;
+  const completo = { ...pacote, conteudo_adaptado: conteudo } as unknown as AdaptacaoPacote;
   return { api, wrapper, completo };
 }
 
