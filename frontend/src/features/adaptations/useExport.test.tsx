@@ -25,7 +25,10 @@ describe('useExport', () => {
   it('exporta markdown com o nome de arquivo derivado do pacote', async () => {
     URL.createObjectURL = vi.fn(() => 'blob:mock');
     URL.revokeObjectURL = vi.fn();
-    const clique = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    let nomeBaixado: string | null = null;
+    const clique = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {
+      nomeBaixado = document.querySelector<HTMLAnchorElement>('a[download]')?.getAttribute('download') ?? null;
+    });
     const { api, wrapper, completo } = montar({
       tipo: 'flashcards',
       titulo: 'Deck',
@@ -41,7 +44,8 @@ describe('useExport', () => {
     await result.current.exportar('md');
 
     expect(api.exportar).toHaveBeenCalledWith('01JAVCNFLCARD00000000001', 'md');
-    expect(clique).toHaveBeenCalled();
+    expect(clique).toHaveBeenCalledTimes(1);
+    expect(nomeBaixado).toBe('novamente-introducao-a-vcn-iniciante-flashcards-01javcnf.md');
   });
 
   it('habilita CSV apenas para flashcards', () => {

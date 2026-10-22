@@ -8,12 +8,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useExport } from '@/features/adaptations/useExport';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { M } from '@/lib/mensagens';
-import type { AdaptacaoPacote } from '@/types/novamente';
+import type { Exportacao } from '@/features/adaptations/useExport';
 
-export function ExportMenu({ pacote }: { pacote: AdaptacaoPacote }) {
-  const { exportar, csvDisponivel, baixando, erro } = useExport(pacote);
+export function ExportMenu({ exportacao }: { exportacao: Exportacao }) {
+  const { exportar, csvDisponivel, baixando } = exportacao;
+
+  const itemCsv = (
+    <DropdownMenuItem disabled={!csvDisponivel} onSelect={() => exportar('csv')}>
+      CSV (Anki)
+    </DropdownMenuItem>
+  );
 
   return (
     <div>
@@ -31,20 +37,22 @@ export function ExportMenu({ pacote }: { pacote: AdaptacaoPacote }) {
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => exportar('md')}>Markdown</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => exportar('pdf')}>PDF</DropdownMenuItem>
-          <DropdownMenuItem
-            disabled={!csvDisponivel}
-            title={csvDisponivel ? undefined : M.resultado.csvIndisponivel}
-            onSelect={() => exportar('csv')}
-          >
-            CSV (Anki)
-          </DropdownMenuItem>
+          {csvDisponivel ? (
+            itemCsv
+          ) : (
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span tabIndex={0} className="pointer-events-auto block">
+                    {itemCsv}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="left">{M.resultado.csvIndisponivel}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
-      {erro && (
-        <p role="alert" className="mt-2 text-sm text-[var(--danger)]">
-          {erro}
-        </p>
-      )}
     </div>
   );
 }

@@ -7,7 +7,15 @@ import { baixarBlob } from '@/services/api/download';
 import { nomeArquivoExportacao, nomeArquivoPacote } from '@/lib/formatadores';
 import type { AdaptacaoPacote, FormatoExportacao } from '@/types/novamente';
 
-export function useExport(pacote: AdaptacaoPacote | null) {
+export interface Exportacao {
+  exportar: (formato: FormatoExportacao) => Promise<void>;
+  baixarJson: () => Promise<void>;
+  baixando: FormatoExportacao | 'json' | null;
+  erro: string | null;
+  csvDisponivel: boolean;
+}
+
+export function useExport(pacote: AdaptacaoPacote | null): Exportacao {
   const api = useApi();
   const [baixando, setBaixando] = useState<FormatoExportacao | 'json' | null>(null);
   const [erro, setErro] = useState<string | null>(null);

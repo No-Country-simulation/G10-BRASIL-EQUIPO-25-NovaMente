@@ -5,13 +5,13 @@ import { FileJson } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ExportMenu } from './ExportMenu';
-import { useExport } from '@/features/adaptations/useExport';
 import { FORMATOS, NICHOS, NIVEIS, PERFIS } from '@/lib/constants';
 import { M } from '@/lib/mensagens';
+import type { Exportacao } from '@/features/adaptations/useExport';
 import type { AdaptacaoPacote } from '@/types/novamente';
 
-export function ResultadoHeader({ pacote }: { pacote: AdaptacaoPacote }) {
-  const { baixarJson, baixando } = useExport(pacote);
+export function ResultadoHeader({ pacote, exportacao }: { pacote: AdaptacaoPacote; exportacao: Exportacao }) {
+  const { baixarJson, baixando, erro } = exportacao;
   const perfil = PERFIS.find((p) => p.valor === pacote.metadados.perfil_aplicado)?.rotulo;
   const formato = FORMATOS.find((f) => f.valor === pacote.metadados.formato_gerado)?.rotulo;
   const nivel = NIVEIS.find((n) => n.valor === pacote.metadados.nivel_detalhe_aplicado)?.rotulo;
@@ -26,15 +26,22 @@ export function ResultadoHeader({ pacote }: { pacote: AdaptacaoPacote }) {
             {pacote.documento.titulo} · {M.resultado.tempoEstimado(pacote.metadados.tempo_estimado_estudo_minutos)}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <ExportMenu pacote={pacote} />
-          <Button variant="outline" onClick={baixarJson} disabled={baixando === 'json'}>
-            <FileJson aria-hidden className="mr-2 h-4 w-4" />
-            {M.resultado.baixarJson}
-          </Button>
-          <Button asChild variant="ghost">
-            <Link href="/">{M.resultado.novaGeracao}</Link>
-          </Button>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <ExportMenu exportacao={exportacao} />
+            <Button variant="outline" onClick={baixarJson} disabled={baixando === 'json'}>
+              <FileJson aria-hidden className="mr-2 h-4 w-4" />
+              {M.resultado.baixarJson}
+            </Button>
+            <Button asChild variant="ghost">
+              <Link href="/">{M.resultado.novaGeracao}</Link>
+            </Button>
+          </div>
+          {erro && (
+            <p role="alert" className="text-sm text-[var(--danger)]">
+              {erro}
+            </p>
+          )}
         </div>
       </div>
 
