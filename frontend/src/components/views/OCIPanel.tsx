@@ -1,3 +1,6 @@
+'use client';
+
+import { useId } from 'react';
 import { AlertTriangle, Database } from 'lucide-react';
 import { ScoreGauge } from './ScoreGauge';
 import { M } from '@/lib/mensagens';
@@ -11,9 +14,11 @@ interface Props {
 }
 
 export function OCIPanel({ armazenamento, avaliacao, oci }: Props) {
+  const tituloId = useId();
+
   return (
-    <aside aria-labelledby="oci-titulo" className="space-y-5 rounded-xl border p-5">
-      <h2 id="oci-titulo" className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide">
+    <aside aria-labelledby={tituloId} className="space-y-5 rounded-xl border p-5">
+      <h2 id={tituloId} className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide">
         <Database aria-hidden className="h-4 w-4 text-[var(--accent)]" />
         {M.oci.titulo}
       </h2>
@@ -71,7 +76,7 @@ export function OCIPanel({ armazenamento, avaliacao, oci }: Props) {
         </p>
       )}
 
-      {oci?.configurado && (
+      {oci?.configurado && (oci.total_objetos !== undefined || oci.ultimo_upload_em) && (
         <dl className="space-y-1 border-t pt-4 text-xs text-[var(--fg-muted)]">
           {oci.total_objetos !== undefined && (
             <div className="flex justify-between">

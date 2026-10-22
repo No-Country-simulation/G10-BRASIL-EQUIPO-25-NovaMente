@@ -32,4 +32,16 @@ describe('OCIPanel', () => {
     expect(screen.getByText('OCI não configurado')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
+
+  it('não renderiza bloco vazio de detalhes quando o OCI configurado não traz métricas', () => {
+    render(
+      <OCIPanel
+        armazenamento={armazenamento}
+        avaliacao={avaliacao}
+        oci={{ configurado: true, verificado_em: '2026-10-21T14:00:00Z' }}
+      />,
+    );
+    expect(screen.queryByText('Objetos')).not.toBeInTheDocument();
+    expect(screen.queryByText('Último upload')).not.toBeInTheDocument();
+  });
 });

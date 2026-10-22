@@ -24,6 +24,7 @@ export const UploadFalhou: Story = {
 
 export const OciNaoConfigurado: Story = {
   args: {
+    armazenamento: { bucket: 'novamente', objeto_id: 'a.json', status_upload: 'falha' },
     oci: { configurado: false, mensagem: 'Credenciais ausentes', verificado_em: '2026-10-21T14:00:00Z' },
   },
 };

@@ -28,17 +28,18 @@ const REGISTRY: Record<ConteudoAdaptado['tipo'], Renderizador> = {
 };
 
 export function ContentRenderer({ conteudo }: { conteudo: ConteudoAdaptado }) {
-  // A união de tipos garante a chave em tempo de compilação; em runtime o payload
-  // pode vir de fora do contrato, então o fallback precisa existir de verdade.
-  const renderizar: Renderizador | undefined = REGISTRY[conteudo.tipo];
-
-  if (!renderizar) {
+  // hasOwn evita que chaves herdadas do protótipo (constructor, toString, …)
+  // sejam tratadas como formatos válidos. Em runtime o payload pode vir de fora
+  // do contrato, então o fallback precisa existir de verdade.
+  if (!Object.hasOwn(REGISTRY, conteudo.tipo)) {
     return (
       <p role="alert" className="rounded-md border border-[var(--danger)] p-4 text-sm text-[var(--danger)]">
         {mensagemDoErro(new ErroContrato('tipo fora do registry'))}
       </p>
     );
   }
+
+  const renderizar = REGISTRY[conteudo.tipo];
 
   return <>{renderizar(conteudo)}</>;
 }

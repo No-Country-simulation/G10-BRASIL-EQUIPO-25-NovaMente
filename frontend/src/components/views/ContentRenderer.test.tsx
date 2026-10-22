@@ -57,7 +57,7 @@ describe('ContentRenderer', () => {
             tipo: 'markdown',
             titulo: 'Tutorial',
             introducao_contextualizada: 'Intro',
-            itens: '## Passo 1\n\nTexto seguro.\n\n<script>alert(1)</script>',
+            itens: '## Passo 1\n\nTexto seguro.\n\n<script>alert(1)</script>\n\n[link malicioso](javascript:alert(1))',
           }}
         />,
       );
@@ -65,12 +65,22 @@ describe('ContentRenderer', () => {
         await screen.findByRole('heading', { name: 'Passo 1' }, { timeout: ESPERA_CHUNK_MS }),
       ).toBeInTheDocument();
       expect(document.querySelector('script')).toBeNull();
+      expect(document.body.textContent).not.toContain('alert(1)');
+      const link = screen.getByText('link malicioso').closest('a');
+      expect(link).not.toBeNull();
+      expect(link?.getAttribute('href') ?? '').not.toMatch(/^javascript:/i);
     },
     ESPERA_CHUNK_MS,
   );
 
   it('cai em ErrorState quando o tipo não está no registry', () => {
     const invalido = { tipo: 'desconhecido', titulo: 'x', introducao_contextualizada: 'y', itens: 'z' } as never;
+    render(<ContentRenderer conteudo={invalido} />);
+    expect(screen.getByRole('alert')).toHaveTextContent('formato inesperado');
+  });
+
+  it.each(['constructor', 'toString'])('não aceita chave herdada do protótipo como formato: %s', (tipo) => {
+    const invalido = { tipo, titulo: 'x', introducao_contextualizada: 'y', itens: 'z' } as never;
     render(<ContentRenderer conteudo={invalido} />);
     expect(screen.getByRole('alert')).toHaveTextContent('formato inesperado');
   });

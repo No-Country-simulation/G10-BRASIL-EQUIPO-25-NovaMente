@@ -8,8 +8,6 @@ type Props = { conteudo: Extract<ConteudoAdaptado, { tipo: 'markdown' }> };
 export function MarkdownView({ conteudo }: Props) {
   return (
     <article className="prose prose-invert max-w-none">
-      <h2>{conteudo.titulo}</h2>
-      <p>{conteudo.introducao_contextualizada}</p>
       <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
         {conteudo.itens}
       </ReactMarkdown>

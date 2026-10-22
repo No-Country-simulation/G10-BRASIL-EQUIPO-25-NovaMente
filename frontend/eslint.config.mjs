@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "coverage/**",
     "next-env.d.ts",
+    // Build do Storybook não é código-fonte.
+    "storybook-static/**",
     // Gerado pelo `msw init`; não é código nosso.
     "public/mockServiceWorker.js",
   ]),
