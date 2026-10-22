@@ -20,14 +20,30 @@ export function ResultadoView({ adaptacaoId }: { adaptacaoId: string }) {
   const exportacao = useExport(pacote ?? null);
 
   if (isPending) {
+    // Espelha tags, classes e alturas do conteúdo final (header de 92px + grid),
+    // para o React reutilizar os mesmos nós e nada deslizar quando o pacote chega.
     return (
-      <div role="status" className="grid gap-6 lg:grid-cols-[1fr_340px]">
+      <div role="status">
         <span className="sr-only">{M.comum.carregando}</span>
-        <div className="space-y-4">
-          <Skeleton className="h-8 w-2/3" />
-          <Skeleton className="h-[360px] w-full" />
+        <header className="mb-8 space-y-4">
+          <div className="space-y-1">
+            <Skeleton className="h-8 w-2/3" />
+            <Skeleton className="h-5 w-1/3" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-5 w-20" />
+            <Skeleton className="h-5 w-16" />
+            <Skeleton className="h-5 w-24" />
+          </div>
+        </header>
+        <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+          <div className="min-w-0">
+            <Skeleton className="mb-6 h-5 w-full" />
+            <Skeleton className="h-[440px] w-full" />
+          </div>
+          <Skeleton className="h-[420px] w-full" />
         </div>
-        <Skeleton className="h-[420px] w-full" />
       </div>
     );
   }

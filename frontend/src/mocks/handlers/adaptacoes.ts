@@ -3,7 +3,12 @@ import flashcards from '../fixtures/flashcards-vcn-iniciante.json';
 import quiz from '../fixtures/quiz-vcn-desenvolvedor.json';
 import tutorial from '../fixtures/tutorial-vcn-lider.json';
 import resumo from '../fixtures/resumo-vcn-gestor.json';
-import { AdaptacaoInputSchema } from '@/types/schemas';
+import {
+  AdaptacaoInputSchema,
+  formatoSaidaSchema,
+  perfilSchema,
+  LIMITES,
+} from '@/types/schemas';
 import type { AdaptacaoInput, AdaptacaoPacote, FormatoSaida } from '@/types/novamente';
 import {
   criarJob,
@@ -87,7 +92,23 @@ function montarPacote(
 
 export const handlersAdaptacoes = [
   http.post('*/api/v1/adaptacoes', async ({ request }) => {
-    const corpo = await request.json();
+    const corpo = (await request.json()) as { documento_conteudo?: unknown };
+    // Acima de 50.000 caracteres a spec manda 413 (LIMITE_EXCEDIDO), não 422.
+    if (
+      typeof corpo?.documento_conteudo === 'string' &&
+      corpo.documento_conteudo.trim().length > LIMITES.textoMax
+    ) {
+      return HttpResponse.json(
+        {
+          erro: {
+            codigo: 'LIMITE_EXCEDIDO',
+            mensagem: 'Texto acima de 50.000 caracteres.',
+            campos: { documento_conteudo: 'Texto acima de 50.000 caracteres.' },
+          },
+        },
+        { status: 413 },
+      );
+    }
     const analisado = AdaptacaoInputSchema.safeParse(corpo);
     if (!analisado.success) {
       const campos = Object.fromEntries(analisado.error.issues.map((i) => [i.path.join('.'), i.message]));
@@ -104,7 +125,7 @@ export const handlersAdaptacoes = [
     if (!ehArquivo(arquivo)) {
       return problemas({ arquivo: 'Selecione um arquivo.' });
     }
-    if (arquivo.size > 10 * 1024 * 1024) {
+    if (arquivo.size > LIMITES.arquivoMaxBytes) {
       return HttpResponse.json(
         {
           erro: {
@@ -154,11 +175,47 @@ export const handlersAdaptacoes = [
 
   http.get('*/api/v1/adaptacoes', ({ request }) => {
     const url = new URL(request.url);
-    const pagina = Math.max(1, Number(url.searchParams.get('pagina') ?? 1));
-    const tamanho = Math.min(50, Math.max(1, Number(url.searchParams.get('tamanho_pagina') ?? 12)));
+    const campos: Record<string, string> = {};
+
+    function inteiro(bruto: string | null, padrao: number, minimo: number, maximo: number): number | null {
+      if (bruto === null || bruto === '') return padrao;
+      if (!/^\d+$/.test(bruto)) return null;
+      const numero = Number(bruto);
+      return numero >= minimo && numero <= maximo ? numero : null;
+    }
+
+    const pagina = inteiro(url.searchParams.get('pagina'), 1, 1, Number.MAX_SAFE_INTEGER);
+    if (pagina === null) campos.pagina = 'Deve ser um inteiro maior ou igual a 1.';
+    const tamanho = inteiro(
+      url.searchParams.get('tamanho_pagina'),
+      LIMITES.paginaPadrao,
+      1,
+      LIMITES.paginaMax,
+    );
+    if (tamanho === null) campos.tamanho_pagina = `Deve estar entre 1 e ${LIMITES.paginaMax}.`;
+
     const formato = url.searchParams.get('formato');
+    if (formato && !formatoSaidaSchema.safeParse(formato).success) {
+      campos.formato = 'Formato de saída desconhecido.';
+    }
     const perfil = url.searchParams.get('perfil');
-    const q = (url.searchParams.get('q') ?? '').toLowerCase();
+    if (perfil && !perfilSchema.safeParse(perfil).success) {
+      campos.perfil = 'Perfil desconhecido.';
+    }
+
+    const q = (url.searchParams.get('q') ?? '').trim();
+    if (q.length > 100) campos.q = 'Máximo de 100 caracteres.';
+
+    const ordenar = url.searchParams.get('ordenar') ?? 'criado_em:desc';
+    if (!['criado_em:desc', 'criado_em:asc', 'ancoragem:desc'].includes(ordenar)) {
+      campos.ordenar = 'Ordenação desconhecida.';
+    }
+
+    if (Object.keys(campos).length > 0) return problemas(campos);
+
+    // Depois da validação, nulos só existiriam se houvesse erro — e já saímos.
+    const paginaAtual = pagina ?? 1;
+    const tamanhoAtual = tamanho ?? LIMITES.paginaPadrao;
 
     const todos = listarPacotes()
       .map((p) => ({ p, resumo: resumirPacote(p) }))
@@ -166,19 +223,25 @@ export const handlersAdaptacoes = [
       .filter(({ resumo }) => (perfil ? resumo.perfil_aplicado === perfil : true))
       .filter(({ resumo }) =>
         q
-          ? resumo.documento.titulo.toLowerCase().includes(q) ||
-            resumo.conceitos_chave.join(' ').toLowerCase().includes(q)
+          ? resumo.documento.titulo.toLowerCase().includes(q.toLowerCase()) ||
+            resumo.conceitos_chave.join(' ').toLowerCase().includes(q.toLowerCase())
           : true,
       )
-      .sort((a, b) => Date.parse(b.resumo.criado_em) - Date.parse(a.resumo.criado_em));
+      .sort((a, b) =>
+        ordenar === 'criado_em:asc'
+          ? Date.parse(a.resumo.criado_em) - Date.parse(b.resumo.criado_em)
+          : ordenar === 'ancoragem:desc'
+            ? b.resumo.ancoragem_fonte_score - a.resumo.ancoragem_fonte_score
+            : Date.parse(b.resumo.criado_em) - Date.parse(a.resumo.criado_em),
+      );
 
-    const inicio = (pagina - 1) * tamanho;
+    const inicio = (paginaAtual - 1) * tamanhoAtual;
     return HttpResponse.json({
-      itens: todos.slice(inicio, inicio + tamanho).map(({ resumo }) => resumo),
-      pagina,
-      tamanho_pagina: tamanho,
+      itens: todos.slice(inicio, inicio + tamanhoAtual).map(({ resumo }) => resumo),
+      pagina: paginaAtual,
+      tamanho_pagina: tamanhoAtual,
       total: todos.length,
-      total_paginas: Math.ceil(todos.length / tamanho),
+      total_paginas: Math.ceil(todos.length / tamanhoAtual),
     });
   }),
 
@@ -192,7 +255,7 @@ export const handlersAdaptacoes = [
     const pacote = obterPacote(String(params.id));
     if (!pacote) return naoEncontrado();
     return HttpResponse.json(pacote, {
-      headers: { 'Content-Disposition': `attachment; filename="${pacote.adaptacao_id}.json"` },
+      headers: { 'Content-Disposition': `attachment; filename="${nomeArquivoPacote(pacote)}"` },
     });
   }),
 
@@ -214,8 +277,10 @@ export const handlersAdaptacoes = [
         );
       }
       const linhas = ['frente;verso;dica'];
+      // Aspas duplas como escape (RFC 4180/Anki): `"` vira `""` dentro do campo.
+      const campo = (valor: string) => `"${valor.replace(/"/g, '""')}"`;
       pacote.conteudo_adaptado.itens.forEach((i) =>
-        linhas.push(`"${i.frente}";"${i.verso}";"${i.dica_didatica ?? ''}"`),
+        linhas.push(`${campo(i.frente)};${campo(i.verso)};${campo(i.dica_didatica ?? '')}`),
       );
       return new HttpResponse(linhas.join('\n'), {
         headers: { 'Content-Type': 'text/csv; charset=utf-8' },

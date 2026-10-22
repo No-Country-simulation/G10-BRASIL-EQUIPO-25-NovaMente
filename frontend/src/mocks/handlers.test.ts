@@ -1,7 +1,9 @@
 // @vitest-environment node
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { server } from './server';
-import { configurarDuracaoJob, limparEstadoMock, semearHistorico } from './estadoJobs';
+import { configurarDuracaoJob, limparEstadoMock, registrarPacote, semearHistorico } from './estadoJobs';
+import flashcardsFixture from './fixtures/flashcards-vcn-iniciante.json';
+import type { AdaptacaoPacote } from '@/types/novamente';
 import { httpApiClient } from '@/services/api/httpApiClient';
 import { ErroApi } from '@/services/api/erros';
 import { LIMITES } from '@/types/schemas';
@@ -128,5 +130,55 @@ describe('handlers de adaptação', () => {
     await new Promise((r) => setTimeout(r, 30));
     const job = await httpApiClient.obterJob(criado.job_id);
     await expect(httpApiClient.exportar(job.adaptacao_id!, 'csv')).rejects.toMatchObject({ status: 409 });
+  });
+
+  it('responde 413 quando o texto passa de 50.000 caracteres', async () => {
+    await expect(
+      httpApiClient.criarPorTexto({ ...entrada, documento_conteudo: 'x'.repeat(LIMITES.textoMax + 1) }),
+    ).rejects.toMatchObject({ status: 413, problema: { erro: { codigo: 'LIMITE_EXCEDIDO' } } });
+  });
+
+  it('responde 422 com campos em query fora da faixa', async () => {
+    const erro = await httpApiClient
+      .listar({ tamanho_pagina: LIMITES.paginaMax + 1 })
+      .catch((e: unknown) => e);
+    expect(erro).toMatchObject({ status: 422, problema: { erro: { codigo: 'VALIDACAO' } } });
+    expect((erro as ErroApi).problema.erro.campos).toHaveProperty('tamanho_pagina');
+
+    const ordenacao = await httpApiClient
+      .listar({ ordenar: 'desconhecida' as never })
+      .catch((e: unknown) => e);
+    expect((ordenacao as ErroApi).problema.erro.campos).toHaveProperty('ordenar');
+  });
+
+  it('ordena o histórico por ancoragem', async () => {
+    semearHistorico(4);
+    const pagina = await httpApiClient.listar({ ordenar: 'ancoragem:desc' });
+    const notas = pagina.itens.map((i) => i.ancoragem_fonte_score);
+    expect(notas).toEqual([...notas].sort((a, b) => b - a));
+  });
+
+  it('nomeia o download com documento, perfil, formato e id8', async () => {
+    semearHistorico(1);
+    const [item] = (await httpApiClient.listar({})).itens;
+    const resposta = await fetch(`/api/v1/adaptacoes/${item.adaptacao_id}/download`);
+    expect(resposta.status).toBe(200);
+    expect(resposta.headers.get('Content-Disposition')).toContain(
+      'novamente-manual-de-exemplo-1-iniciante-flashcards-01jseed0.json',
+    );
+  });
+
+  it('escapa aspas duplas no CSV de flashcards', async () => {
+    const pacote = structuredClone(flashcardsFixture) as unknown as AdaptacaoPacote;
+    if (pacote.conteudo_adaptado.tipo === 'flashcards') {
+      pacote.conteudo_adaptado.itens[0].frente = 'O que é "VCN"?';
+    }
+    pacote.adaptacao_id = '01JCSVTESTE0000000000001';
+    registrarPacote(pacote);
+
+    const csv = await (await httpApiClient.exportar(pacote.adaptacao_id, 'csv')).text();
+
+    expect(csv.startsWith('frente;verso;dica')).toBe(true);
+    expect(csv).toContain('"O que é ""VCN""?"');
   });
 });
