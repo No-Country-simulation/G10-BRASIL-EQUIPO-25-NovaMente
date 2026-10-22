@@ -49,10 +49,7 @@ export function useAdaptationJob(
   useEffect(() => {
     concluidoRef.current = null;
     inicioRef.current = jobId ? Date.now() : 0;
-    if (!jobId) return;
-    const timer = setTimeout(() => setEstouro({ jobId, estourou: true }), timeoutMs);
-    return () => clearTimeout(timer);
-  }, [jobId, timeoutMs]);
+  }, [jobId]);
 
   const estourou = Boolean(jobId) && estouro.jobId === jobId && estouro.estourou;
 
@@ -72,6 +69,17 @@ export function useAdaptationJob(
     },
     refetchIntervalInBackground: false,
   });
+
+  // Timer único ancorado no início do job: reagenda em cada mudança de status com
+  // o tempo que falta, e não agenda nada quando o job já terminou.
+  const status = consulta.data?.status;
+  useEffect(() => {
+    if (!jobId) return;
+    if (status && STATUS_TERMINAIS.includes(status)) return;
+    const restante = Math.max(0, timeoutMs - (Date.now() - inicioRef.current));
+    const timer = setTimeout(() => setEstouro({ jobId, estourou: true }), restante);
+    return () => clearTimeout(timer);
+  }, [jobId, timeoutMs, status]);
 
   const job = consulta.data;
 

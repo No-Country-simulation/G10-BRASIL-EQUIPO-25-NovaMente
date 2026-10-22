@@ -73,4 +73,23 @@ describe('useAdaptationJob', () => {
 
     await waitFor(() => expect(result.current.perdido).toBe(true), { timeout: 3000 });
   });
+
+  it('não estoura depois de o job terminar', async () => {
+    const obterJob = vi.fn().mockResolvedValue({
+      ...emAndamento(30),
+      status: 'failed' as const,
+      etapa_atual: null,
+      erro: { codigo: 'DOCUMENTO_ILEGIVEL' as const, mensagem: 'PDF sem texto.' },
+    });
+    const { wrapper } = montar(obterJob);
+
+    const { result } = renderHook(
+      () => useAdaptationJob('j1', vi.fn(), { intervaloRapidoMs: 10, timeoutMs: 60 }),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.job?.status).toBe('failed'), { timeout: 3000 });
+    await new Promise((r) => setTimeout(r, 150));
+    expect(result.current.estourou).toBe(false);
+  });
 });

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GerarView } from './GerarView';
 import { ApiProvider } from '@/services/api/ApiProvider';
 import type { NovaMenteApi } from '@/services/api/NovaMenteApi';
-import type { JobResposta } from '@/types/novamente';
+import type { AdaptacaoPacote, JobResposta } from '@/types/novamente';
 
 const { push } = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
@@ -32,15 +32,17 @@ const emAndamento = (id: string): JobResposta =>
 function montar({
   obterJob,
   criarPorTexto,
+  cancelarJob = vi.fn(),
 }: {
   obterJob: NovaMenteApi['obterJob'];
   criarPorTexto: NovaMenteApi['criarPorTexto'];
+  cancelarJob?: NovaMenteApi['cancelarJob'];
 }) {
   const api = {
     obterJob,
     criarPorTexto,
     criarPorArquivo: vi.fn(),
-    cancelarJob: vi.fn(),
+    cancelarJob,
   } as unknown as NovaMenteApi;
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
@@ -99,5 +101,57 @@ describe('GerarView', () => {
     expect(screen.getByText('Gerando seu material')).toBeInTheDocument();
     expect(screen.getByText('Extraindo texto')).toBeInTheDocument();
     expect(push).not.toHaveBeenCalled();
+  });
+
+  it('navega uma única vez quando o job conclui', async () => {
+    const pacote = { adaptacao_id: 'a1' } as unknown as AdaptacaoPacote;
+    const concluido = job({
+      status: 'succeeded',
+      etapa_atual: null,
+      etapas_concluidas: ['extraindo', 'chunking', 'embeddings', 'gerando', 'revisando', 'armazenando'],
+      progresso_percentual: 100,
+      adaptacao_id: 'a1',
+      resultado: pacote,
+    });
+    const criarPorTexto = vi.fn().mockResolvedValue(job({ job_id: 'j1' }));
+    montar({ criarPorTexto, obterJob: vi.fn().mockResolvedValue(concluido) });
+
+    await preencherEEnviar();
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/resultado/a1'), { timeout: 3000 });
+    await new Promise((r) => setTimeout(r, 80));
+    expect(push).toHaveBeenCalledTimes(1);
+  });
+
+  it('não navega com 100% em job ainda em andamento', async () => {
+    const quase = job({
+      status: 'running',
+      etapa_atual: 'armazenando',
+      etapas_concluidas: ['extraindo', 'chunking', 'embeddings', 'gerando', 'revisando'],
+      progresso_percentual: 100,
+    });
+    const criarPorTexto = vi.fn().mockResolvedValue(job({ job_id: 'j1' }));
+    montar({ criarPorTexto, obterJob: vi.fn().mockResolvedValue(quase) });
+
+    await preencherEEnviar();
+
+    expect(await screen.findByText('100%')).toBeInTheDocument();
+    await new Promise((r) => setTimeout(r, 80));
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('cancela pelo DELETE e volta ao formulário mesmo se a API rejeitar', async () => {
+    const cancelarJob = vi.fn().mockRejectedValue(new Error('falhou'));
+    const criarPorTexto = vi.fn().mockResolvedValue(job({ job_id: 'j1' }));
+    montar({ criarPorTexto, obterJob: vi.fn().mockResolvedValue(emAndamento('j1')), cancelarJob });
+
+    await preencherEEnviar();
+    await screen.findByText('Gerando seu material');
+
+    await userEvent.click(screen.getByRole('button', { name: /cancelar geração/i }));
+
+    expect(cancelarJob).toHaveBeenCalledWith('j1');
+    expect(await screen.findByText('O material gerado aparece aqui.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /gerar material/i })).toBeEnabled();
   });
 });

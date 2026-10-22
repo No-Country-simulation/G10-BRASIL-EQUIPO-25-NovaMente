@@ -26,7 +26,7 @@ export function GerarView() {
   const { job, estourou, perdido, erro } = useAdaptationJob(jobId, aoConcluir);
   // Só trava o formulário enquanto a geração está de fato em andamento: numa
   // falha o usuário precisa poder corrigir o documento e enviar de novo.
-  const falhou = estourou || perdido || job?.status === 'failed';
+  const falhou = Boolean(erro) || estourou || perdido || job?.status === 'failed';
 
   const aoCriar = useCallback((novo: JobResposta, repetirEnvio: () => Promise<JobResposta | null>) => {
     setErroAcao(null);

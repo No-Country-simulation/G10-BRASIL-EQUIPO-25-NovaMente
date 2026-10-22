@@ -38,10 +38,9 @@ export function JobProgress({ job, estourou, aoCancelar, aoTentarNovamente, perd
     setChaveChecklist(chaveAtual);
     setIndiceMaximo((anterior) => Math.max(anterior, indiceAtual, indiceConcluidas));
   }
-  const concluidas = new Set<EtapaJob>([
-    ...ETAPAS.slice(0, Math.max(indiceMaximo, indiceConcluidas)),
-    ...job.etapas_concluidas,
-  ]);
+  // `slice(0, -1)` marcaria cinco etapas falsas em job na fila; o limite nunca é negativo.
+  const limite = Math.max(0, indiceMaximo, indiceConcluidas);
+  const concluidas = new Set<EtapaJob>([...ETAPAS.slice(0, limite), ...job.etapas_concluidas]);
 
   const falhou = estourou || Boolean(perdido) || job.status === 'failed';
   const mensagem = estourou ? M.job.timeout : perdido ? M.job.perdida : job.erro?.mensagem;

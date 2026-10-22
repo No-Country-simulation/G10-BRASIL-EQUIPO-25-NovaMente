@@ -34,6 +34,27 @@ describe('JobProgress', () => {
     expect(screen.queryByText('30%')).not.toBeInTheDocument();
   });
 
+  it('não marca etapa nenhuma em job na fila e, ao iniciar, só a etapa atual aparece', () => {
+    const props = { estourou: false, aoCancelar: vi.fn(), aoTentarNovamente: vi.fn() };
+    const { rerender } = render(
+      <JobProgress
+        job={job({ status: 'queued', etapa_atual: null, etapas_concluidas: [], progresso_percentual: 0 })}
+        {...props}
+      />,
+    );
+    expect(document.querySelectorAll('li[aria-current="step"]')).toHaveLength(0);
+    expect(screen.getAllByRole('listitem').filter((li) => li.querySelector('.lucide-check'))).toHaveLength(0);
+
+    rerender(
+      <JobProgress
+        job={job({ status: 'running', etapa_atual: 'extraindo', etapas_concluidas: [], progresso_percentual: 15 })}
+        {...props}
+      />,
+    );
+    expect(screen.getByText('Extraindo texto').closest('li')).toHaveAttribute('aria-current', 'step');
+    expect(screen.getAllByRole('listitem').filter((li) => li.querySelector('.lucide-check'))).toHaveLength(0);
+  });
+
   it('mostra falha com mensagem e request_id, e permite tentar de novo', async () => {
     const aoTentarNovamente = vi.fn();
     render(
