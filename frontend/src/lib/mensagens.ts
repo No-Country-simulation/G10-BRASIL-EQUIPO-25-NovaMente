@@ -93,6 +93,12 @@ export const M = {
     placar: (acertos: number, total: number) => `${acertos} / ${total}`,
     revisar: 'Revisar erradas',
     semErros: 'Você acertou todas.',
+    contador: (atual: number, total: number) => `Pergunta ${atual} de ${total}`,
+    progresso: 'Progresso do quiz',
+    placarRotulo: 'Placar',
+    suaResposta: (resposta: string) => `Sua resposta: ${resposta}`,
+    respostaCorreta: (resposta: string) => `Correta: ${resposta}`,
+    vazio: 'Nenhuma pergunta disponível.',
   },
   historico: {
     titulo: 'Histórico',
