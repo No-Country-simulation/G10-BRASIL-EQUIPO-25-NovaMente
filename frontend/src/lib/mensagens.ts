@@ -60,8 +60,11 @@ export const M = {
   },
   resultado: {
     exportar: 'Exportar',
+    csvIndisponivel: 'CSV está disponível apenas para Flashcards.',
     baixarJson: 'Baixar JSON',
     novaGeracao: 'Nova geração',
+    irParaHistorico: 'Ir para o histórico',
+    naoEncontrado: 'Material não encontrado.',
     ancoragem: 'Ancoragem na fonte',
     clareza: 'Clareza pedagógica',
     observacoes: 'Observações',
