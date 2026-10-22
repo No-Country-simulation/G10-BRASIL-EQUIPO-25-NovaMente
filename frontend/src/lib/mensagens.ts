@@ -106,7 +106,9 @@ export const M = {
   historico: {
     titulo: 'Histórico',
     vazio: 'Nenhum material gerado ainda.',
+    vazioFiltros: 'Nenhum resultado para os filtros.',
     vazioCta: 'Gerar o primeiro material',
+    limparFiltros: 'Limpar filtros',
     busca: 'Buscar por título ou conceito',
     todosFormatos: 'Todos os formatos',
     todosPerfis: 'Todos os perfis',

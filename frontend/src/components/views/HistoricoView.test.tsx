@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HistoricoView } from './HistoricoView';
@@ -32,14 +32,15 @@ const resumo = (i: number) => ({
 function renderizar(listar: NovaMenteApi['listar']) {
   const api = { listar } as unknown as NovaMenteApi;
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
+  const arvore = () => (
     <ApiProvider client={api}>
       <QueryClientProvider client={client}>
         <HistoricoView />
       </QueryClientProvider>
-    </ApiProvider>,
+    </ApiProvider>
   );
-  return { listar };
+  const { rerender } = render(arvore());
+  return { listar, rerender: () => rerender(arvore()) };
 }
 
 beforeEach(() => {
@@ -126,5 +127,75 @@ describe('HistoricoView', () => {
 
     expect(mocks.replace).not.toHaveBeenCalled();
     await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/historico?q=vcn'), { timeout: 1_500 });
+  });
+
+  it('descarta a busca pendente quando a URL muda por navegação', async () => {
+    const { rerender } = renderizar(
+      vi.fn().mockResolvedValue({ itens: [resumo(1)], pagina: 1, tamanho_pagina: 12, total: 1, total_paginas: 1 }),
+    );
+    await screen.findByText('Documento 1');
+
+    vi.useFakeTimers();
+    try {
+      const campo = screen.getByLabelText(/buscar por título ou conceito/i);
+      fireEvent.change(campo, { target: { value: 'rascunho' } });
+
+      mocks.params = new URLSearchParams('q=outro');
+      await act(async () => {
+        rerender();
+      });
+
+      expect(campo).toHaveValue('outro');
+
+      act(() => {
+        vi.advanceTimersByTime(350);
+      });
+
+      expect(mocks.replace).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('ignora formato, perfil e página inválidos da URL', async () => {
+    mocks.params = new URLSearchParams('formato=Inexistente&perfil=Inexistente&pagina=abc');
+    const listar = vi
+      .fn()
+      .mockResolvedValue({ itens: [resumo(1)], pagina: 1, tamanho_pagina: 12, total: 1, total_paginas: 1 });
+    renderizar(listar);
+
+    await screen.findByText('Documento 1');
+    expect(listar).toHaveBeenCalledWith({
+      pagina: 1,
+      tamanho_pagina: 12,
+      formato: undefined,
+      perfil: undefined,
+      q: '',
+    });
+    expect(screen.getByLabelText(/todos os formatos/i)).toHaveValue('');
+    expect(screen.getByLabelText(/todos os perfis/i)).toHaveValue('');
+  });
+
+  it('mostra paginação quando a página está fora do intervalo', async () => {
+    mocks.params = new URLSearchParams('pagina=99');
+    renderizar(
+      vi.fn().mockResolvedValue({ itens: [], pagina: 99, tamanho_pagina: 12, total: 40, total_paginas: 4 }),
+    );
+
+    expect(await screen.findByText('Página 99 de 4')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /anterior/i })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /próxima/i })).toBeDisabled();
+    expect(screen.queryByText(/nenhum material gerado ainda/i)).not.toBeInTheDocument();
+  });
+
+  it('mostra vazio filtrado com botão de limpar filtros', async () => {
+    mocks.params = new URLSearchParams('formato=Quiz&q=vcn');
+    renderizar(vi.fn().mockResolvedValue({ itens: [], pagina: 1, tamanho_pagina: 12, total: 0, total_paginas: 0 }));
+
+    expect(await screen.findByText(/nenhum resultado para os filtros/i)).toBeInTheDocument();
+    expect(screen.queryByText(/nenhum material gerado ainda/i)).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /limpar filtros/i }));
+    expect(mocks.replace).toHaveBeenCalledWith('/historico');
   });
 });

@@ -25,6 +25,7 @@ export function HistoricoSkeleton() {
 export function HistoricoView() {
   const { data, isLoading, error, refetch, filtros, busca, setBusca, atualizar } = useAdaptationHistory();
   const campoBusca = useRef<HTMLInputElement>(null);
+  const temFiltros = Boolean(filtros.q || filtros.formato || filtros.perfil);
 
   // O input é não-controlado para preservar o cursor e o foco enquanto o
   // debounce não confirma a busca na URL; a URL continua sendo a fonte de
@@ -101,7 +102,20 @@ export function HistoricoView() {
         </div>
       )}
 
-      {data && data.itens.length === 0 && !error && (
+      {data && data.itens.length === 0 && !error && data.total === 0 && temFiltros && (
+        <div className="rounded-xl border border-dashed p-10 text-center">
+          <p className="text-[var(--fg-muted)]">{M.historico.vazioFiltros}</p>
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => atualizar({ q: '', formato: undefined, perfil: undefined, pagina: 1 })}
+          >
+            {M.historico.limparFiltros}
+          </Button>
+        </div>
+      )}
+
+      {data && data.itens.length === 0 && !error && data.total === 0 && !temFiltros && (
         <div className="rounded-xl border border-dashed p-10 text-center">
           <p className="text-[var(--fg-muted)]">{M.historico.vazio}</p>
           <Button asChild className="mt-4">
@@ -111,53 +125,53 @@ export function HistoricoView() {
       )}
 
       {data && data.itens.length > 0 && (
-        <>
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {data.itens.map((item) => (
-              <li key={item.adaptacao_id}>
-                <Link
-                  href={`/resultado/${item.adaptacao_id}`}
-                  className="block h-full rounded-xl border p-5 transition-colors hover:border-[var(--accent)]"
-                >
-                  <p className="font-medium">{item.documento.titulo}</p>
-                  <p className="mt-1 text-xs text-[var(--fg-muted)]">
-                    {formatarDataRelativa(item.criado_em)}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Badge>{item.formato_gerado}</Badge>
-                    <Badge variant="secondary">{item.perfil_aplicado}</Badge>
-                    {item.status_upload === 'falha' && <Badge variant="destructive">{M.oci.falhaUpload}</Badge>}
-                  </div>
-                  <p className="mt-3 text-sm text-[var(--fg-muted)]">
-                    {M.resultado.ancoragem}: {formatarPercentual(item.ancoragem_fonte_score)}
-                  </p>
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {data.itens.map((item) => (
+            <li key={item.adaptacao_id}>
+              <Link
+                href={`/resultado/${item.adaptacao_id}`}
+                className="block h-full rounded-xl border p-5 transition-colors hover:border-[var(--accent)]"
+              >
+                <p className="font-medium">{item.documento.titulo}</p>
+                <p className="mt-1 text-xs text-[var(--fg-muted)]">
+                  {formatarDataRelativa(item.criado_em)}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Badge>{item.formato_gerado}</Badge>
+                  <Badge variant="secondary">{item.perfil_aplicado}</Badge>
+                  {item.status_upload === 'falha' && <Badge variant="destructive">{M.oci.falhaUpload}</Badge>}
+                </div>
+                <p className="mt-3 text-sm text-[var(--fg-muted)]">
+                  {M.resultado.ancoragem}: {formatarPercentual(item.ancoragem_fonte_score)}
+                </p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
 
-          {data.total_paginas > 1 && (
-            <nav aria-label={M.historico.paginacao} className="flex items-center justify-center gap-3">
-              <Button
-                variant="outline"
-                disabled={data.pagina <= 1}
-                onClick={() => atualizar({ pagina: data.pagina - 1 })}
-              >
-                {M.historico.anterior}
-              </Button>
-              <span className="text-sm text-[var(--fg-muted)]">
-                {M.historico.pagina(data.pagina, data.total_paginas)}
-              </span>
-              <Button
-                variant="outline"
-                disabled={data.pagina >= data.total_paginas}
-                onClick={() => atualizar({ pagina: data.pagina + 1 })}
-              >
-                {M.historico.proxima}
-              </Button>
-            </nav>
-          )}
-        </>
+      {/* A paginação depende do total, não da página atual: numa página fora
+          do intervalo a lista vem vazia, mas o usuário ainda precisa navegar. */}
+      {data && data.total > 0 && (
+        <nav aria-label={M.historico.paginacao} className="flex items-center justify-center gap-3">
+          <Button
+            variant="outline"
+            disabled={data.pagina <= 1}
+            onClick={() => atualizar({ pagina: data.pagina - 1 })}
+          >
+            {M.historico.anterior}
+          </Button>
+          <span className="text-sm text-[var(--fg-muted)]">
+            {M.historico.pagina(data.pagina, data.total_paginas)}
+          </span>
+          <Button
+            variant="outline"
+            disabled={data.pagina >= data.total_paginas}
+            onClick={() => atualizar({ pagina: data.pagina + 1 })}
+          >
+            {M.historico.proxima}
+          </Button>
+        </nav>
       )}
     </div>
   );

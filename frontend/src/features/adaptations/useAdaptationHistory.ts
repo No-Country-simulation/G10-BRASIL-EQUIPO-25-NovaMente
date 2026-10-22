@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useApi } from '@/services/api/ApiProvider';
 import { ErroContrato } from '@/services/api/erros';
-import { LIMITES, PaginaAdaptacoesSchema } from '@/types/schemas';
+import { formatoSaidaSchema, LIMITES, PaginaAdaptacoesSchema, perfilSchema } from '@/types/schemas';
 
 export interface FiltrosHistorico {
   pagina: number;
@@ -19,6 +19,16 @@ function lerPagina(valor: string | null): number {
   return Number.isFinite(numero) && numero >= 1 ? numero : 1;
 }
 
+function lerFormato(valor: string | null): string | undefined {
+  if (!valor) return undefined;
+  return formatoSaidaSchema.safeParse(valor).success ? valor : undefined;
+}
+
+function lerPerfil(valor: string | null): string | undefined {
+  if (!valor) return undefined;
+  return perfilSchema.safeParse(valor).success ? valor : undefined;
+}
+
 export function useAdaptationHistory() {
   const api = useApi();
   const router = useRouter();
@@ -27,8 +37,8 @@ export function useAdaptationHistory() {
   const filtros = useMemo<FiltrosHistorico>(
     () => ({
       pagina: lerPagina(params.get('pagina')),
-      formato: params.get('formato') ?? undefined,
-      perfil: params.get('perfil') ?? undefined,
+      formato: lerFormato(params.get('formato')),
+      perfil: lerPerfil(params.get('perfil')),
       q: params.get('q') ?? '',
     }),
     [params],
@@ -56,6 +66,15 @@ export function useAdaptationHistory() {
   }, [atualizar]);
 
   const timerBusca = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Mudança externa da URL (voltar/avançar) invalida o commit pendente para
+  // não sobrescrever o que o histórico acabou de restaurar.
+  useEffect(() => {
+    if (timerBusca.current !== null) {
+      clearTimeout(timerBusca.current);
+      timerBusca.current = null;
+    }
+  }, [filtros.q]);
 
   const setBusca = useCallback((valor: string) => {
     if (timerBusca.current !== null) clearTimeout(timerBusca.current);
