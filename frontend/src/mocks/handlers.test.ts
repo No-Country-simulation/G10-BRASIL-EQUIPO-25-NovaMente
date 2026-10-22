@@ -168,6 +168,16 @@ describe('handlers de adaptação', () => {
     );
   });
 
+  it('nomeia a exportação com o mesmo padrão do download', async () => {
+    semearHistorico(1);
+    const [item] = (await httpApiClient.listar({})).itens;
+    const resposta = await fetch(`/api/v1/adaptacoes/${item.adaptacao_id}/exportacao?formato=md`);
+    expect(resposta.status).toBe(200);
+    expect(resposta.headers.get('Content-Disposition')).toContain(
+      'novamente-manual-de-exemplo-1-iniciante-flashcards-01jseed0.md',
+    );
+  });
+
   it('escapa aspas duplas no CSV de flashcards', async () => {
     const pacote = structuredClone(flashcardsFixture) as unknown as AdaptacaoPacote;
     if (pacote.conteudo_adaptado.tipo === 'flashcards') {
@@ -176,9 +186,11 @@ describe('handlers de adaptação', () => {
     pacote.adaptacao_id = '01JCSVTESTE0000000000001';
     registrarPacote(pacote);
 
-    const csv = await (await httpApiClient.exportar(pacote.adaptacao_id, 'csv')).text();
+    const resposta = await fetch(`/api/v1/adaptacoes/${pacote.adaptacao_id}/exportacao?formato=csv`);
+    const csv = await resposta.text();
 
     expect(csv.startsWith('frente;verso;dica')).toBe(true);
     expect(csv).toContain('"O que é ""VCN""?"');
+    expect(resposta.headers.get('Content-Disposition')).toContain('.csv"');
   });
 });

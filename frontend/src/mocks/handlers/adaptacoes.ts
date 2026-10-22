@@ -17,7 +17,7 @@ import {
   registrarPacote,
   resumir as resumirPacote,
 } from '../estadoJobs';
-import { nomeArquivoPacote } from '@/lib/formatadores';
+import { nomeArquivoExportacao, nomeArquivoPacote } from '@/lib/formatadores';
 
 const POR_FORMATO: Record<FormatoSaida, unknown> = {
   Flashcards: flashcards,
@@ -283,7 +283,10 @@ export const handlersAdaptacoes = [
         linhas.push(`${campo(i.frente)};${campo(i.verso)};${campo(i.dica_didatica ?? '')}`),
       );
       return new HttpResponse(linhas.join('\n'), {
-        headers: { 'Content-Type': 'text/csv; charset=utf-8' },
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename="${nomeArquivoExportacao(pacote, 'csv')}"`,
+        },
       });
     }
     if (formato === 'md') {
@@ -301,12 +304,20 @@ export const handlersAdaptacoes = [
                 .join('\n\n');
       return new HttpResponse(
         `# ${conteudo.titulo}\n\n${conteudo.introducao_contextualizada}\n\n${corpo}\n`,
-        { headers: { 'Content-Type': 'text/markdown; charset=utf-8' } },
+        {
+          headers: {
+            'Content-Type': 'text/markdown; charset=utf-8',
+            'Content-Disposition': `attachment; filename="${nomeArquivoExportacao(pacote, 'md')}"`,
+          },
+        },
       );
     }
     if (formato === 'pdf') {
       return new HttpResponse('%PDF-1.4\n% mock\n', {
-        headers: { 'Content-Type': 'application/pdf' },
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${nomeArquivoExportacao(pacote, 'pdf')}"`,
+        },
       });
     }
     return HttpResponse.json(

@@ -20,15 +20,27 @@ export function ResultadoView({ adaptacaoId }: { adaptacaoId: string }) {
   const exportacao = useExport(pacote ?? null);
 
   if (isPending) {
-    // Espelha tags, classes e alturas do conteúdo final (header de 92px + grid),
-    // para o React reutilizar os mesmos nós e nada deslizar quando o pacote chega.
+    // Espelha tags, classes e alturas do conteúdo final para o React reutilizar
+    // os mesmos nós: header de 92 px no desktop (288 px em 390 px, quando o
+    // título quebra e as ações empilham), introdução de duas linhas e grid.
     return (
       <div role="status">
         <span className="sr-only">{M.comum.carregando}</span>
         <header className="mb-8 space-y-4">
-          <div className="space-y-1">
-            <Skeleton className="h-8 w-2/3" />
-            <Skeleton className="h-5 w-1/3" />
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <Skeleton className="h-8 w-2/3" />
+              <Skeleton className="mt-1 h-5 w-1/3" />
+            </div>
+            {/* Exportar / JSON / Nova geração: no mobile os três botões quebram
+                em duas linhas (72 px); daí para cima cabem em uma (32 px). */}
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <Skeleton className="h-8 w-40" />
+                <Skeleton className="h-8 w-36" />
+                <Skeleton className="h-8 w-32" />
+              </div>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <Skeleton className="h-5 w-24" />
@@ -39,7 +51,8 @@ export function ResultadoView({ adaptacaoId }: { adaptacaoId: string }) {
         </header>
         <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
           <div className="min-w-0">
-            <Skeleton className="mb-6 h-5 w-full" />
+            {/* O parágrafo real tem 48 px (duas linhas de 24 px). */}
+            <Skeleton className="mb-6 min-h-12 w-full" />
             <Skeleton className="h-[440px] w-full" />
           </div>
           <Skeleton className="h-[420px] w-full" />
