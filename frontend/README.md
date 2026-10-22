@@ -34,3 +34,21 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Testes E2E (Playwright)
+
+Os testes cobrem os três cenários do edital e a acessibilidade (axe) das rotas principais,
+rodando com o mock de API no browser (NEXT_PUBLIC_API_MOCK=1).
+
+```bash
+npx playwright install chromium   # uma vez por máquina
+npm run e2e                       # sobe o next dev e roda os 6 testes
+npm run e2e -- 3-historico        # filtra por arquivo
+```
+
+- `playwright.config.ts` usa `workers: 1` e nunca reaproveita um servidor já no ar
+  (`reuseExistingServer: false`), para não rodar contra o FastAPI real por acidente.
+  Pare qualquer `next dev` na porta 3000 antes de rodar.
+- Cada teste abre um contexto de browser novo; o estado do mock (jobs e pacotes) vive na
+  memória da página, então recarregar a página reseta o histórico para a fixture semeada.
+- Relatório HTML/traces ficam em `playwright-report/` e `test-results/` (ignorados pelo git).
