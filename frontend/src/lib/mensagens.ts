@@ -35,6 +35,15 @@ export const M = {
     enviando: 'Criando geração…',
     cancelarGeracao: 'Cancelar geração',
     cenarios: 'Cenários de demonstração',
+    erros: {
+      titulo: 'Informe um título de 3 a 150 caracteres.',
+      textoMin: 'Mínimo de 200 caracteres.',
+      textoMax: 'Máximo de 50.000 caracteres.',
+      arquivoObrigatorio: 'Selecione um arquivo.',
+      arquivoVazio: 'O arquivo está vazio.',
+      arquivoGrande: 'Arquivo acima de 10 MB.',
+      arquivoTipo: 'Use um arquivo .pdf, .md ou .txt.',
+    },
     resumoErros: 'Corrija os campos destacados.',
   },
   job: {
