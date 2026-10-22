@@ -51,4 +51,5 @@ npm run e2e -- 3-historico        # filtra por arquivo
   Pare qualquer `next dev` na porta 3000 antes de rodar.
 - Cada teste abre um contexto de browser novo; o estado do mock (jobs e pacotes) vive na
   memória da página, então recarregar a página reseta o histórico para a fixture semeada.
-- Relatório HTML/traces ficam em `playwright-report/` e `test-results/` (ignorados pelo git).
+- Reporter `list` no terminal e relatório HTML em `playwright-report/` (`open: 'never'`, não abre
+  sozinho); traces de retry ficam em `test-results/`. Ambos são ignorados pelo git.

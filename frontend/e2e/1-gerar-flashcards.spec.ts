@@ -18,4 +18,10 @@ test('cenário Iniciante + Flashcards gera, vira o cartão e exporta Markdown', 
   await page.getByRole('button', { name: 'Exportar' }).click();
   await page.getByRole('menuitem', { name: 'Markdown' }).click();
   expect((await download).suggestedFilename()).toMatch(/^novamente-.*\.md$/);
+
+  // Flashcards têm CSV: o item precisa continuar habilitado.
+  await page.getByRole('button', { name: 'Exportar' }).click();
+  const csv = page.getByRole('menuitem', { name: /csv/i });
+  await expect(csv).toBeVisible();
+  await expect(csv).not.toHaveAttribute('aria-disabled', 'true');
 });

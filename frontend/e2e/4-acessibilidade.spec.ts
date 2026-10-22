@@ -12,6 +12,13 @@ for (const { rota, titulo } of ROTAS) {
     await page.goto(rota);
     // A página só ganha conteúdo depois do worker do MSW e da query do pacote.
     await expect(page.getByRole('heading', { name: titulo })).toBeVisible();
+    if (rota === '/historico') {
+      // O <h1> aparece antes da query terminar; sem um item real o axe analisaria
+      // o skeleton da lista.
+      await page
+        .getByRole('link', { name: /introdução à arquitetura de redes vcn/i })
+        .waitFor();
+    }
     await page.waitForLoadState('networkidle');
 
     const resultado = await new AxeBuilder({ page }).analyze();
