@@ -155,6 +155,7 @@ export function useAdaptationForm(
 
   const dispararCenario = useCallback(
     async (cenario: Cenario, documento: string) => {
+      if (enviando || desabilitado) return;
       const conteudo =
         documento.length > 0
           ? documento.repeat(Math.ceil(LIMITES.textoMin / contarCaracteres(documento)) + 1)
@@ -172,7 +173,7 @@ export function useAdaptationForm(
       setAba('texto');
       await enviarValores(valores);
     },
-    [enviarValores, form],
+    [desabilitado, enviando, enviarValores, form],
   );
 
   return { form, aba, trocarAba, enviar, enviando, erroGeral, dispararCenario };

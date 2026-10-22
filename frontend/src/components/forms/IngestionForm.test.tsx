@@ -118,4 +118,19 @@ describe('IngestionForm', () => {
     fireEvent.change(texto(), { target: { value: '😀'.repeat(50) } });
     expect(await screen.findByText('50 / 50.000')).toBeInTheDocument();
   });
+
+  it('preenche o formulário e dispara a geração ao clicar em um cenário', async () => {
+    const { criarPorTexto, onCriado } = renderizar();
+    await userEvent.click(screen.getByRole('button', { name: /gestor \+ resumo executivo/i }));
+
+    await waitFor(() => expect(criarPorTexto).toHaveBeenCalledTimes(1));
+    expect(criarPorTexto.mock.calls[0][0]).toMatchObject({
+      documento_titulo: 'Introdução à Arquitetura de Redes VCN na OCI',
+      perfil_destinatario: 'Gestor',
+      formato_saida: 'ResumoExecutivo',
+      nivel_detalhe: 'Executivo',
+    });
+    expect(titulo()).toHaveValue('Introdução à Arquitetura de Redes VCN na OCI');
+    expect(onCriado).toHaveBeenCalledWith(job, expect.any(Function));
+  });
 });

@@ -7,6 +7,7 @@ export const M = {
     tema: 'Tema',
     emConstrucao: 'Em construção',
     preparandoDemo: 'Preparando ambiente de demonstração…',
+    degradado: (oci: string, llm: string) => `Serviço parcialmente indisponível — OCI: ${oci}, LLM: ${llm}`,
   },
   comum: {
     carregando: 'Carregando…',

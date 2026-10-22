@@ -1,4 +1,5 @@
 import { Header } from './Header';
+import { HealthBanner } from './HealthBanner';
 import { M } from '@/lib/mensagens';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -11,6 +12,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {M.comum.irParaConteudo}
       </a>
       <Header />
+      <HealthBanner />
       <main id="conteudo" className="mx-auto max-w-[1280px] px-4 py-8">
         {children}
       </main>

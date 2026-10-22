@@ -6,6 +6,8 @@ import { useAdaptationForm } from '@/features/adaptations/useAdaptationForm';
 import type { JobResposta } from '@/types/novamente';
 import { LIMITES } from '@/types/schemas';
 import { M } from '@/lib/mensagens';
+import { DOCUMENTO_DEMO } from '@/lib/constants';
+import { Cenarios } from './Cenarios';
 import { FonteDocumento } from './campos/FonteDocumento';
 import { FormatoField, NivelField, NichoField, PerfilField } from './campos/ParametrosFields';
 
@@ -16,7 +18,7 @@ export function IngestionForm({
   onCriado: (job: JobResposta, repetir: () => Promise<JobResposta | null>) => void;
   desabilitado?: boolean;
 }) {
-  const { form, aba, trocarAba, enviar, enviando, erroGeral } = useAdaptationForm(onCriado, desabilitado);
+  const { form, aba, trocarAba, enviar, enviando, erroGeral, dispararCenario } = useAdaptationForm(onCriado, desabilitado);
   const idTitulo = useId();
   const idErroTitulo = useId();
   const erros = form.formState.errors;
@@ -28,6 +30,11 @@ export function IngestionForm({
           {erroGeral}
         </div>
       )}
+
+      <Cenarios
+        aoDisparar={(cenario) => dispararCenario(cenario, DOCUMENTO_DEMO)}
+        desabilitado={desabilitado || enviando}
+      />
 
       <div>
         <label htmlFor={idTitulo} className="mb-2 block text-sm font-medium">

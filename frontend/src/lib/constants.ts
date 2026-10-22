@@ -43,4 +43,31 @@ export const INTERVALO_POLL_LONGO_MS = 3_000;
 export const LIMITE_TEMPO_JOB_MS = 5 * 60 * 1_000;
 export const JANELA_POLL_RAPIDO_MS = 60_000;
 
+export const CENARIOS = [
+  {
+    id: 'iniciante-flashcards',
+    rotulo: 'Iniciante + Flashcards',
+    titulo: 'Introdução à Arquitetura de Redes VCN na OCI',
+    perfil: 'Iniciante',
+    formato: 'Flashcards',
+    nivel: 'Didatico',
+  },
+  {
+    id: 'desenvolvedor-quiz',
+    rotulo: 'Desenvolvedor + Quiz',
+    titulo: 'Introdução à Arquitetura de Redes VCN na OCI',
+    perfil: 'Desenvolvedor',
+    formato: 'Quiz',
+    nivel: 'Tecnico',
+  },
+  {
+    id: 'gestor-resumo',
+    rotulo: 'Gestor + Resumo Executivo',
+    titulo: 'Introdução à Arquitetura de Redes VCN na OCI',
+    perfil: 'Gestor',
+    formato: 'ResumoExecutivo',
+    nivel: 'Executivo',
+  },
+] as const;
+
 export const DOCUMENTO_DEMO = `A Virtual Cloud Network (VCN) é uma rede privada e personalizável configurada na Oracle Cloud Infrastructure. Semelhante a uma rede de data center tradicional, a VCN oferece controle total sobre o ambiente de rede, incluindo sub-redes públicas e privadas, tabelas de roteamento, Internet Gateways, NAT Gateways e Security Lists para controle de tráfego via regras de entrada (ingress) e saída (egress). Cada sub-rede pode ser pública ou privada, e o roteamento decide para onde o tráfego segue.`;
