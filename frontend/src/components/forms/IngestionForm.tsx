@@ -4,6 +4,7 @@ import { useId } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAdaptationForm } from '@/features/adaptations/useAdaptationForm';
 import type { JobResposta } from '@/types/novamente';
+import { LIMITES } from '@/types/schemas';
 import { M } from '@/lib/mensagens';
 import { FonteDocumento } from './campos/FonteDocumento';
 import { FormatoField, NivelField, NichoField, PerfilField } from './campos/ParametrosFields';
@@ -15,7 +16,7 @@ export function IngestionForm({
   onCriado: (job: JobResposta, repetir: () => Promise<JobResposta | null>) => void;
   desabilitado?: boolean;
 }) {
-  const { form, aba, trocarAba, enviar, enviando, erroGeral } = useAdaptationForm(onCriado);
+  const { form, aba, trocarAba, enviar, enviando, erroGeral } = useAdaptationForm(onCriado, desabilitado);
   const idTitulo = useId();
   const idErroTitulo = useId();
   const erros = form.formState.errors;
@@ -35,7 +36,7 @@ export function IngestionForm({
         <input
           id={idTitulo}
           type="text"
-          maxLength={200}
+          maxLength={LIMITES.tituloMax}
           disabled={desabilitado}
           placeholder={M.formulario.placeholderTitulo}
           aria-invalid={Boolean(erros.documento_titulo)}
@@ -51,11 +52,11 @@ export function IngestionForm({
       </div>
 
       <FonteDocumento form={form} aba={aba} trocarAba={trocarAba} desabilitado={desabilitado} />
-      <PerfilField form={form} />
-      <FormatoField form={form} />
+      <PerfilField form={form} desabilitado={desabilitado} />
+      <FormatoField form={form} desabilitado={desabilitado} />
       <div className="grid gap-4 sm:grid-cols-2">
-        <NichoField form={form} />
-        <NivelField form={form} />
+        <NichoField form={form} desabilitado={desabilitado} />
+        <NivelField form={form} desabilitado={desabilitado} />
       </div>
 
       <Button type="submit" disabled={enviando || desabilitado} className="h-11 w-full">

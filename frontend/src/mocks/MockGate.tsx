@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { M } from '@/lib/mensagens';
 
 // Garante uma única inicialização do worker mesmo com o duplo efeito do StrictMode.
 let inicioWorker: Promise<void> | null = null;
@@ -27,7 +28,7 @@ export default function MockGate({ children }: { children: React.ReactNode }) {
 
   if (!pronto) {
     return (
-      <div className="p-8 text-sm text-[var(--fg-muted)]">Preparando ambiente de demonstração…</div>
+      <div className="p-8 text-sm text-[var(--fg-muted)]">{M.app.preparandoDemo}</div>
     );
   }
   return <>{children}</>;

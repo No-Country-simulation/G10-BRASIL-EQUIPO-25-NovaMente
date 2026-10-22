@@ -68,6 +68,21 @@ describe('IngestionForm', () => {
     expect(titulo()).toHaveValue('Documento técnico');
   });
 
+  it('envia upload válido sem campos de texto', async () => {
+    const { criarPorArquivo } = renderizar();
+    await userEvent.type(titulo(), 'Manual interno');
+    await userEvent.click(screen.getByRole('tab', { name: /enviar arquivo/i }));
+    const arquivo = new File(['conteudo'], 'manual.md', { type: 'text/markdown' });
+    await userEvent.upload(screen.getByLabelText(/arraste o arquivo/i), arquivo);
+    await userEvent.click(screen.getByRole('button', { name: /gerar material/i }));
+
+    await waitFor(() => expect(criarPorArquivo).toHaveBeenCalledTimes(1));
+    const envio = criarPorArquivo.mock.calls[0][0];
+    expect(envio.arquivo).toBe(arquivo);
+    expect(envio).not.toHaveProperty('documento_conteudo');
+    expect(envio).not.toHaveProperty('modo');
+  });
+
   it('rejeita extensão não suportada no upload', async () => {
     const { criarPorArquivo } = renderizar();
     const user = userEvent.setup({ applyAccept: false });

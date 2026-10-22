@@ -15,7 +15,9 @@ describe('Dropzone', () => {
     const aoSelecionar = vi.fn();
     render(<Dropzone arquivo={null} aoSelecionar={aoSelecionar} />);
     const arquivo = new File(['abc'], 'doc.md', { type: 'text/markdown' });
-    await userEvent.upload(screen.getByLabelText(/arraste o arquivo/i), arquivo);
+    const input = screen.getByLabelText(/arraste o arquivo/i);
+    expect(input).toHaveAttribute('accept', '.pdf,.md,.txt');
+    await userEvent.upload(input, arquivo);
     expect(aoSelecionar).toHaveBeenCalledWith(arquivo);
   });
 

@@ -7,7 +7,7 @@ import { FORMATOS, NIVEIS, NICHOS, PERFIS } from '@/lib/constants';
 import { M } from '@/lib/mensagens';
 import { cn } from '@/lib/cn';
 
-type Props = { form: UseFormReturn<ValoresFormulario> };
+type Props = { form: UseFormReturn<ValoresFormulario>; desabilitado?: boolean };
 
 function Erro({ mensagem }: { mensagem?: string }) {
   if (!mensagem) return null;
@@ -18,7 +18,7 @@ function Erro({ mensagem }: { mensagem?: string }) {
   );
 }
 
-export function PerfilField({ form }: Props) {
+export function PerfilField({ form, desabilitado }: Props) {
   const atual = form.watch('perfil_destinatario');
   return (
     <fieldset>
@@ -37,6 +37,7 @@ export function PerfilField({ form }: Props) {
               type="radio"
               value={perfil.valor}
               className="sr-only"
+              disabled={desabilitado}
               {...form.register('perfil_destinatario')}
             />
             <span className="block font-medium">{perfil.rotulo}</span>
@@ -49,7 +50,7 @@ export function PerfilField({ form }: Props) {
   );
 }
 
-export function FormatoField({ form }: Props) {
+export function FormatoField({ form, desabilitado }: Props) {
   const atual = form.watch('formato_saida');
   return (
     <fieldset>
@@ -68,6 +69,7 @@ export function FormatoField({ form }: Props) {
               type="radio"
               value={formato.valor}
               className="sr-only"
+              disabled={desabilitado}
               {...form.register('formato_saida')}
             />
             <span className="block font-medium">{formato.rotulo}</span>
@@ -80,7 +82,7 @@ export function FormatoField({ form }: Props) {
   );
 }
 
-export function NichoField({ form }: Props) {
+export function NichoField({ form, desabilitado }: Props) {
   const id = useId();
   const idErro = useId();
   const erro = form.formState.errors.nicho_setor?.message;
@@ -91,6 +93,7 @@ export function NichoField({ form }: Props) {
       </label>
       <select
         id={id}
+        disabled={desabilitado}
         aria-invalid={Boolean(erro)}
         aria-describedby={erro ? idErro : undefined}
         className="h-11 w-full rounded-md border bg-[var(--surface)] px-3 text-sm"
@@ -111,7 +114,7 @@ export function NichoField({ form }: Props) {
   );
 }
 
-export function NivelField({ form }: Props) {
+export function NivelField({ form, desabilitado }: Props) {
   const atual = form.watch('nivel_detalhe');
   return (
     <fieldset>
@@ -130,6 +133,7 @@ export function NivelField({ form }: Props) {
               type="radio"
               value={nivel.valor}
               className="sr-only"
+              disabled={desabilitado}
               {...form.register('nivel_detalhe')}
             />
             {nivel.rotulo}

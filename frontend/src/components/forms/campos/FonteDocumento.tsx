@@ -25,15 +25,15 @@ export function FonteDocumento({
   const conteudo = form.watch('documento_conteudo') ?? '';
   const arquivo = form.watch('arquivo') ?? null;
   const erros = form.formState.errors;
-  const totalCaracteres = Array.from(conteudo).length;
+  const totalCaracteres = Array.from(conteudo.trim()).length;
 
   return (
     <Tabs value={aba} onValueChange={(v) => trocarAba(v as Aba)}>
       <TabsList className="w-full group-data-horizontal/tabs:h-12">
-        <TabsTrigger value="texto" className="h-11">
+        <TabsTrigger value="texto" className="h-11" disabled={desabilitado}>
           {M.formulario.abaTexto}
         </TabsTrigger>
-        <TabsTrigger value="arquivo" className="h-11">
+        <TabsTrigger value="arquivo" className="h-11" disabled={desabilitado}>
           {M.formulario.abaArquivo}
         </TabsTrigger>
       </TabsList>

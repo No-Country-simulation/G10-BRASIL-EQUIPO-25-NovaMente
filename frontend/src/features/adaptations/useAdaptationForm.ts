@@ -99,6 +99,7 @@ function paraEnvio(valores: ValoresFormulario): Envio {
 
 export function useAdaptationForm(
   onCriado: (job: JobResposta, repetir: () => Promise<JobResposta | null>) => void,
+  desabilitado = false,
 ) {
   const { criar, repetir, enviando } = useCreateAdaptation();
   const [aba, setAba] = useState<Aba>('texto');
@@ -125,6 +126,7 @@ export function useAdaptationForm(
 
   const enviarValores = useCallback(
     async (valores: ValoresFormulario) => {
+      if (enviando || desabilitado) return;
       setErroGeral(null);
       try {
         const job = await criar(paraEnvio(valores));
@@ -133,13 +135,14 @@ export function useAdaptationForm(
         mapearErro(erro);
       }
     },
-    [criar, mapearErro, onCriado, repetir],
+    [criar, desabilitado, enviando, mapearErro, onCriado, repetir],
   );
 
   const enviar = form.handleSubmit(enviarValores);
 
   const trocarAba = useCallback(
     (nova: Aba) => {
+      if (enviando || desabilitado) return;
       setAba(nova);
       setErroGeral(null);
       form.clearErrors();
@@ -147,7 +150,7 @@ export function useAdaptationForm(
       if (nova === 'texto') form.setValue('arquivo', null);
       else form.setValue('documento_conteudo', '');
     },
-    [form],
+    [desabilitado, enviando, form],
   );
 
   const dispararCenario = useCallback(

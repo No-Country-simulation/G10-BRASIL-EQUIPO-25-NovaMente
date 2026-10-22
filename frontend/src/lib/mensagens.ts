@@ -6,6 +6,7 @@ export const M = {
     navPrincipal: 'Principal',
     tema: 'Tema',
     emConstrucao: 'Em construção',
+    preparandoDemo: 'Preparando ambiente de demonstração…',
   },
   comum: {
     carregando: 'Carregando…',
