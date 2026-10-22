@@ -1,6 +1,10 @@
 import { AppShell } from '@/components/layout/AppShell';
-import { M } from '@/lib/mensagens';
+import { GerarView } from '@/components/views/GerarView';
 
 export default function Home() {
-  return <AppShell>{M.app.emConstrucao}</AppShell>;
+  return (
+    <AppShell>
+      <GerarView />
+    </AppShell>
+  );
 }

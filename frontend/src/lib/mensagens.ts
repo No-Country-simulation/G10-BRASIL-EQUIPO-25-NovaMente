@@ -52,6 +52,11 @@ export const M = {
     timeout: 'A geração passou de 5 minutos e foi interrompida. Tente novamente.',
     falhaTitulo: 'A geração falhou',
     perdida: 'Esta geração foi perdida. Tente novamente.',
+    progresso: 'Progresso da geração',
+    etapaAtual: (etapa: string) => `Etapa atual: ${etapa}`,
+    requestId: (id: string) => `request_id: ${id}`,
+    aguardando: 'O material gerado aparece aqui.',
+    regiaoResultado: 'Resultado da geração',
   },
   resultado: {
     exportar: 'Exportar',
