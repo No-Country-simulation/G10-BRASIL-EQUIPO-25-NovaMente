@@ -13,6 +13,9 @@ describe('FlashcardDeck', () => {
   it('começa no primeiro cartão, com a frente ativa', () => {
     render(<FlashcardDeck itens={itens} />);
     expect(screen.getByText('1 / 3')).toBeInTheDocument();
+    const barra = screen.getByRole('progressbar');
+    expect(barra).toHaveAttribute('aria-valuenow');
+    expect(Number(barra.getAttribute('aria-valuenow'))).toBeCloseTo(33.3, 1);
     expect(screen.getByRole('button', { name: /mostrar verso/i })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByText('Frente 1').closest('[data-ativa]')).toHaveAttribute('data-ativa', 'true');
   });

@@ -80,6 +80,27 @@ describe('JobProgress', () => {
     expect(screen.getByText(/passou de 5 minutos/i)).toBeInTheDocument();
   });
 
+  it('expõe o valor da barra e a etapa atual em aria-valuetext', () => {
+    render(<JobProgress job={job()} estourou={false} aoCancelar={vi.fn()} aoTentarNovamente={vi.fn()} />);
+    const barra = screen.getByRole('progressbar');
+    expect(barra).toHaveAttribute('aria-valuenow', '45');
+    expect(barra).toHaveAttribute('aria-valuetext', '45%, etapa Gerando embeddings');
+  });
+
+  it('não reanuncia a mensagem livre quando o poll só troca job.mensagem', () => {
+    const props = { estourou: false, aoCancelar: vi.fn(), aoTentarNovamente: vi.fn() };
+    const { rerender } = render(<JobProgress job={job({ mensagem: 'Processando lote 1 de 3.' })} {...props} />);
+    const regiao = document.querySelector('[aria-live="polite"]') as HTMLElement;
+    expect(regiao.textContent).toBe('Etapa atual: Gerando embeddings');
+    expect(screen.getByText('Processando lote 1 de 3.')).toBeInTheDocument();
+
+    rerender(<JobProgress job={job({ mensagem: 'Processando lote 2 de 3.' })} {...props} />);
+
+    expect(regiao.textContent).toBe('Etapa atual: Gerando embeddings');
+    expect(screen.queryByText('Processando lote 1 de 3.')).not.toBeInTheDocument();
+    expect(screen.getByText('Processando lote 2 de 3.')).toBeInTheDocument();
+  });
+
   it('cancela pelo botão', async () => {
     const aoCancelar = vi.fn();
     render(<JobProgress job={job()} estourou={false} aoCancelar={aoCancelar} aoTentarNovamente={vi.fn()} />);

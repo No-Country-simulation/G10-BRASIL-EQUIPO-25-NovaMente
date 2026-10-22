@@ -54,6 +54,7 @@ export const M = {
     falhaTitulo: 'A geração falhou',
     perdida: 'Esta geração foi perdida. Tente novamente.',
     progresso: 'Progresso da geração',
+    progressoValorTexto: (percentual: number, etapa: string) => `${percentual}%, etapa ${etapa}`,
     etapaAtual: (etapa: string) => `Etapa atual: ${etapa}`,
     requestId: (id: string) => `request_id: ${id}`,
     aguardando: 'O material gerado aparece aqui.',

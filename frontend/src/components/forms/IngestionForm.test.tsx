@@ -31,6 +31,15 @@ function renderizar(criarPorTexto = vi.fn().mockResolvedValue(job), criarPorArqu
 const titulo = () => screen.getByLabelText(/título do documento/i);
 const texto = () => screen.getByLabelText(/conteúdo técnico/i);
 
+async function enviarArquivo() {
+  await userEvent.type(titulo(), 'Manual interno');
+  await userEvent.click(screen.getByRole('tab', { name: /enviar arquivo/i }));
+  const input = screen.getByLabelText(/arraste o arquivo/i);
+  await userEvent.upload(input, new File(['conteudo'], 'manual.md', { type: 'text/markdown' }));
+  await userEvent.click(screen.getByRole('button', { name: /gerar material/i }));
+  return input;
+}
+
 describe('IngestionForm', () => {
   it('bloqueia envio com título curto e texto curto', async () => {
     const { criarPorTexto } = renderizar();
@@ -111,6 +120,51 @@ describe('IngestionForm', () => {
     await userEvent.click(screen.getByRole('button', { name: /gerar material/i }));
 
     expect(await screen.findByText('Título já usado.')).toBeInTheDocument();
+  });
+
+  it('marca o campo de arquivo em 413 sem campos e mantém o formulário utilizável', async () => {
+    const criarPorArquivo = vi.fn().mockRejectedValue(
+      new ErroApi(
+        { erro: { codigo: 'LIMITE_EXCEDIDO', mensagem: 'O arquivo excede o limite de 10 MB.' } },
+        413,
+      ),
+    );
+    renderizar(vi.fn(), criarPorArquivo);
+    const input = await enviarArquivo();
+
+    await waitFor(() => expect(input).toHaveAttribute('aria-invalid', 'true'));
+    expect(screen.getAllByText('O arquivo excede o limite de 10 MB.')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: /gerar material/i })).toBeEnabled();
+  });
+
+  it('marca o campo de arquivo em 415 sem campos', async () => {
+    const criarPorArquivo = vi.fn().mockRejectedValue(
+      new ErroApi(
+        { erro: { codigo: 'ARQUIVO_INVALIDO', mensagem: 'Não foi possível ler o arquivo enviado.' } },
+        415,
+      ),
+    );
+    renderizar(vi.fn(), criarPorArquivo);
+    const input = await enviarArquivo();
+
+    await waitFor(() => expect(input).toHaveAttribute('aria-invalid', 'true'));
+    expect(screen.getAllByText('Não foi possível ler o arquivo enviado.')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: /gerar material/i })).toBeEnabled();
+  });
+
+  it('em 422 com campos, mantém o erro no campo de arquivo sem duplicar o banner', async () => {
+    const criarPorArquivo = vi.fn().mockRejectedValue(
+      new ErroApi(
+        { erro: { codigo: 'VALIDACAO', mensagem: 'Dados inválidos', campos: { arquivo: 'Arquivo já utilizado.' } } },
+        422,
+      ),
+    );
+    renderizar(vi.fn(), criarPorArquivo);
+    const input = await enviarArquivo();
+
+    await waitFor(() => expect(input).toHaveAttribute('aria-invalid', 'true'));
+    expect(screen.getByText('Arquivo já utilizado.')).toBeInTheDocument();
+    expect(screen.getByText('Dados inválidos')).toBeInTheDocument();
   });
 
   it('conta caracteres, não bytes, no contador', async () => {

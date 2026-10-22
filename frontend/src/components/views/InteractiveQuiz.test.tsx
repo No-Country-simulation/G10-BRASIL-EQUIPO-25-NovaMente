@@ -21,6 +21,7 @@ const itens = [
 describe('InteractiveQuiz', () => {
   it('mantém Confirmar desabilitado sem seleção', () => {
     render(<InteractiveQuiz itens={itens} />);
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '50');
     expect(screen.getByRole('button', { name: /confirmar/i })).toBeDisabled();
   });
 

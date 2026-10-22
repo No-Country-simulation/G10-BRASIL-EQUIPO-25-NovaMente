@@ -51,7 +51,16 @@ export function JobProgress({ job, estourou, aoCancelar, aoTentarNovamente, perd
         {falhou ? M.job.falhaTitulo : M.job.titulo}
       </h2>
 
-      <Progress value={progresso} aria-label={M.job.progresso} className="mt-4" />
+      <Progress
+        value={progresso}
+        aria-label={M.job.progresso}
+        aria-valuetext={
+          job.etapa_atual
+            ? M.job.progressoValorTexto(progresso, ROTULOS_ETAPA[job.etapa_atual])
+            : `${progresso}%`
+        }
+        className="mt-4"
+      />
       <p className="mt-2 text-sm text-[var(--fg-muted)]">{progresso}%</p>
 
       <ol className="mt-6 space-y-3">
@@ -77,7 +86,8 @@ export function JobProgress({ job, estourou, aoCancelar, aoTentarNovamente, perd
         })}
       </ol>
 
-      {/* Só entra aqui o que muda em troca de etapa/mensagem; o poll em si não altera o DOM. */}
+      {/* Região viva: só a etapa muda de forma anunciável; mensagens livres do
+          backend são renderizadas fora dela para não falar a cada poll. */}
       <div aria-live="polite" className="mt-4 min-h-6 text-sm">
         {falhou ? (
           <div className="text-[var(--danger)]">
@@ -90,12 +100,14 @@ export function JobProgress({ job, estourou, aoCancelar, aoTentarNovamente, perd
             )}
           </div>
         ) : (
-          <>
-            {job.etapa_atual && <p>{M.job.etapaAtual(ROTULOS_ETAPA[job.etapa_atual])}</p>}
-            {job.mensagem}
-          </>
+          job.etapa_atual && (
+            <p key={job.etapa_atual}>{M.job.etapaAtual(ROTULOS_ETAPA[job.etapa_atual])}</p>
+          )
         )}
       </div>
+      {!falhou && job.mensagem && (
+        <p className="mt-1 text-sm text-[var(--fg-muted)]">{job.mensagem}</p>
+      )}
 
       <div className="mt-6 flex gap-3">
         {falhou ? (

@@ -113,10 +113,20 @@ export function useAdaptationForm(
 
   const mapearErro = useCallback(
     (erro: unknown) => {
-      if (erro instanceof ErroApi && erro.problema.erro.campos) {
-        for (const [campo, mensagem] of Object.entries(erro.problema.erro.campos)) {
-          if (!CAMPOS_CONHECIDOS.has(campo)) continue;
-          form.setError(campo as keyof ValoresFormulario, { type: 'server', message: mensagem });
+      if (erro instanceof ErroApi) {
+        const campos = erro.problema.erro.campos;
+        if (campos) {
+          for (const [campo, mensagem] of Object.entries(campos)) {
+            if (!CAMPOS_CONHECIDOS.has(campo)) continue;
+            form.setError(campo as keyof ValoresFormulario, { type: 'server', message: mensagem });
+          }
+        } else if (
+          form.getValues('modo') === 'arquivo' &&
+          (erro.status === 413 || erro.status === 415 || erro.problema.erro.codigo === 'DOCUMENTO_ILEGIVEL')
+        ) {
+          // Erros do upload podem vir só com a mensagem geral: ainda assim
+          // marcamos o campo de arquivo para o usuário ver onde corrigir.
+          form.setError('arquivo', { type: 'server', message: erro.problema.erro.mensagem });
         }
       }
       setErroGeral(mensagemDoErro(erro));
