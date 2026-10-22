@@ -69,13 +69,39 @@ describe('InteractiveQuiz', () => {
     expect(screen.getByLabelText('Banco de dados')).toBeDisabled();
   });
 
-  it('permite refazer depois do placar', async () => {
+  it('foca a nova pergunta ao avançar e o placar ao finalizar', async () => {
+    render(<InteractiveQuiz itens={itens} />);
+
+    await userEvent.click(screen.getByLabelText('Rede privada'));
+    await userEvent.click(screen.getByRole('button', { name: /confirmar/i }));
+    await userEvent.click(screen.getByRole('button', { name: /próxima/i }));
+    expect(screen.getByText('O que é NAT Gateway?')).toHaveFocus();
+
+    await userEvent.click(screen.getByLabelText('Saída privada'));
+    await userEvent.click(screen.getByRole('button', { name: /confirmar/i }));
+    await userEvent.click(screen.getByRole('button', { name: /próxima/i }));
+    expect(screen.getByRole('heading', { name: /placar/i })).toHaveFocus();
+  });
+
+  it('permite refazer depois do placar e zera as respostas', async () => {
     render(<InteractiveQuiz itens={[{ ...itens[0] }]} />);
     await userEvent.click(screen.getByLabelText('Rede privada'));
     await userEvent.click(screen.getByRole('button', { name: /confirmar/i }));
     await userEvent.click(screen.getByRole('button', { name: /próxima/i }));
+    expect(screen.getByText('1 / 1')).toBeInTheDocument();
+
     await userEvent.click(screen.getByRole('button', { name: /refazer/i }));
-    expect(screen.getByRole('group', { name: /o que é vcn/i })).toBeInTheDocument();
+
+    expect(screen.getByText('O que é VCN?')).toHaveFocus();
+    expect(screen.getByRole('button', { name: /confirmar/i })).toBeDisabled();
+    expect(screen.queryByText('1 / 1')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /placar/i })).not.toBeInTheDocument();
+
+    // Uma nova rodada começa do zero: o placar reflete só as respostas novas.
+    await userEvent.click(screen.getByLabelText('Bucket'));
+    await userEvent.click(screen.getByRole('button', { name: /confirmar/i }));
+    await userEvent.click(screen.getByRole('button', { name: /próxima/i }));
+    expect(screen.getByText('0 / 1')).toBeInTheDocument();
   });
 
   it('mostra estado vazio quando não há perguntas', () => {

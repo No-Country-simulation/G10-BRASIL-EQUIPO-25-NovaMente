@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -25,6 +25,10 @@ export function InteractiveQuiz({ itens }: Props) {
   const [confirmada, setConfirmada] = useState(false);
   const [respostas, setRespostas] = useState<Resposta[]>([]);
   const [finalizado, setFinalizado] = useState(false);
+  // Incrementado pelo "Refazer": garante foco no legend mesmo com uma única pergunta.
+  const [recomecos, setRecomecos] = useState(0);
+  const legendaRef = useRef<HTMLLegendElement>(null);
+  const placarRef = useRef<HTMLHeadingElement>(null);
 
   const total = itens.length;
   // O quiz só recebe o recorte que usa; ainda assim, clampa para nunca sair dos itens.
@@ -35,6 +39,18 @@ export function InteractiveQuiz({ itens }: Props) {
   const erradas = respostas.filter((r) => !r.correta);
   const feedbackId = `quiz-feedback-${id}`;
   const perguntaId = `quiz-pergunta-${id}`;
+  const anterior = useRef({ posicao, recomecos });
+
+  useEffect(() => {
+    // Não rouba foco na montagem: só quando a pergunta de fato muda (avanço ou refazer).
+    const mudou = anterior.current.posicao !== posicao || anterior.current.recomecos !== recomecos;
+    anterior.current = { posicao, recomecos };
+    if (mudou) legendaRef.current?.focus();
+  }, [posicao, recomecos]);
+
+  useEffect(() => {
+    if (finalizado) placarRef.current?.focus();
+  }, [finalizado]);
 
   const reiniciar = () => {
     setIndice(0);
@@ -42,14 +58,12 @@ export function InteractiveQuiz({ itens }: Props) {
     setConfirmada(false);
     setRespostas([]);
     setFinalizado(false);
+    setRecomecos((n) => n + 1);
   };
 
   if (!item) {
     return (
-      <section
-        aria-label={M.quiz.vazio}
-        className="rounded-xl border border-dashed p-6 text-sm text-[var(--fg-muted)]"
-      >
+      <section className="rounded-xl border border-dashed p-6 text-sm text-[var(--fg-muted)]">
         {M.quiz.vazio}
       </section>
     );
@@ -59,7 +73,12 @@ export function InteractiveQuiz({ itens }: Props) {
     return (
       <section aria-labelledby={`quiz-placar-${id}`} className="space-y-6">
         <div className="rounded-xl border p-6 text-center">
-          <h2 id={`quiz-placar-${id}`} className="text-sm uppercase tracking-wide text-[var(--fg-muted)]">
+          <h2
+            id={`quiz-placar-${id}`}
+            ref={placarRef}
+            tabIndex={-1}
+            className="text-sm uppercase tracking-wide text-[var(--fg-muted)]"
+          >
             {M.quiz.placarRotulo}
           </h2>
           <p className="mt-2 text-4xl font-semibold">{M.quiz.placar(acertos, respostas.length)}</p>
@@ -104,7 +123,12 @@ export function InteractiveQuiz({ itens }: Props) {
       <Progress value={((posicao + 1) / total) * 100} aria-label={M.quiz.progresso} />
 
       <fieldset aria-describedby={confirmada ? feedbackId : undefined}>
-        <legend id={perguntaId} className="text-lg font-medium">
+        <legend
+          id={perguntaId}
+          ref={legendaRef}
+          tabIndex={-1}
+          className="rounded-sm text-lg font-medium focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ring)]"
+        >
           {item.pergunta}
         </legend>
         <div className="mt-4 space-y-2">
@@ -113,7 +137,7 @@ export function InteractiveQuiz({ itens }: Props) {
             const respostaCerta = n === item.resposta_correta;
             return (
               <label
-                key={opcao}
+                key={`${posicao}-${n}`}
                 className={cn(
                   'flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm',
                   marcada && 'border-[var(--accent)] bg-[var(--accent-muted)]',
@@ -157,6 +181,7 @@ export function InteractiveQuiz({ itens }: Props) {
       <div className="flex justify-end">
         {confirmada ? (
           <Button
+            key="proxima"
             onClick={() => {
               if (posicao >= total - 1) {
                 setFinalizado(true);
@@ -171,6 +196,7 @@ export function InteractiveQuiz({ itens }: Props) {
           </Button>
         ) : (
           <Button
+            key="confirmar"
             disabled={selecionada === null}
             onClick={() => {
               if (selecionada === null) return;
