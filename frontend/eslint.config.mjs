@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "coverage/**",
     "next-env.d.ts",
+    // Gerado pelo `msw init`; não é código nosso.
+    "public/mockServiceWorker.js",
   ]),
   ...storybook.configs["flat/recommended"]
 ]);

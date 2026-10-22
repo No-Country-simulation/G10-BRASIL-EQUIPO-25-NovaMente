@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ApiProvider } from '@/services/api/ApiProvider';
 import { ErroApi } from '@/services/api/erros';
+import { MockProvider } from '@/mocks/MockProvider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(
@@ -23,8 +24,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <ApiProvider>
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
-    </ApiProvider>
+    <MockProvider>
+      <ApiProvider>
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      </ApiProvider>
+    </MockProvider>
   );
 }

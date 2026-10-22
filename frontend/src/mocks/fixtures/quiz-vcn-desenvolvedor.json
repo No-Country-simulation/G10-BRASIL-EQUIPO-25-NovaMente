@@ -1,0 +1,67 @@
+{
+  "adaptacao_id": "01JAVCNQUIZ000000000002",
+  "status": "sucesso",
+  "criado_em": "2026-10-21T14:10:00Z",
+  "documento": { "titulo": "Introdução à Arquitetura de Redes VCN na OCI", "origem": "upload", "nome_arquivo": "vcn-oci.md", "tamanho_bytes": 4821 },
+  "metadados": {
+    "perfil_aplicado": "Desenvolvedor",
+    "formato_gerado": "Quiz",
+    "nivel_detalhe_aplicado": "Tecnico",
+    "nicho_setor_aplicado": "Geral",
+    "tempo_estimado_estudo_minutos": 8,
+    "conceitos_chave": ["VCN", "CIDR", "Security List", "Route Table", "NAT Gateway", "Service Gateway"]
+  },
+  "conteudo_adaptado": {
+    "tipo": "quiz",
+    "titulo": "VCN na prática: roteamento e isolamento",
+    "introducao_contextualizada": "Seis perguntas para validar decisões de rede antes de subir uma carga na OCI.",
+    "itens": [
+      {
+        "pergunta": "Qual componente permite acesso à internet a partir de uma sub-rede privada sem expor os recursos?",
+        "opcoes": ["Internet Gateway", "NAT Gateway", "Service Gateway", "Dynamic Routing Gateway"],
+        "resposta_correta": 1,
+        "explicacao": "O NAT Gateway faz tradução de endereço para tráfego iniciado de dentro da sub-rede privada."
+      },
+      {
+        "pergunta": "Onde as regras de firewall de uma sub-rede são aplicadas?",
+        "opcoes": ["Security Lists associadas à sub-rede", "Tabela de roteamento", "Internet Gateway", "Bucket do Object Storage"],
+        "resposta_correta": 0,
+        "explicacao": "Security Lists são associadas à sub-rede e valem para todas as VNICs nela."
+      },
+      {
+        "pergunta": "Uma tabela de roteamento define o destino do tráfego com base em quê?",
+        "opcoes": ["No nome do bucket", "No CIDR de destino", "No tamanho do arquivo", "Na versão do SDK"],
+        "resposta_correta": 1,
+        "explicacao": "Cada regra casa um prefixo CIDR de destino com um gateway ou alvo."
+      },
+      {
+        "pergunta": "Para acessar o Object Storage sem passar pela internet, o gateway indicado é:",
+        "opcoes": ["NAT Gateway", "Internet Gateway", "Service Gateway", "Local Peering Gateway"],
+        "resposta_correta": 2,
+        "explicacao": "O Service Gateway dá acesso privado a serviços da OCI, incluindo Object Storage."
+      },
+      {
+        "pergunta": "Duas VCNs que precisam se comunicar de forma privada usam:",
+        "opcoes": ["Local Peering Gateway", "Internet Gateway", "Security List", "NAT Gateway"],
+        "resposta_correta": 0,
+        "explicacao": "O Local Peering Gateway conecta VCNs na mesma região sem tráfego público."
+      },
+      {
+        "pergunta": "Qual é o efeito de uma regra egress ausente em uma Security List?",
+        "opcoes": ["Nada, egress é opcional", "Todo tráfego de saída é negado", "O tráfego é roteado pelo NAT", "O bucket fica público"],
+        "resposta_correta": 1,
+        "explicacao": "Security Lists são stateful apenas para conexões estabelecidas; sem regra egress, novas saídas são negadas."
+      }
+    ]
+  },
+  "avaliacao_qualidade": {
+    "ancoragem_fonte_score": 0.94,
+    "clareza_pedagogica": "Alta",
+    "observacoes": "Questões focadas em decisão de arquitetura, com justificativa técnica em cada alternativa correta."
+  },
+  "armazenamento_oci": {
+    "bucket": "novamente-conteudos-educativos",
+    "objeto_id": "novamente-introducao-a-arquitetura-de-redes-vcn-na-oci-desenvolvedor-quiz-01javcnqu.json",
+    "status_upload": "concluido"
+  }
+}
