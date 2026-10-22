@@ -24,6 +24,9 @@ export function GerarView() {
   );
 
   const { job, estourou, perdido, erro } = useAdaptationJob(jobId, aoConcluir);
+  // Só trava o formulário enquanto a geração está de fato em andamento: numa
+  // falha o usuário precisa poder corrigir o documento e enviar de novo.
+  const falhou = estourou || perdido || job?.status === 'failed';
 
   const aoCriar = useCallback((novo: JobResposta, repetirEnvio: () => Promise<JobResposta | null>) => {
     setErroAcao(null);
@@ -59,7 +62,7 @@ export function GerarView() {
         <h1 id="form-titulo" className="mb-4 text-xl font-semibold">
           {M.formulario.titulo}
         </h1>
-        <IngestionForm onCriado={aoCriar} desabilitado={Boolean(jobId)} />
+        <IngestionForm onCriado={aoCriar} desabilitado={Boolean(jobId) && !falhou} />
       </section>
 
       <section aria-label={M.job.regiaoResultado}>
