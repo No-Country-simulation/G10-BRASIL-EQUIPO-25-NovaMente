@@ -4,9 +4,9 @@
 
 ## 1. Visão do Produto
 
-- **Para** instituições de ensino, empresas de tecnologia e equipes de engenharia que precisam capacitar públicos diversos desde iniciantes em transição de carreira até lideranças técnicas e arquitetos.
-- **Que** enfrentam processos morosos de semanas para a criação e adaptação manual de materiais didáticos densos e em constante evolução.
-- **O NovaMente** é um sistema inteligente de adaptação e geração de conteúdo educacional.
+- **Para** EdTechs, instituições de ensino, empresas de tecnologia e equipes de engenharia que precisam capacitar públicos diversos desde iniciantes em transição de carreira até lideranças técnicas e arquitetos.
+- **Que enfrentam** processos morosos de semanas para a criação e adaptação manual de materiais didáticos densos e em constante evolução.
+- **O NovaMente** é um sistema inteligente de adaptação e geração de conteúdo educacional baseado em IA Generativa, Arquitetura RAG e Orquestração de Agentes.
 - **Que** ingere documentações técnicas, manuais de software e bases de conhecimento para transformá-los automaticamente em conteúdos educacionais personalizados e estruturados de acordo com o perfil do destinatário, a indústria de aplicação e o formato pedagógico.
 - **Diferente de** processos manuais fragmentados com consultores especializados e geradores de texto genéricos sem ancoragem técnica.
 - **Nosso produto** oferece automação completa via RAG (Retrieval-Augmented Generation) com fidelidade às fontes originais, permitindo parametrizar perfis (iniciante, pleno, arquiteto), formatos de saída (flashcards, quizzes, tutoriais) e persistência obrigatória em nuvem na Oracle Cloud (OCI Object Storage).
@@ -16,7 +16,21 @@ Empresas e escolas de tecnologia produzem documentações técnicas ricas, mas m
 
 ---
 
-## 2. Definição do MVP
+## 2. Fundamentação Pedagógica, Metodológica e Experiência do Usuário (UX/IHC)
+
+Para garantir que o **NovaMente** entregue tanto eficácia no aprendizado quanto excelência na experiência de uso da interface interativa, o projeto fundamenta-se em pilares consolidados das ciências da educação e da Interação Humano-Computador (IHC):
+
+### Fundamentação Pedagógica
+- **Andaimagem Cognitiva (*Scaffolding* - Vygotsky):** O sistema atua como um mediador inteligente que reduz a complexidade de documentações densas, adaptando o discurso ao nível de proficiência do destinatário (do iniciante ao avançado), preenchendo lacunas de conhecimento técnico de forma gradual.
+- **Teoria da Carga Cognitiva (Sweller):** Ao fragmentar manuais extensos em formatos objetivos (como resumos executivos, flashcards e tutoriais passo a passo), o NovaMente evita a sobrecarga de informações, otimizando a retenção cognitiva do aluno.
+- **Aprendizagem Baseada em Evidências e *Microlearning*:** A disponibilização de flashcards de memorização e quizzes interativos fomenta a recuperação ativa e o aprendizado em pílulas, maximizando a fixação de conceitos técnicos complexos de infraestrutura e software.
+
+## Princípios de IHC e Usabilidade
+- **Teoria da Ação (Donald Norman):** Aplicada no design dos fluxos de ingestão de arquivos e parametrização. Garante alta visibilidade do estado do sistema, affordances claras e feedback imediato durante o processamento assíncrono da Inteligência Artificial.
+- **Heurísticas de Usabilidade (Jakob Nielsen):** Norteiam a simplicidade e a eficiência da interface interativa, assegurando prevenção de erros, flexibilidade de uso e visibilidade limpa dos resultados.
+- **Engenharia Semiótica (Clarisse de Souza):** Trata a interface como um "delegado" do designer que comunica de forma transparente ao usuário como a IA interpretou o documento técnico original, garantindo clareza na ancoragem das fontes e rastreabilidade dos dados gerados.
+
+## 3. Definição do MVP
 
 ### Hipótese de Valor
 > **Acreditamos que** educadores, instrutores e empresas de tecnologia **vão** utilizar o NovaMente para gerar pacotes didáticos personalizados a partir de manuais técnicos **porque** o sistema reduz o tempo de produção de semanas para minutos, garantindo rigor técnico, ancoragem sem alucinações e adequação pedagógica instantânea para diferentes públicos.
@@ -26,7 +40,7 @@ Empresas e escolas de tecnologia produzem documentações técnicas ricas, mas m
 - **Pipeline de RAG e Indexação:** Segmentação de texto (*chunking*), geração de embeddings e busca vetorial em Vector Store (ChromaDB / FAISS).
 - **Orquestração com LLM:** Integração com Google Gemini (ou modelo equivalente) utilizando prompts estruturados (few-shot e role prompting).
 - **Saída Estruturada (JSON):** Validação de schemas estritos com Pydantic contendo metadados, perfil aplicado, formato gerado e conteúdo adaptado.
-- **Interface Interativa:** Aplicação web amigável em Streamlit ou Gradio para upload e parametrização.
+- **Interface Interativa:** Aplicação web amigável em Next.js para upload e parametrização.
 - **Persistência em Nuvem (OCI):** Integração obrigatória com o OCI Object Storage (camada *Always Free*) para armazenar documentos originais e artefatos gerados.
 
 ### Fora do Escopo (Pós-MVP)
@@ -39,13 +53,13 @@ Empresas e escolas de tecnologia produzem documentações técnicas ricas, mas m
 ### Critérios de Sucesso do MVP
 1. O sistema ingere com sucesso documentações técnicas em PDF, Markdown ou texto puro.
 2. A pipeline de RAG recupera e ancora as respostas com alta fidelidade às fontes originais.
-3. A aplicação gera saídas estruturadas em JSON e exibe o resultado interativamente na interface web (Streamlit/Gradio).
+3. A aplicação gera saídas estruturadas em JSON e exibe o resultado interativamente na interface web (Next.js).
 4. Os arquivos originais e JSONs gerados são salvos automaticamente no OCI Object Storage (*Always Free*).
 5. O sistema demonstra a capacidade de adaptar um mesmo documento para pelo menos 2 perfis e 2 formatos distintos.
 
 ---
 
-## 3. Backlog Inicial e Histórias de Usuário
+## 4. Backlog Inicial e Histórias de Usuário
 
 *O backlog detalhado e dinâmico encontra-se no Quadro Kanban do projeto no GitHub.*
 
@@ -56,22 +70,22 @@ Empresas e escolas de tecnologia produzem documentações técnicas ricas, mas m
 | **US03** | Como usuário da plataforma, quero parametrizar o perfil do destinatário e o formato de saída (ex: Iniciante e Flashcards) para customizar o aprendizado. | 3 pts | **P1** |
 | **US04** | Como avaliador, quero obter o resultado em formato JSON estrito validado via Pydantic contendo os termos-chave e o conteúdo didático adaptado. | 5 pts | **P1** |
 | **US05** | Como administrador, quero integrar a aplicação com o OCI Object Storage (Always Free) para persistir automaticamente os arquivos gerados. | 5 pts | **P1** |
-| **US06** | Como usuário final, quero interagir com uma interface gráfica amigável (Streamlit) para testar os cenários de adaptação de forma simples. | 3 pts | **P2** |
+| **US06** | Como usuário final, quero interagir com uma interface gráfica amigável (Next.js) para testar os cenários de adaptação de forma simples. | 3 pts | **P2** |
 
 ---
 
-## 4. Stack Tecnológico e Justificativa
+## 5. Stack Tecnológico e Justificativa
 
 - **Linguagem & Inteligência Artificial (Python 3.10+ & LangChain):** Padrão de mercado para ecossistemas de IA, oferecendo robustez na manipulação de dados, bibliotecas de leitura de PDFs e orquestração de LLMs.
 - **Modelos de Linguagem (Google Gemini / OpenAI):** Modelos de alta capacidade para reescrita pedagógica, estruturação de tom e garantia de coerência didática.
 - **Vector Store & Embeddings (ChromaDB / FAISS):** Soluções eficientes para armazenamento vetorial e buscas por similaridade semântica no processo de RAG.
 - **Validação de Dados (Pydantic):** Utilizado para tipagem estrita de schemas de entrada e saída, garantindo a integridade dos objetos JSON gerados.
-- **Interface Gráfica (Streamlit / Gradio):** Frameworks ágeis para a construção de interfaces web interativas voltadas a protótipos de IA.
+- **Interface Gráfica (Next.js):** Frameworks ágeis para a construção de interfaces web interativas voltadas a protótipos de IA.
 - **Infraestrutura e Armazenamento (OCI Object Storage):** Serviço de armazenamento em nuvem da Oracle Cloud Infrastructure na camada *Always Free*, atendendo rigorosamente ao requisito de gratuidade do programa ONE.
 
 ---
 
-## 5. Acordo de Processo
+## 6. Acordo de Processo
 
 - **Cadência de Sprints:** O projeto será executado em sprints estruturadas de 0 a 5, cobrindo o período do programa.
 - **Cerimônias do Scrum:**
@@ -80,13 +94,13 @@ Empresas e escolas de tecnologia produzem documentações técnicas ricas, mas m
   * **Sprint Review & Demo:** Apresentação prática dos resultados e entregas alcançadas ao final de cada ciclo.
 - **Definição de Pronto (Definition of Done - DoD):**
   1. Código versionado em branch descritiva (`feat/...`, `fix/...`, `docs/...`) e integrado via Pull Request direcionado à branch `develop` com integração final em `main`.
-  2. Pull Request revisado e aprovado por outro membro da equipa.
+  2. Pull Request revisado e aprovado por outros membro da equipe.
   3. Funcionalidade testada localmente com dados reais ou simulados.
   4. Documentação e comentários atualizados quando aplicável.
-  5. Card correspondente atualizado e movido para a coluna **Pronto** no Kanban.
+  5. Card correspondente atualizado e movido para a coluna **Done** no Kanban.
 - **Limites de Trabalho em Progresso (WIP Limits):**
   * *Em Progresso:* Limitado para evitar sobrecarga e garantir foco nas entregas ativas.
-  * *Em Revisão:* Máximo de tarefas simultâneas em validação de código.
+  * *Em Revisão:* Limitado por tarefas simultâneas em validação de código.
 - **Ferramentas Adotadas:**
   * **Gestão e Versionamento:** GitHub (Repositório, GitHub Projects com Kanban, Issues e Pull Requests)
   * **Comunicação:** Discord para alinhamentos síncronos e assíncronos.
@@ -94,7 +108,7 @@ Empresas e escolas de tecnologia produzem documentações técnicas ricas, mas m
 
 ---
 
-## 6. Equipa
+## 7. Equipe
 
 | Nome do Integrante | Papel no Projeto / Scrum |
 | :--- | :--- |
@@ -107,7 +121,7 @@ Empresas e escolas de tecnologia produzem documentações técnicas ricas, mas m
 
 ---
 
-## 7. Informações da Apresentação DemoDay
+## 8. Informações da Apresentação DemoDay
 
 - **Iniciativa:** Programa ONE (Oracle Next Education) & Alura — G10 / NoCountry
 - **Foco Tecnológico:** Inteligência de Dados, RAG Avançado e Oracle Cloud Infrastructure (OCI)
