@@ -3,6 +3,9 @@ export const M = {
     nome: 'NovaMente',
     navGerar: 'Gerar',
     navHistorico: 'Histórico',
+    navPrincipal: 'Principal',
+    tema: 'Tema',
+    emConstrucao: 'Em construção',
   },
   comum: {
     carregando: 'Carregando…',

@@ -2,6 +2,7 @@
 
 import { useSkin } from '@/features/theme/useSkin';
 import { SKINS, type SkinId } from '@/themes/registry';
+import { M } from '@/lib/mensagens';
 import { cn } from '@/lib/cn';
 
 export function SkinSwitcher() {
@@ -9,7 +10,7 @@ export function SkinSwitcher() {
   const setSkin = useSkin((estado) => estado.setSkin);
 
   return (
-    <div role="group" aria-label="Tema" className="flex items-center gap-1 rounded-full border p-1">
+    <div role="group" aria-label={M.app.tema} className="flex items-center gap-1 rounded-full border p-1">
       {(Object.keys(SKINS) as SkinId[]).map((id) => (
         <button
           key={id}

@@ -21,7 +21,7 @@ export function Header() {
           <Link href="/" className="font-semibold tracking-tight">
             {M.app.nome}
           </Link>
-          <nav aria-label="Principal" className="flex gap-1">
+          <nav aria-label={M.app.navPrincipal} className="flex gap-1">
             {NAV.map((item) => (
               <Link
                 key={item.href}
