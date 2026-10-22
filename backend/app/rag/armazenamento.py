@@ -72,6 +72,14 @@ def salvar_trechos(
     return len(trechos)
 
 
+def existe_documento(documento_id: str) -> bool:
+    try:
+        obter_cliente().get_collection(nome_collection(documento_id), embedding_function=None)
+        return True
+    except NotFoundError:
+        return False
+
+
 def remover_documento(documento_id: str) -> bool:
     """Apaga a collection do documento. Devolve False se ela não existia."""
     try:
