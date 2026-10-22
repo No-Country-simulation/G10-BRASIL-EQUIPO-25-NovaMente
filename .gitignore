@@ -218,3 +218,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Fontes do app Next.js (frontend/src/lib) — não é empacotamento Python
+!frontend/src/lib/
