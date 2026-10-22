@@ -1,5 +1,6 @@
 import type { AdaptacaoPacote, AdaptacaoResumo, EtapaJob, JobResposta } from '@/types/novamente';
 import { ETAPAS, LIMITE_TEMPO_JOB_MS } from '@/lib/constants';
+import { nomeArquivoPacote } from '@/lib/formatadores';
 import flashcards from './fixtures/flashcards-vcn-iniciante.json';
 import quiz from './fixtures/quiz-vcn-desenvolvedor.json';
 import tutorial from './fixtures/tutorial-vcn-lider.json';
@@ -17,8 +18,8 @@ const pacotes = new Map<string, AdaptacaoPacote>();
 let duracaoPadrao = 6000;
 let sequencia = 0;
 
-// Faixas progressivas de progresso, uma por etapa, terminando em 100.
-const FAIXAS = [20, 35, 55, 80, 90, 100];
+// Faixas progressivas de progresso, uma por etapa; 100 só no estado `succeeded`.
+const FAIXAS = [15, 30, 50, 70, 85, 95];
 
 export function configurarDuracaoJob(ms: number) {
   duracaoPadrao = ms;
@@ -137,6 +138,7 @@ export function semearHistorico(quantidade: number) {
     base.adaptacao_id = `01JSEED${String(i).padStart(19, '0')}`;
     base.criado_em = new Date(Date.now() - (i + 1) * 3_600_000).toISOString();
     base.documento = { ...base.documento, titulo: `Manual de exemplo ${i + 1}` };
+    base.armazenamento_oci = { ...base.armazenamento_oci, objeto_id: nomeArquivoPacote(base) };
     pacotes.set(base.adaptacao_id, base);
   }
 }

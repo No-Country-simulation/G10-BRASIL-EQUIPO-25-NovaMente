@@ -24,7 +24,7 @@
   },
   "armazenamento_oci": {
     "bucket": "novamente-conteudos-educativos",
-    "objeto_id": "novamente-introducao-a-arquitetura-de-redes-vcn-na-oci-lider-tecnico-tutorial-01javcntut.json",
+    "objeto_id": "novamente-introducao-a-arquitetura-de-redes-vcn-na-oci-lider-tecnico-tutorial-01javcnt.json",
     "status_upload": "concluido"
   }
 }

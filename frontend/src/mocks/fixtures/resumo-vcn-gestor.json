@@ -24,7 +24,7 @@
   },
   "armazenamento_oci": {
     "bucket": "novamente-conteudos-educativos",
-    "objeto_id": "novamente-introducao-a-arquitetura-de-redes-vcn-na-oci-gestor-resumo-executivo-01javcnres.json",
+    "objeto_id": "novamente-introducao-a-arquitetura-de-redes-vcn-na-oci-gestor-resumo-executivo-01javcnr.json",
     "status_upload": "concluido"
   }
 }

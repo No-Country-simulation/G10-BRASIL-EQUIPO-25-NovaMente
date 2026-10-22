@@ -3,6 +3,8 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { server } from './server';
 import { configurarDuracaoJob, limparEstadoMock, semearHistorico } from './estadoJobs';
 import { httpApiClient } from '@/services/api/httpApiClient';
+import { ErroApi } from '@/services/api/erros';
+import { LIMITES } from '@/types/schemas';
 
 const entrada = {
   documento_titulo: 'Introdução à VCN',
@@ -59,10 +61,40 @@ describe('handlers de adaptação', () => {
   });
 
   it('respeita limite de texto com 422 e campos', async () => {
-    await expect(httpApiClient.criarPorTexto({ ...entrada, documento_conteudo: 'x' })).rejects.toMatchObject({
+    const erro = await httpApiClient
+      .criarPorTexto({ ...entrada, documento_conteudo: 'x' })
+      .catch((e: unknown) => e);
+    expect(erro).toMatchObject({
       status: 422,
       problema: { erro: { codigo: 'VALIDACAO' } },
     });
+    expect((erro as ErroApi).problema.erro.campos).toHaveProperty('documento_conteudo');
+  });
+
+  it('aceita upload válido e conclui com metadados do arquivo', async () => {
+    configurarDuracaoJob(30);
+    const conteudo = '# VCN\n\nA VCN é uma rede privada.';
+    const arquivo = new File([conteudo], 'vcn.md', { type: 'text/markdown' });
+    const criado = await httpApiClient.criarPorArquivo({
+      ...entrada,
+      documento_conteudo: undefined,
+      arquivo,
+    } as never);
+    expect(criado.status).toBe('queued');
+
+    await new Promise((r) => setTimeout(r, 60));
+    const job = await httpApiClient.obterJob(criado.job_id);
+    expect(job.status).toBe('succeeded');
+    expect(job.resultado?.documento.origem).toBe('upload');
+    expect(job.resultado?.documento.nome_arquivo).toBe('vcn.md');
+    expect(job.resultado?.documento.tamanho_bytes).toBe(arquivo.size);
+  });
+
+  it('rejeita arquivo acima de 10 MB com 413', async () => {
+    const arquivo = new File([new Uint8Array(LIMITES.arquivoMaxBytes + 1)], 'grande.pdf');
+    await expect(
+      httpApiClient.criarPorArquivo({ ...entrada, documento_conteudo: undefined, arquivo } as never),
+    ).rejects.toMatchObject({ status: 413, problema: { erro: { codigo: 'LIMITE_EXCEDIDO' } } });
   });
 
   it('rejeita extensão inválida no upload com 415', async () => {
@@ -86,6 +118,7 @@ describe('handlers de adaptação', () => {
     expect(pagina1.itens).toHaveLength(12);
     expect(pagina1.total_paginas).toBe(2);
     const soQuiz = await httpApiClient.listar({ formato: 'Quiz' });
+    expect(soQuiz.itens.length).toBeGreaterThan(0);
     expect(soQuiz.itens.every((i) => i.formato_gerado === 'Quiz')).toBe(true);
   });
 

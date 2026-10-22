@@ -61,7 +61,7 @@
   },
   "armazenamento_oci": {
     "bucket": "novamente-conteudos-educativos",
-    "objeto_id": "novamente-introducao-a-arquitetura-de-redes-vcn-na-oci-desenvolvedor-quiz-01javcnqu.json",
+    "objeto_id": "novamente-introducao-a-arquitetura-de-redes-vcn-na-oci-desenvolvedor-quiz-01javcnq.json",
     "status_upload": "concluido"
   }
 }
