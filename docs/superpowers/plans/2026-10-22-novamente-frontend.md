@@ -1012,9 +1012,9 @@ describe('faixaAncoragem', () => {
 describe('nomeArquivoPacote e nomeArquivoExportacao', () => {
   it('usa slug do documento, perfil, formato e 8 caracteres do id', () => {
     expect(nomeArquivoExportacao(pacote, 'md')).toBe(
-      'novamente-introducao-a-arquitetura-de-redes-vcn-acao-cia-lider-tecnico-resumo-executivo-01javcnfl.md',
+      'novamente-introducao-a-arquitetura-de-redes-vcn-acao-cia-lider-tecnico-resumo-executivo-01javcnf.md',
     );
-    expect(nomeArquivoPacote(pacote)).toMatch(/^novamente-.*-01javcnfl\.json$/);
+    expect(nomeArquivoPacote(pacote)).toMatch(/^novamente-.*-01javcnf\.json$/);
   });
 
   it('não contém caractere inválido para cabeçalho HTTP', () => {
@@ -2291,7 +2291,7 @@ Expected: FAIL — fixtures e handlers ausentes.
   },
   "armazenamento_oci": {
     "bucket": "novamente-conteudos-educativos",
-    "objeto_id": "novamente-introducao-a-arquitetura-de-redes-vcn-na-oci-iniciante-flashcards-01javcnfl.json",
+    "objeto_id": "novamente-introducao-a-arquitetura-de-redes-vcn-na-oci-iniciante-flashcards-01javcnf.json",
     "status_upload": "concluido"
   }
 }
