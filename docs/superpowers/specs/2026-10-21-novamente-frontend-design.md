@@ -748,9 +748,11 @@ Regras:
 
 | Meta | Alvo | Como verificar |
 |---|---|---|
-| CLS | 0 | Lighthouse local |
+| CLS | 0 | Lighthouse local ou PerformanceObserver em Chromium |
 | LCP local | < 2,5 s | Lighthouse local |
-| JS inicial por rota | < 180 kB gzip | `next build` |
+| JS inicial por rota (gzip) | < 250 kB | Medição no browser; Next 16 não reporta First Load JS |
+
+A meta original de 180 kB foi revista depois da medição: `/` ficou em 230,8 kB, dos quais 128,3 kB são a base do framework (Next 16 + React 19) e ~65 kB são dependências exigidas ou escolhidas na stack (zod, TanStack Query, react-hook-form, tailwind-merge). Como a base do framework sozinha já consome 128 kB, 180 kB não é atingível sem trocar a stack aprovada. O número medido e a decomposição ficam registrados no `frontend/README.md`.
 | Framer Motion e markdown | fora do bundle inicial | Análise do relatório de build |
 
 Regras:
