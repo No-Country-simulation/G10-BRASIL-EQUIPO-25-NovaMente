@@ -113,6 +113,7 @@ export const M = {
   },
   oci: {
     titulo: 'Armazenamento OCI',
+    status: 'Status',
     naoConfigurado: 'OCI não configurado',
     objetos: 'Objetos',
     ultimoUpload: 'Último upload',
