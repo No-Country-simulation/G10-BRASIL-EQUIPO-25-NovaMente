@@ -111,6 +111,7 @@ export const M = {
     todosFormatos: 'Todos os formatos',
     todosPerfis: 'Todos os perfis',
     pagina: (pagina: number, total: number) => `Página ${pagina} de ${total}`,
+    paginacao: 'Paginação do histórico',
     anterior: 'Anterior',
     proxima: 'Próxima',
   },
