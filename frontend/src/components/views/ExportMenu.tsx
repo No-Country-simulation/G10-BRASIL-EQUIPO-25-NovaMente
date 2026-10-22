@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import { Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,16 +11,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { M } from '@/lib/mensagens';
+import { cn } from '@/lib/cn';
 import type { Exportacao } from '@/features/adaptations/useExport';
 
 export function ExportMenu({ exportacao }: { exportacao: Exportacao }) {
   const { exportar, csvDisponivel, baixando } = exportacao;
-
-  const itemCsv = (
-    <DropdownMenuItem disabled={!csvDisponivel} onSelect={() => exportar('csv')}>
-      CSV (Anki)
-    </DropdownMenuItem>
-  );
+  const idMotivoCsv = useId();
 
   return (
     <div>
@@ -37,22 +34,34 @@ export function ExportMenu({ exportacao }: { exportacao: Exportacao }) {
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => exportar('md')}>Markdown</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => exportar('pdf')}>PDF</DropdownMenuItem>
-          {csvDisponivel ? (
-            itemCsv
-          ) : (
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span tabIndex={0} className="pointer-events-auto block">
-                    {itemCsv}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="left">{M.resultado.csvIndisponivel}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuItem
+                  aria-disabled={csvDisponivel ? undefined : true}
+                  aria-describedby={csvDisponivel ? undefined : idMotivoCsv}
+                  className={cn(!csvDisponivel && 'opacity-50')}
+                  onSelect={(evento) => {
+                    if (!csvDisponivel) {
+                      evento.preventDefault();
+                      return;
+                    }
+                    exportar('csv');
+                  }}
+                >
+                  CSV (Anki)
+                </DropdownMenuItem>
+              </TooltipTrigger>
+              {!csvDisponivel && <TooltipContent>{M.resultado.csvIndisponivel}</TooltipContent>}
+            </Tooltip>
+          </TooltipProvider>
         </DropdownMenuContent>
       </DropdownMenu>
+      {!csvDisponivel && (
+        <span id={idMotivoCsv} className="sr-only">
+          {M.resultado.csvIndisponivel}
+        </span>
+      )}
     </div>
   );
 }

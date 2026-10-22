@@ -1,13 +1,15 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ResultadoView } from './ResultadoView';
 import { M } from '@/lib/mensagens';
 import { ApiProvider } from '@/services/api/ApiProvider';
 import { ErroApi } from '@/services/api/erros';
 import type { NovaMenteApi } from '@/services/api/NovaMenteApi';
 import type { AdaptacaoPacote } from '@/types/novamente';
+
+afterEach(() => vi.restoreAllMocks());
 
 const pacote: AdaptacaoPacote = {
   adaptacao_id: '01JAVCNFLCARD00000000001',
@@ -70,13 +72,9 @@ function renderizar(sobrescrever: Partial<NovaMenteApi> = {}) {
   return { api };
 }
 
-async function abrirMenuExportar() {
+async function abrirMenuCsv() {
   await userEvent.click(screen.getByRole('button', { name: M.resultado.exportar }));
-  const item = await screen.findByRole('menuitem', { name: 'CSV (Anki)' });
-  const wrapper = item.parentElement;
-  expect(wrapper?.tagName).toBe('SPAN');
-  expect(wrapper).toHaveAttribute('tabindex', '0');
-  return { item, wrapper: wrapper as HTMLElement };
+  return screen.findByRole('menuitem', { name: 'CSV (Anki)' });
 }
 
 describe('ResultadoView', () => {
@@ -131,24 +129,67 @@ describe('ResultadoView', () => {
     expect(baixarJson).toHaveBeenCalledWith(pacote.adaptacao_id);
   });
 
-  it('desabilita CSV para Tutorial e mostra o motivo no foco do wrapper', async () => {
+  it('mantém o CSV focável, com aria-disabled e descrito pelo motivo', async () => {
     renderizar({ obter: vi.fn().mockResolvedValue(pacoteTutorial) });
     await screen.findByRole('heading', { name: pacoteTutorial.conteudo_adaptado.titulo });
 
-    const { item, wrapper } = await abrirMenuExportar();
+    const item = await abrirMenuCsv();
 
-    expect(item).toHaveAttribute('data-disabled');
-    wrapper.focus();
-    expect(await screen.findByText(M.resultado.csvIndisponivel)).toBeInTheDocument();
+    expect(item).not.toHaveAttribute('disabled');
+    expect(item).not.toHaveAttribute('data-disabled');
+    expect(item).toHaveAttribute('aria-disabled', 'true');
+
+    const id = item.getAttribute('aria-describedby');
+    expect(id).toBeTruthy();
+    expect(document.getElementById(id as string)).toHaveTextContent(M.resultado.csvIndisponivel);
   });
 
-  it('mostra o motivo do CSV desabilitado no hover do wrapper', async () => {
+  it('abre o tooltip do CSV no foco do próprio item', async () => {
     renderizar({ obter: vi.fn().mockResolvedValue(pacoteTutorial) });
     await screen.findByRole('heading', { name: pacoteTutorial.conteudo_adaptado.titulo });
 
-    const { wrapper } = await abrirMenuExportar();
+    const item = await abrirMenuCsv();
+    item.focus();
 
-    await userEvent.hover(wrapper);
-    expect(await screen.findByText(M.resultado.csvIndisponivel)).toBeInTheDocument();
+    expect(item).toHaveFocus();
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(M.resultado.csvIndisponivel);
+  });
+
+  it('abre o tooltip do CSV no hover do próprio item', async () => {
+    renderizar({ obter: vi.fn().mockResolvedValue(pacoteTutorial) });
+    await screen.findByRole('heading', { name: pacoteTutorial.conteudo_adaptado.titulo });
+
+    const item = await abrirMenuCsv();
+    await userEvent.hover(item);
+
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(M.resultado.csvIndisponivel);
+  });
+
+  it('não exporta CSV em pacote não-Flashcards e mantém o item alcançável por teclado', async () => {
+    const { api } = renderizar({ obter: vi.fn().mockResolvedValue(pacoteTutorial) });
+    await screen.findByRole('heading', { name: pacoteTutorial.conteudo_adaptado.titulo });
+
+    const item = await abrirMenuCsv();
+    item.focus();
+    expect(item).toHaveFocus();
+
+    await userEvent.keyboard('{Enter}');
+    expect(vi.mocked(api.exportar)).not.toHaveBeenCalled();
+  });
+
+  it('exporta CSV quando o formato é Flashcards', async () => {
+    URL.createObjectURL = vi.fn(() => 'blob:mock');
+    URL.revokeObjectURL = vi.fn();
+    const clique = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    const { api } = renderizar();
+    await screen.findByRole('heading', { name: 'Dominando Redes na Nuvem' });
+
+    const item = await abrirMenuCsv();
+    expect(item).not.toHaveAttribute('aria-disabled');
+
+    await userEvent.click(item);
+
+    await waitFor(() => expect(vi.mocked(api.exportar)).toHaveBeenCalledWith(pacote.adaptacao_id, 'csv'));
+    expect(clique).toHaveBeenCalled();
   });
 });
