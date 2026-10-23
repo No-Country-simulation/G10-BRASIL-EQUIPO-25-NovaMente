@@ -310,6 +310,7 @@ def executar_pipeline(
             perfil_aplicado=perfil,
             formato_gerado=formato,
             nivel_detalhe_aplicado=nivel,
+            nicho_setor_aplicado=nicho,
             tempo_estimado_estudo_minutos=tempo_estudo,
             conceitos_chave=conceitos,
         ),
