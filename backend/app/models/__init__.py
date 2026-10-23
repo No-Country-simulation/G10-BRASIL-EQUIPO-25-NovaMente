@@ -50,6 +50,7 @@ class MetadadosAdaptacao(BaseModel):
     perfil_aplicado: PerfilDestinatario
     formato_gerado: FormatoSaida
     nivel_detalhe_aplicado: NivelDetalhe
+    nicho_setor_aplicado: NichoSetor
     tempo_estimado_estudo_minutos: int = Field(ge=1)
     conceitos_chave: list[str] = Field(min_length=1, max_length=12)
 
@@ -176,6 +177,7 @@ class AdaptacaoResumo(BaseModel):
     perfil_aplicado: PerfilDestinatario
     formato_gerado: FormatoSaida
     nivel_detalhe_aplicado: NivelDetalhe
+    nicho_setor_aplicado: NichoSetor
     tempo_estimado_estudo_minutos: int
     ancoragem_fonte_score: float
     status_upload: Literal["concluido", "falha"]
