@@ -110,3 +110,48 @@ def test_listar_adaptacoes_pagina_invalida():
 def test_listar_adaptacoes_tamanho_invalido():
     resp = client.get("/api/v1/adaptacoes?tamanho_pagina=100")
     assert resp.status_code == 422
+
+
+# ── Upload de arquivos ───────────────────────────────────────────────────────
+
+
+def test_upload_extensao_invalida():
+    arquivos = {"arquivo": ("teste.exe", b"binario", "application/octet-stream")}
+    dados = {
+        "documento_titulo": "Manual de Teste",
+        "perfil_destinatario": "Iniciante",
+        "formato_saida": "Flashcards",
+        "nicho_setor": "Geral",
+        "nivel_detalhe": "Didatico",
+    }
+    resp = client.post("/api/v1/adaptacoes/upload", files=arquivos, data=dados)
+    assert resp.status_code == 415
+    assert resp.json()["erro"]["codigo"] == "ARQUIVO_INVALIDO"
+
+
+def test_upload_texto_curto_retorna_400():
+    arquivos = {"arquivo": ("teste.txt", b"Texto muito curto para gerar", "text/plain")}
+    dados = {
+        "documento_titulo": "Manual de Teste",
+        "perfil_destinatario": "Iniciante",
+        "formato_saida": "Flashcards",
+        "nicho_setor": "Geral",
+        "nivel_detalhe": "Didatico",
+    }
+    resp = client.post("/api/v1/adaptacoes/upload", files=arquivos, data=dados)
+    assert resp.status_code == 400
+    assert resp.json()["erro"]["codigo"] == "DOCUMENTO_ILEGIVEL"
+
+
+def test_modelo_metadados_tem_nicho():
+    from app.models import MetadadosAdaptacao
+
+    meta = MetadadosAdaptacao(
+        perfil_aplicado="Iniciante",
+        formato_gerado="Flashcards",
+        nivel_detalhe_aplicado="Didatico",
+        nicho_setor_aplicado="Fintech",
+        tempo_estimado_estudo_minutos=10,
+        conceitos_chave=["VCN", "Subnet"],
+    )
+    assert meta.nicho_setor_aplicado == "Fintech"
