@@ -1,0 +1,30 @@
+{
+  "adaptacao_id": "01JAVCNTUTO000000000003",
+  "status": "sucesso",
+  "criado_em": "2026-10-21T14:20:00Z",
+  "documento": { "titulo": "Introdução à Arquitetura de Redes VCN na OCI", "origem": "upload", "nome_arquivo": "vcn-oci.pdf", "tamanho_bytes": 184320 },
+  "metadados": {
+    "perfil_aplicado": "LiderTecnico",
+    "formato_gerado": "Tutorial",
+    "nivel_detalhe_aplicado": "Tecnico",
+    "nicho_setor_aplicado": "Geral",
+    "tempo_estimado_estudo_minutos": 12,
+    "conceitos_chave": ["Topologia", "Segmentação", "Roteamento", "Security Lists", "Peering"]
+  },
+  "conteudo_adaptado": {
+    "tipo": "markdown",
+    "titulo": "Desenhando uma VCN pronta para produção",
+    "introducao_contextualizada": "Um roteiro de decisões para sair do diagrama inicial e chegar a uma topologia que aguenta crescimento, auditoria e isolamento.",
+    "itens": "## 1. Defina o bloco CIDR antes de criar recursos\n\nEscolha um bloco que não colida com a rede on-premise. Um /16 dá espaço para sub-redes /24 sem retrabalho.\n\n## 2. Separe camadas em sub-redes distintas\n\nAplique uma sub-rede pública apenas para load balancers e bastion. Aplicação e banco ficam em sub-redes privadas.\n\n## 3. Roteie por intenção\n\nSub-redes públicas usam Internet Gateway. Sub-redes privadas usam NAT Gateway para saída e Service Gateway para Object Storage.\n\n## 4. Feche por padrão\n\nSecurity Lists começam negando tudo. Abra porta e origem específicas, com justificativa registrada no repositório de infraestrutura.\n\n## 5. Planeje o crescimento\n\nReserve faixas para peering com outras VCNs e para expansão regional. Documente o mapa de CIDRs junto do código.\n\n## 6. Verifique antes de promover\n\nSimule o fluxo com um recurso de teste em cada sub-rede e confirme que nenhum caminho inesperado para a internet existe."
+  },
+  "avaliacao_qualidade": {
+    "ancoragem_fonte_score": 0.96,
+    "clareza_pedagogica": "Alta",
+    "observacoes": "Foco em decisões e trade-offs, sem repetir a introdução conceitual."
+  },
+  "armazenamento_oci": {
+    "bucket": "novamente-conteudos-educativos",
+    "objeto_id": "novamente-introducao-a-arquitetura-de-redes-vcn-na-oci-lider-tecnico-tutorial-01javcnt.json",
+    "status_upload": "concluido"
+  }
+}

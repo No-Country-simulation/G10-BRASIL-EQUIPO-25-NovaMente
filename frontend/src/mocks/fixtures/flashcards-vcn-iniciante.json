@@ -1,0 +1,65 @@
+{
+  "adaptacao_id": "01JAVCNFLCARD00000000001",
+  "status": "sucesso",
+  "criado_em": "2026-10-21T14:02:11Z",
+  "documento": { "titulo": "Introdução à Arquitetura de Redes VCN na OCI", "origem": "texto" },
+  "metadados": {
+    "perfil_aplicado": "Iniciante",
+    "formato_gerado": "Flashcards",
+    "nivel_detalhe_aplicado": "Didatico",
+    "nicho_setor_aplicado": "Geral",
+    "tempo_estimado_estudo_minutos": 5,
+    "conceitos_chave": ["VCN", "Sub-redes", "Internet Gateway", "Security Lists", "NAT Gateway"]
+  },
+  "conteudo_adaptado": {
+    "tipo": "flashcards",
+    "titulo": "Dominando Redes na Nuvem (VCN) do Zero",
+    "introducao_contextualizada": "Imagine a VCN como o seu próprio bairro particular e seguro dentro da nuvem da Oracle, onde você decide quem entra e quem sai.",
+    "itens": [
+      {
+        "frente": "O que é uma VCN na Oracle Cloud?",
+        "verso": "É a sua rede virtual privada e personalizada dentro da nuvem da Oracle, funcionando como a infraestrutura de rede da sua empresa.",
+        "dica_didatica": "Pense nela como o terreno cercado onde seus servidores moram."
+      },
+      {
+        "frente": "Para que servem as Security Lists?",
+        "verso": "São porteiros virtuais com listas de regras que definem exatamente que tipo de tráfego pode entrar ou sair da sua rede.",
+        "dica_didatica": "Regras de entrada são ingress e regras de saída são egress."
+      },
+      {
+        "frente": "O que é uma sub-rede pública?",
+        "verso": "É uma subdivisão da VCN cujo tráfego pode chegar à internet por meio de um Internet Gateway."
+      },
+      {
+        "frente": "O que é uma sub-rede privada?",
+        "verso": "É uma subdivisão sem rota direta para a internet, usada para bancos de dados e serviços internos."
+      },
+      {
+        "frente": "O que faz o Internet Gateway?",
+        "verso": "Conecta a VCN à internet, permitindo tráfego de entrada e saída para recursos públicos."
+      },
+      {
+        "frente": "O que faz o NAT Gateway?",
+        "verso": "Permite que recursos em sub-redes privadas iniciem conexões para a internet sem ficarem expostos."
+      },
+      {
+        "frente": "O que é uma tabela de roteamento?",
+        "verso": "É o mapa que decide para onde o tráfego de cada sub-rede deve seguir."
+      },
+      {
+        "frente": "O que significa ingress e egress?",
+        "verso": "Ingress é tráfego que entra na rede; egress é tráfego que sai dela."
+      }
+    ]
+  },
+  "avaliacao_qualidade": {
+    "ancoragem_fonte_score": 0.98,
+    "clareza_pedagogica": "Alta",
+    "observacoes": "Linguagem ajustada com analogias para público iniciante, sem jargões excessivos."
+  },
+  "armazenamento_oci": {
+    "bucket": "novamente-conteudos-educativos",
+    "objeto_id": "novamente-introducao-a-arquitetura-de-redes-vcn-na-oci-iniciante-flashcards-01javcnf.json",
+    "status_upload": "concluido"
+  }
+}
