@@ -139,7 +139,7 @@ Equivalente com Lighthouse (não instalado aqui; exige `npx lighthouse`, baixa n
 `npx lighthouse http://localhost:3100/ --preset=desktop --only-categories=performance --chrome-flags="--headless"`.
 
 Cobertura de `src/features/**` + `src/services/**`: 90,4% statements, 82,1% branches,
-95,1% functions, 94,2% lines (limiares do `vitest.config.ts`: 80/70/80/80).
+95,1% functions, 94,2% lines (limiares do `vitest.config.mts`: 80/70/80/80).
 
 ## Testes E2E (Playwright)
 
@@ -162,7 +162,7 @@ npm run e2e -- 3-historico        # filtra por arquivo
 
 ## Notas de manutenção
 
-- `vitest.config.ts` exclui `e2e/**`: os specs do Playwright casam com o include padrão do
+- `vitest.config.mts` exclui `e2e/**`: os specs do Playwright casam com o include padrão do
   Vitest e usam outro runner.
 - `storybook-static/`, `.next/`, `coverage/`, `playwright-report/` e `test-results/` são
   artefatos de build e ficam fora do git.

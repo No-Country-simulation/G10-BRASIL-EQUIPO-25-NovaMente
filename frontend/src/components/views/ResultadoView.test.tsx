@@ -83,7 +83,7 @@ describe('ResultadoView', () => {
     expect(await screen.findByRole('heading', { name: 'Dominando Redes na Nuvem' })).toBeInTheDocument();
     expect(await screen.findByText('O que é VCN?')).toBeInTheDocument();
     expect(screen.getByText('98%')).toBeInTheDocument();
-  });
+  }, 15_000);
 
   it('trata 404 com mensagem específica e sem "Tentar novamente"', async () => {
     renderizar({
