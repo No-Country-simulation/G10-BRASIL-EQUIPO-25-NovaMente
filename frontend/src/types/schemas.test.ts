@@ -142,6 +142,23 @@ describe('JobRespostaSchema', () => {
     expect(JobRespostaSchema.safeParse(jobBase).success).toBe(true);
   });
 
+  it('aceita payload real do FastAPI com campos opcionais nulos em queued', () => {
+    const jobDoFastAPI = {
+      job_id: '01M5TM9Q7KXZR5CJ6BW0A76CRB',
+      status: 'queued',
+      etapa_atual: null,
+      etapas_concluidas: [],
+      progresso_percentual: 0,
+      mensagem: null,
+      iniciado_em: '2026-10-25T22:53:29.715183+00:00',
+      atualizado_em: '2026-10-25T22:53:29.715183+00:00',
+      adaptacao_id: null,
+      resultado: null,
+      erro: null,
+    };
+    expect(JobRespostaSchema.safeParse(jobDoFastAPI).success).toBe(true);
+  });
+
   it('exige resultado e adaptacao_id quando succeeded', () => {
     expect(JobRespostaSchema.safeParse({ ...jobBase, status: 'succeeded', etapa_atual: null }).success).toBe(false);
     expect(
