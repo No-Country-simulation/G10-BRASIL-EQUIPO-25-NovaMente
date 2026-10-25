@@ -62,7 +62,6 @@ O desenvolvimento do projeto segue uma metodologia ágil adaptada para entregas 
 | **Alex Grellet** | Vibe Coder / Developer |
 | **Luan Carvalho** | Vibe Coder / Developer |
 | **Mario Lucio Breder Junior** | Product Manager / Developer  |
-| **Ramon Oliveira Cardoso** | Vibe Coder / Developer |
 | **Renato Campos** | Tech Lead / Vibe Coder |
 
 ---
