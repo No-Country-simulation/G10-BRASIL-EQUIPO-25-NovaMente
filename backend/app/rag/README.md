@@ -79,11 +79,37 @@ python backend/scripts/demo_rag.py git_versionamento.md
 
 ### Cenários de demonstração
 
-| # | Documento | Perguntas de teste | Resultado observado |
+Execução real do `demo_rag.py` com o Gemini (`gemini-embedding-001`), pedindo os 2 trechos mais relevantes (`k=2`) para cada pergunta. Cada texto de exemplo tem cerca de 2.000 caracteres e gera 3 trechos. A coluna "Trecho esperado" indica em qual trecho está a resposta no texto, conferido manualmente.
+
+**Cenário 1: `http_apis_rest.md` (3 trechos, 2.006 caracteres)**
+
+| Pergunta | Trecho esperado | Trechos recuperados (relevância) | Acertou |
 |---|---|---|---|
-| 1 | `http_apis_rest.md` | "O que significa o erro 404?"; "Qual a diferença entre PUT e PATCH?"; "Como versionar uma API?" | _a preencher com a saída do script_ |
-| 2 | `sql_consultas.md` | "Como encontrar clientes que nunca fizeram pedidos?"; "Quando usar HAVING em vez de WHERE?"; "Índices deixam o banco mais lento?" | _a preencher com a saída do script_ |
-| 3 | `git_versionamento.md` | "O que acontece quando duas pessoas mudam a mesma linha?"; "Para que serve um pull request?"; "Qual a diferença entre merge e rebase?" | _a preencher com a saída do script_ |
+| O que significa o erro 404? | 1 | **1 (0,679)**, 0 (0,668) | Sim, em 1º |
+| Qual a diferença entre PUT e PATCH? | 0 | **0 (0,704)**, 2 (0,654) | Sim, em 1º |
+| Como versionar uma API? | 2 | **2 (0,734)**, 0 (0,684) | Sim, em 1º |
+
+**Cenário 2: `sql_consultas.md` (3 trechos, 1.938 caracteres)**
+
+| Pergunta | Trecho esperado | Trechos recuperados (relevância) | Acertou |
+|---|---|---|---|
+| Como encontrar clientes que nunca fizeram pedidos? | 1 | 0 (0,621), **1 (0,613)** | Sim, em 2º |
+| Quando usar HAVING em vez de WHERE? | 1 | **1 (0,711)**, 0 (0,676) | Sim, em 1º |
+| Índices deixam o banco mais lento? | 2 | **2 (0,756)**, 0 (0,656) | Sim, em 1º |
+
+**Cenário 3: `git_versionamento.md` (3 trechos, 1.861 caracteres)**
+
+| Pergunta | Trecho esperado | Trechos recuperados (relevância) | Acertou |
+|---|---|---|---|
+| O que acontece quando duas pessoas mudam a mesma linha? | 1 | **1 (0,689)**, 0 (0,661) | Sim, em 1º |
+| Para que serve um pull request? | 2 | **2 (0,758)**, 1 (0,692) | Sim, em 1º |
+| Qual a diferença entre merge e rebase? | 1 | **1 (0,739)**, 2 (0,670) | Sim, em 1º |
+
+**Leitura dos resultados:**
+- Nas 9 perguntas, o trecho com a resposta apareceu entre os 2 recuperados; em 8 delas ele foi o primeiro.
+- Na pergunta sobre clientes sem pedidos, o trecho certo ficou em 2º lugar, com relevância muito próxima do 1º (0,613 contra 0,621). A busca por similaridade não garante a ordem exata, e a diferença é pequena.
+- As relevâncias ficaram entre 0,61 e 0,76 mesmo quando o trecho está certo. Por isso a relevância sozinha não deve ser tratada como nota de qualidade: ela serve para ordenar trechos, e não para dizer se o conteúdo gerado está bem apoiado na fonte.
+- Os textos de exemplo são curtos. Com documentos reais, que geram muito mais trechos, o resultado pode variar.
 
 ### Pendências
 
