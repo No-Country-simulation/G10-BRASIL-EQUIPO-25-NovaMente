@@ -221,3 +221,7 @@ __marimo__/
 
 # Fontes do app Next.js (frontend/src/lib) — não é empacotamento Python
 !frontend/src/lib/
+# NovaMente: variantes de .env e vector store local
+.env.*
+!.env.example
+backend/data/chroma/
