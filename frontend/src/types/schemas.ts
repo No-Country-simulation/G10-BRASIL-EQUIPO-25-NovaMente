@@ -72,7 +72,7 @@ export const FlashcardItemSchema = z
   .object({
     frente: z.string().trim().min(1),
     verso: z.string().trim().min(1),
-    dica_didatica: z.string().trim().min(1).optional(),
+    dica_didatica: z.string().trim().min(1).nullable().optional(),
   })
   .strict();
 
@@ -116,8 +116,8 @@ export const DocumentoRefSchema = z
   .object({
     titulo: z.string().min(1),
     origem: z.enum(['upload', 'texto']),
-    nome_arquivo: z.string().min(1).optional(),
-    tamanho_bytes: z.number().int().nonnegative().optional(),
+    nome_arquivo: z.string().min(1).nullable().optional(),
+    tamanho_bytes: z.number().int().nonnegative().nullable().optional(),
   })
   .strict();
 
@@ -136,7 +136,7 @@ export const AvaliacaoQualidadeSchema = z
   .object({
     ancoragem_fonte_score: z.number().min(0).max(1),
     clareza_pedagogica: z.enum(['Alta', 'Media', 'Baixa']),
-    observacoes: z.string().min(1).optional(),
+    observacoes: z.string().min(1).nullable().optional(),
   })
   .strict();
 
@@ -166,8 +166,8 @@ export const ApiProblemaErroSchema = z
   .object({
     codigo: CodigoErroSchema,
     mensagem: z.string().min(1),
-    campos: z.record(z.string(), z.string()).optional(),
-    request_id: z.string().min(1).optional(),
+    campos: z.record(z.string(), z.string()).nullable().optional(),
+    request_id: z.string().min(1).nullable().optional(),
   })
   .strict();
 
@@ -230,12 +230,12 @@ export const JobRespostaSchema = z
     etapa_atual: EtapaJobSchema.nullable(),
     etapas_concluidas: z.array(EtapaJobSchema),
     progresso_percentual: z.number().min(0).max(100),
-    mensagem: z.string().min(1).optional(),
+    mensagem: z.string().min(1).nullable().optional(),
     iniciado_em: dataIso,
     atualizado_em: dataIso,
-    adaptacao_id: z.string().min(1).optional(),
-    resultado: AdaptacaoPacoteSchema.optional(),
-    erro: ApiProblemaErroSchema.optional(),
+    adaptacao_id: z.string().min(1).nullable().optional(),
+    resultado: AdaptacaoPacoteSchema.nullable().optional(),
+    erro: ApiProblemaErroSchema.nullable().optional(),
   })
   .strict()
   .superRefine((job, ctx) => {
@@ -255,10 +255,11 @@ export const AdaptacaoResumoSchema = z
     perfil_aplicado: perfilSchema,
     formato_gerado: formatoSaidaSchema,
     nivel_detalhe_aplicado: nivelDetalheSchema,
+    nicho_setor_aplicado: nichoSchema.optional(),
     tempo_estimado_estudo_minutos: z.number().int().min(1),
     ancoragem_fonte_score: z.number().min(0).max(1),
     status_upload: z.enum(['concluido', 'falha']),
-    conceitos_chave: z.array(z.string().min(1)).max(6),
+    conceitos_chave: z.array(z.string().min(1)).max(12),
   })
   .strict();
 
@@ -275,12 +276,12 @@ export const PaginaAdaptacoesSchema = z
 export const OciStatusSchema = z
   .object({
     configurado: z.boolean(),
-    bucket: z.string().min(1).optional(),
-    regiao: z.string().min(1).optional(),
-    total_objetos: z.number().int().min(0).optional(),
-    bytes_armazenados: z.number().int().min(0).optional(),
-    ultimo_upload_em: dataIso.optional(),
-    mensagem: z.string().min(1).optional(),
+    bucket: z.string().min(1).nullable().optional(),
+    regiao: z.string().min(1).nullable().optional(),
+    total_objetos: z.number().int().min(0).nullable().optional(),
+    bytes_armazenados: z.number().int().min(0).nullable().optional(),
+    ultimo_upload_em: dataIso.nullable().optional(),
+    mensagem: z.string().min(1).nullable().optional(),
     verificado_em: dataIso,
   })
   .strict();

@@ -79,7 +79,13 @@ export function FonteDocumento({
           arquivo={arquivo}
           erro={erros.arquivo?.message}
           desabilitado={desabilitado}
-          aoSelecionar={(novo) => form.setValue('arquivo', novo, { shouldValidate: true })}
+          aoSelecionar={(novo) => {
+            form.setValue('arquivo', novo, { shouldValidate: true });
+            if (novo && !form.getValues('documento_titulo')?.trim()) {
+              const nomeSemExt = novo.name.replace(/\.[^/.]+$/, '');
+              form.setValue('documento_titulo', nomeSemExt, { shouldValidate: true });
+            }
+          }}
         />
       </TabsContent>
     </Tabs>

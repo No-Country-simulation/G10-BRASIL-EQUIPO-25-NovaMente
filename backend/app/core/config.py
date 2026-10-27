@@ -1,12 +1,18 @@
 """Configurações da aplicação via variáveis de ambiente."""
 
+import os
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Busca .env em backend/.env ou na pasta atual
+_BASE_DIR = Path(__file__).resolve().parents[2]
+_ENV_FILE = _BASE_DIR / ".env" if (_BASE_DIR / ".env").exists() else ".env"
 
 
 class Settings(BaseSettings):
     """Configurações carregadas do .env ou do ambiente."""
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=_ENV_FILE, extra="ignore")
 
     # ── API ──────────────────────────────────────────────────────────────────
     app_nome: str = "NovaMente API"
@@ -38,3 +44,9 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Sincroniza com os.environ para módulos do LangChain e RAG
+if settings.google_api_key and not os.environ.get("GOOGLE_API_KEY"):
+    os.environ["GOOGLE_API_KEY"] = settings.google_api_key
+if settings.chroma_dir:
+    os.environ["CHROMA_DIR"] = settings.chroma_dir

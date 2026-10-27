@@ -125,7 +125,7 @@ async def criar_por_arquivo(
             texto = extrair_texto_pdf(conteudo_bytes)
         else:
             texto = extrair_texto_markdown(conteudo_bytes)
-    except ValueError as exc:
+    except (ValueError, RuntimeError) as exc:
         raise HTTPException(
             status_code=400,
             detail={"erro": {"codigo": "DOCUMENTO_ILEGIVEL", "mensagem": str(exc)}},
@@ -238,6 +238,7 @@ def listar_adaptacoes(
             perfil_aplicado=p.metadados.perfil_aplicado,
             formato_gerado=p.metadados.formato_gerado,
             nivel_detalhe_aplicado=p.metadados.nivel_detalhe_aplicado,
+            nicho_setor_aplicado=p.metadados.nicho_setor_aplicado,
             tempo_estimado_estudo_minutos=p.metadados.tempo_estimado_estudo_minutos,
             ancoragem_fonte_score=p.avaliacao_qualidade.ancoragem_fonte_score,
             status_upload=p.armazenamento_oci.status_upload,
