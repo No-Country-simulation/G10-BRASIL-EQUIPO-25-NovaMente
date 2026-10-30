@@ -1,0 +1,30 @@
+{
+  "adaptacao_id": "01JAVCNRESU000000000004",
+  "status": "sucesso",
+  "criado_em": "2026-10-21T14:30:00Z",
+  "documento": { "titulo": "Introdução à Arquitetura de Redes VCN na OCI", "origem": "texto" },
+  "metadados": {
+    "perfil_aplicado": "Gestor",
+    "formato_gerado": "ResumoExecutivo",
+    "nivel_detalhe_aplicado": "Executivo",
+    "nicho_setor_aplicado": "Geral",
+    "tempo_estimado_estudo_minutos": 3,
+    "conceitos_chave": ["Custo", "Isolamento", "Conformidade", "Escalabilidade", "Risco operacional"]
+  },
+  "conteudo_adaptado": {
+    "tipo": "markdown",
+    "titulo": "VCN em três minutos: o que a liderança precisa decidir",
+    "introducao_contextualizada": "A rede na nuvem é uma decisão de negócio: define exposição de dados, custo de tráfego e velocidade de entrega.",
+    "itens": "## O que é\n\nA VCN é a rede privada da empresa dentro da Oracle Cloud. Todo recurso nasce conectado a ela.\n\n## Por que importa\n\nIsolamento mal definido vira incidente de segurança; topologia confusa vira atraso de entrega e custo de tráfego inesperado.\n\n## Decisões que sobem para a liderança\n\n- **Exposição:** o que fica público e o que fica privado.\n- **Conformidade:** trilha de auditoria das regras de firewall.\n- **Custo:** tráfego entre zonas e uso de NAT Gateway.\n- **Escalabilidade:** reserva de faixas para novas unidades de negócio.\n\n## Próximo passo\n\nAprovar o mapa de sub-redes e o dono do repositório de infraestrutura, com revisão trimestral das regras de acesso."
+  },
+  "avaliacao_qualidade": {
+    "ancoragem_fonte_score": 0.99,
+    "clareza_pedagogica": "Alta",
+    "observacoes": "Sem jargão de implementação; foco em impacto, risco e decisão."
+  },
+  "armazenamento_oci": {
+    "bucket": "novamente-conteudos-educativos",
+    "objeto_id": "novamente-introducao-a-arquitetura-de-redes-vcn-na-oci-gestor-resumo-executivo-01javcnr.json",
+    "status_upload": "concluido"
+  }
+}
