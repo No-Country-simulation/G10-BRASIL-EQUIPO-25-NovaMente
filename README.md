@@ -149,6 +149,20 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+##### Configure as variáveis de ambiente:
+```bash
+cp .env.example .env
+```
+Edite o `.env` e preencha:
+- `GOOGLE_API_KEY`: chave da API Google Gemini (obrigatória; nunca a envie para o repositório).
+- `MODELO_LLM`: modelo Gemini usado na geração (padrão: `gemini-3.5-flash-lite`).
+- `CHROMA_DIR`: pasta do ChromaDB, relativa a `backend/` (ex.: `./data/chroma`).
+
+##### (Opcional) Liste os modelos disponíveis para a sua chave:
+```bash
+curl -s -H "x-goog-api-key: $GOOGLE_API_KEY" "https://generativelanguage.googleapis.com/v1beta/models?pageSize=200"
+```
+
 ##### Inicie o servidor de desenvolvimento do FastAPI:
 ```bash
 uvicorn app.main:app --reload
@@ -157,7 +171,7 @@ uvicorn app.main:app --reload
 ### Configuração e Execução do Frontend
 ```bash
 cd frontend
-npm install
+npm ci
 ```
 ##### Inicie o servidor de desenvolvimento do Next.js:
 ```bash
