@@ -56,7 +56,7 @@ O desenvolvimento do projeto segue uma metodologia ágil adaptada para entregas 
 
 ---
 
-## Equipe 25 Hackaton ONE G10 Brasil
+## Equipe 25 Hackathon ONE G10 Brasil
 | Nome do Integrante | Papel no Projeto / Scrum |
 | :--- | :--- |
 | **Alex Grellet** | Vibe Coder / Developer |
@@ -81,15 +81,15 @@ O repositório está organizado como um monorepo contendo os módulos de backend
 .
 ├── backend/
 │   ├── app/
-│   │   ├── api/v1/         # Rotas e endpoints REST da API[cite: 1]
-│   │   ├── core/           # Configurações globais e tratamento de erros[cite: 1]
+│   │   ├── api/v1/         # Rotas e endpoints REST da API
+│   │   ├── core/           # Configurações globais e tratamento de erros
 │   │   ├── models/         # Schemas Pydantic v2[cite: 1]
-│   │   ├── rag/            # Lógica de pipeline RAG, embeddings e ChromaDB[cite: 1]
-│   │   ├── services/       # Serviços de OCI, extração, jobs e repositório[cite: 1]
-│   │   └── main.py         # Ponto de entrada da aplicação FastAPI[cite: 1]
-│   ├── data/exemplos/      # Fixtures e textos de demonstração[cite: 1]
-│   ├── tests/              # Testes unitários e de integração (pytest)[cite: 1]
-│   └── requirements.txt    # Dependências Python do backend[cite: 1]
+│   │   ├── rag/            # Lógica de pipeline RAG, embeddings e ChromaDB
+│   │   ├── services/       # Serviços de OCI, extração, jobs e repositório
+│   │   └── main.py         # Ponto de entrada da aplicação FastAPI
+│   ├── data/exemplos/      # Fixtures e textos de demonstração
+│   ├── tests/              # Testes unitários e de integração (pytest)
+│   └── requirements.txt    # Dependências Python do backend
 ├── frontend/
 │   ├── src/
 │   │   ├── app/            # Rotas do Next.js (Gerar, Resultado, Histórico)
@@ -112,13 +112,20 @@ O repositório está organizado como um monorepo contendo os módulos de backend
 
 - Python 3.11 ou superior (recomendado o uso de ambiente virtual).
 
-- Node.js (versão 18 ou superior) e gerenciador de pacotes (npm, pnpm ou yarn).
+- Node.js (versão 20 ou superior) e gerenciador de pacotes (npm, pnpm ou yarn).
 
 - Git para controle de versão.
 
 - Chaves de API configuradas para acesso ao modelo de IA (Google Gemini) e opcionais credenciais da OCI Object Storage (caso deseje testar a persistência em nuvem).
 
 ## Como Executar
+
+### Clonar o Repositório
+
+```bash
+git clone https://github.com/No-Country-simulation/G10-BRASIL-EQUIPO-25-NovaMente.git
+cd G10-BRASIL-EQUIPO-25-NovaMente
+```
 
 ### Configuração e Execução do Backend
 
