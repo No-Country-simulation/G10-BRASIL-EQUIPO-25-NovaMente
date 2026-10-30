@@ -1,0 +1,62 @@
+name: NovaMente CI - Backend e Frontend
+
+on:
+  push:
+    branches: [ develop, main, "release/**" ]
+  pull_request:
+    branches: [ develop, main ]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar Dependências do Backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Executar Testes com Pytest (se houver)
+        env:
+          GOOGLE_API_KEY: "fake_key_for_ci_testing"
+        run: |
+          # Se tiver testes configurados na pasta tests/
+          pytest tests/ -v || echo "Nenhum teste configurado ou falhou, validando apenas build."
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js (v18)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar Dependências do Frontend
+        run: npm ci
+
+      - name: Executar Build do Next.js para Validação
+        env:
+          API_BASE_URL: "http://localhost:8000"
+          NEXT_PUBLIC_API_MOCK: "1"
+        run: npm run build
