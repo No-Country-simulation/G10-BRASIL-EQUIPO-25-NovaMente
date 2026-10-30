@@ -83,7 +83,7 @@ O repositório está organizado como um monorepo contendo os módulos de backend
 │   ├── app/
 │   │   ├── api/v1/         # Rotas e endpoints REST da API
 │   │   ├── core/           # Configurações globais e tratamento de erros
-│   │   ├── models/         # Schemas Pydantic v2[cite: 1]
+│   │   ├── models/         # Schemas Pydantic v2
 │   │   ├── rag/            # Lógica de pipeline RAG, embeddings e ChromaDB
 │   │   ├── services/       # Serviços de OCI, extração, jobs e repositório
 │   │   └── main.py         # Ponto de entrada da aplicação FastAPI
