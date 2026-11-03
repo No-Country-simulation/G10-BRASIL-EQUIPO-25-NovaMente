@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # Backend FastAPI com RAG e ChromaDB
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.backend
+    container_name: novamente_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./backend/chroma_db:/app/chroma_db
+    environment:
+      - CHROMA_DIR=/app/chroma_db
+    env_file:
+      - ./backend/.env
+    restart: always
+
+  # Frontend Next.js
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    container_name: novamente_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      #- NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_MOCK=0
+      - API_BASE_URL=http://backend:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    restart: always
