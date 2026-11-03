@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     # ── Jobs em memória ──────────────────────────────────────────────────────
     job_ttl_segundos: int = 1800  # 30 minutos
     job_timeout_segundos: int = 300  # 5 minutos (igual ao frontend)
+    llm_timeout_segundos: int = 120  # por chamada ao Gemini
 
     # ── Limites de entrada ───────────────────────────────────────────────────
     texto_min_caracteres: int = 200
