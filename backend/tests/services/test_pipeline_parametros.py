@@ -115,7 +115,7 @@ class _ModeloFalso:
     def __init__(self, nome_modelo: str):
         self.nome_modelo = nome_modelo
 
-    def generate_content(self, prompt: str) -> _RespostaFalsa:
+    def generate_content(self, prompt: str, **_kwargs) -> _RespostaFalsa:
         _ModeloFalso.prompts.append(prompt)
         return _RespostaFalsa(RESPOSTA_FLASHCARDS)
 
