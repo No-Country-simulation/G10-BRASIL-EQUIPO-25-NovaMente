@@ -6,17 +6,27 @@ import io
 
 
 def extrair_texto_pdf(conteudo_bytes: bytes) -> str:
-    """Extrai texto de um PDF usando pypdf. Lança ValueError se sem texto."""
+    """Extrai texto de um PDF usando pypdf.
+
+    Lança ValueError se o arquivo não puder ser lido como PDF (vazio,
+    corrompido, truncado ou protegido por senha) ou se não tiver texto.
+    """
     try:
         from pypdf import PdfReader  # type: ignore
+        from pypdf.errors import FileNotDecryptedError, PyPdfError  # type: ignore
     except ImportError as exc:
         raise RuntimeError("pypdf não instalado.") from exc
 
-    reader = PdfReader(io.BytesIO(conteudo_bytes))
     partes = []
-    for pagina in reader.pages:
-        txt = pagina.extract_text() or ""
-        partes.append(txt)
+    try:
+        reader = PdfReader(io.BytesIO(conteudo_bytes))
+        for pagina in reader.pages:
+            txt = pagina.extract_text() or ""
+            partes.append(txt)
+    except FileNotDecryptedError as exc:
+        raise ValueError("O PDF está protegido por senha e não pode ser lido.") from exc
+    except PyPdfError as exc:
+        raise ValueError("O arquivo não é um PDF válido ou está corrompido.") from exc
     texto = "\n".join(partes).strip()
     if not texto:
         raise ValueError("O PDF não contém camada de texto extraível.")
