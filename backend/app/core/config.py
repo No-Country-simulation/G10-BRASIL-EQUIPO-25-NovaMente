@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # ── Google Gemini ────────────────────────────────────────────────────────
     google_api_key: str = ""
-    modelo_llm: str = "gemini-2.0-flash"
+    modelo_llm: str = "gemini-3.5-flash-lite"
 
     # ── RAG / Chroma ─────────────────────────────────────────────────────────
     chroma_dir: str = "/data/chroma"

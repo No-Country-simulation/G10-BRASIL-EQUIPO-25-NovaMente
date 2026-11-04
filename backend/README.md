@@ -24,7 +24,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `OCI_BUCKET` | — | Nome do bucket (default: `novamente-conteudos-educativos`) |
 | `OCI_REGIAO` | — | Região OCI (ex: `sa-saopaulo-1`) |
 | `CHROMA_DIR` | — | Diretório do ChromaDB (default: `/data/chroma`) |
-| `MODELO_LLM` | — | Modelo Gemini (default: `gemini-2.0-flash`) |
+| `MODELO_LLM` | — | Modelo Gemini (default: `gemini-3.5-flash-lite`) |
 
 ## Documentação Interativa
 
