@@ -28,12 +28,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Executar Testes com Pytest (se houver)
+      - name: Executar Testes com Pytest
         env:
           GOOGLE_API_KEY: "fake_key_for_ci_testing"
         run: |
-          # Se tiver testes configurados na pasta tests/
-          pytest tests/ -v || echo "Nenhum teste configurado ou falhou, validando apenas build."
+          pytest tests/ -v
 
   test-frontend:
     runs-on: ubuntu-latest
@@ -45,7 +44,7 @@ jobs:
       - name: Checkout do Código
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js (v18)
+      - name: Configurar Node.js (v20)
         uses: actions/setup-node@v4
         with:
           node-version: '20'
