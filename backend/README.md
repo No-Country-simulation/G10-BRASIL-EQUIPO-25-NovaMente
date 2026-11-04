@@ -23,6 +23,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `OCI_NAMESPACE` | — | Namespace do OCI Object Storage |
 | `OCI_BUCKET` | — | Nome do bucket (default: `novamente-conteudos-educativos`) |
 | `OCI_REGIAO` | — | Região OCI (ex: `sa-saopaulo-1`) |
+| `LLM_TIMEOUT_SEGUNDOS` | — | Tempo limite de cada chamada ao Gemini, em segundos (default: `120`) |
 | `CHROMA_DIR` | — | Diretório do ChromaDB (default: `/data/chroma`) |
 | `MODELO_LLM` | — | Modelo Gemini (default: `gemini-3.5-flash-lite`) |
 

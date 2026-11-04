@@ -9,8 +9,11 @@ from __future__ import annotations
 
 import logging
 import threading
+import time
 import uuid
 from datetime import datetime, timezone
+
+from pydantic import ValidationError
 
 from app.core.config import settings
 from app.core.erros import NovaMenteError
@@ -28,6 +31,11 @@ from app.models import (
 from app.services import repositorio
 
 logger = logging.getLogger(__name__)
+
+
+class PrazoExcedido(Exception):
+    """O job ultrapassou ``settings.job_timeout_segundos``."""
+
 
 # ── Controle de cancelamento ──────────────────────────────────────────────────
 _cancelamentos: set[str] = set()
@@ -79,14 +87,15 @@ def _executar(
         etapa: EtapaJob | None = None,
         pct: int | None = None,
         msg: str | None = None,
-        concluir_etapa: bool = False,
     ) -> None:
         job = repositorio.obter_job(job_id)
         if job is None:
             return
         concluidas = list(job.etapas_concluidas)
-        if concluir_etapa and etapa and etapa not in concluidas:
-            concluidas.append(etapa)
+        # Ao entrar numa etapa nova, a anterior passa a constar como concluída.
+        anterior = job.etapa_atual
+        if etapa and anterior and etapa != anterior and anterior not in concluidas:
+            concluidas.append(anterior)
         novo = job.model_copy(
             update={
                 k: v
@@ -103,9 +112,13 @@ def _executar(
         )
         repositorio.salvar_job(novo, settings.job_ttl_segundos)
 
+    inicio = time.monotonic()
+
     def on_progresso(etapa: EtapaJob, pct: int, msg: str = "") -> None:
         if _cancelado(job_id):
             raise InterruptedError("Cancelado pelo usuário.")
+        if time.monotonic() - inicio > settings.job_timeout_segundos:
+            raise PrazoExcedido("Prazo total do job excedido.")
         _atualizar(status="running", etapa=etapa, pct=pct, msg=msg)
 
     try:
@@ -168,28 +181,46 @@ def _executar(
                 settings.job_ttl_segundos,
             )
 
+    except PrazoExcedido:
+        _limpar_cancelamento(job_id)
+        logger.warning("Job %s excedeu o prazo de %ss", job_id, settings.job_timeout_segundos)
+        minutos = f"{settings.job_timeout_segundos / 60:g}".replace(".", ",")
+        _marcar_falha(job_id, f"A geração excedeu o tempo limite de {minutos} minutos.")
+
     except Exception as exc:
         _limpar_cancelamento(job_id)
-        logger.exception("Erro no job %s", job_id)
-        job = repositorio.obter_job(job_id)
-        if job:
-            request_id = str(uuid.uuid4())
-            repositorio.salvar_job(
-                job.model_copy(
-                    update={
-                        "status": "failed",
-                        "etapa_atual": None,
-                        "mensagem": str(exc),
-                        "atualizado_em": _agora(),
-                        "erro": ErroJob(
-                            codigo="INTERNO",
-                            mensagem=str(exc),
-                            request_id=request_id,
-                        ),
-                    }
+        request_id = str(uuid.uuid4())
+        logger.exception("Erro no job %s (request_id=%s)", job_id, request_id)
+        # ValueError/RuntimeError trazem mensagens nossas, já em português;
+        # ValidationError (subclasse de ValueError) traz texto técnico do pydantic.
+        if isinstance(exc, (ValueError, RuntimeError)) and not isinstance(exc, ValidationError):
+            mensagem = str(exc)
+        else:
+            mensagem = "Erro interno ao gerar o material."
+        _marcar_falha(job_id, mensagem, request_id)
+
+
+def _marcar_falha(job_id: str, mensagem: str, request_id: str | None = None) -> None:
+    """Marca o job como ``failed`` com código INTERNO."""
+    job = repositorio.obter_job(job_id)
+    if job is None:
+        return
+    repositorio.salvar_job(
+        job.model_copy(
+            update={
+                "status": "failed",
+                "etapa_atual": None,
+                "mensagem": mensagem,
+                "atualizado_em": _agora(),
+                "erro": ErroJob(
+                    codigo="INTERNO",
+                    mensagem=mensagem,
+                    request_id=request_id or str(uuid.uuid4()),
                 ),
-                settings.job_ttl_segundos,
-            )
+            }
+        ),
+        settings.job_ttl_segundos,
+    )
 
 
 def criar_job(
