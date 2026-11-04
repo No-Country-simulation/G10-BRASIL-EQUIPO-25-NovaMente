@@ -79,6 +79,7 @@ O repositório está organizado como um monorepo contendo os módulos de backend
 
 ```text
 .
+├── Makefile                # Atalhos de desenvolvimento (venv, backend, frontend)
 ├── backend/
 │   ├── app/
 │   │   ├── api/v1/         # Rotas e endpoints REST da API
@@ -116,6 +117,8 @@ O repositório está organizado como um monorepo contendo os módulos de backend
 
 - Git para controle de versão.
 
+- GNU Make (opcional, recomendado para os atalhos `make`; no Windows: `choco install make` ou `winget install ezwinports.make`).
+
 - Chaves de API configuradas para acesso ao modelo de IA (Google Gemini) e opcionais credenciais da OCI Object Storage (caso deseje testar a persistência em nuvem).
 
 ## Como Executar
@@ -127,6 +130,28 @@ git clone https://github.com/No-Country-simulation/G10-BRASIL-EQUIPO-25-NovaMent
 cd G10-BRASIL-EQUIPO-25-NovaMente
 ```
 
+### Atalhos com Make (recomendado)
+
+Com o [GNU Make](https://www.gnu.org/software/make/) instalado, os comandos abaixo funcionam em Linux/macOS e Windows (PowerShell, CMD ou Git Bash), sempre a partir da raiz do repositório:
+
+| Comando | O que faz |
+|---|---|
+| `make venv` | Cria `backend/.venv` e instala `backend/requirements.txt` |
+| `make dev-backend` | Sobe a API FastAPI em `http://localhost:8000` |
+| `make dev-frontend` | Sobe o Next.js em `http://localhost:3000` |
+| `make install` | Cria o venv e instala as dependências do frontend |
+| `make help` | Lista todos os comandos disponíveis |
+
+```bash
+make venv           # primeira execução
+make dev-backend    # terminal 1
+make dev-frontend   # terminal 2
+```
+
+> **Windows:** instale o Make com `choco install make` ou `winget install ezwinports.make`. Não é necessário ativar o venv manualmente — os comandos usam o interpretador de `backend/.venv` diretamente.
+
+As seções abaixo descrevem a execução manual, sem o Make.
+
 ### Configuração e Execução do Backend
 
 ##### Navegue até a pasta do backend:
@@ -135,13 +160,14 @@ cd G10-BRASIL-EQUIPO-25-NovaMente
 cd backend
 ```
 
-##### Crie e ative um ambiente virtual Python (utilizando Python 3.11):
+##### Crie e ative um ambiente virtual Python (utilizando Python 3.11+):
 
 ```bash
-python3.11 -m venv venv
+python3 -m venv .venv
 ```
 ```bash
-source venv/bin/activate
+source .venv/bin/activate          # Linux/macOS
+.venv\Scripts\Activate.ps1         # Windows (PowerShell)
 ```
 
 ##### Instale as dependências do projeto:

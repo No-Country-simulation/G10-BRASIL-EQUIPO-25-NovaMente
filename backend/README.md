@@ -2,16 +2,39 @@
 
 ## Configuração
 
+### Atalho com Make (recomendado)
+
+A partir da **raiz do repositório** (funciona em Linux/macOS e Windows com GNU Make instalado):
+
 ```bash
-# 1. Instale as dependências
+make venv                        # cria backend/.venv e instala requirements.txt
+cp backend/.env.example backend/.env   # depois preencha GOOGLE_API_KEY
+make dev-backend                 # sobe a API em http://localhost:8000
+```
+
+> No Windows (PowerShell/CMD), use `copy backend\.env.example backend\.env`.
+
+Os comandos `make` usam diretamente o Python de `backend/.venv`, então não é
+necessário ativar o ambiente virtual.
+
+### Passo a passo manual
+
+```bash
 cd backend
+
+# 1. Crie e ative o ambiente virtual
+python3 -m venv .venv
+source .venv/bin/activate          # Linux/macOS
+# .venv\Scripts\Activate.ps1       # Windows (PowerShell)
+
+# 2. Instale as dependências
 pip install -r requirements.txt
 
-# 2. Crie o arquivo de variáveis de ambiente
+# 3. Crie o arquivo de variáveis de ambiente
 cp .env.example .env
 # Edite .env e preencha GOOGLE_API_KEY e (opcionalmente) as credenciais OCI
 
-# 3. Inicie o servidor
+# 4. Inicie o servidor
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
