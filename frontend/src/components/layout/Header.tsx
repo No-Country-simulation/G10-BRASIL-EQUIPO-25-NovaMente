@@ -16,8 +16,8 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-4">
-        <div className="flex items-center gap-8">
+      <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-2 sm:px-4">
+        <div className="flex items-center gap-2 sm:gap-8">
           <Link href="/" className="font-semibold tracking-tight">
             {M.app.nome}
           </Link>
@@ -28,7 +28,7 @@ export function Header() {
                 href={item.href}
                 aria-current={caminho === item.href ? 'page' : undefined}
                 className={cn(
-                  'rounded-md px-3 py-2 text-sm',
+                  'rounded-md px-2 py-2 text-sm sm:px-3',
                   caminho === item.href
                     ? 'bg-[var(--accent-muted)] text-[var(--fg)]'
                     : 'text-[var(--fg-muted)] hover:text-[var(--fg)]',

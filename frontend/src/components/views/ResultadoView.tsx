@@ -49,7 +49,7 @@ export function ResultadoView({ adaptacaoId }: { adaptacaoId: string }) {
             <Skeleton className="h-5 w-24" />
           </div>
         </header>
-        <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="min-w-0">
             {/* O parágrafo real tem 48 px (duas linhas de 24 px). */}
             <Skeleton className="mb-6 min-h-12 w-full" />
@@ -84,7 +84,7 @@ export function ResultadoView({ adaptacaoId }: { adaptacaoId: string }) {
   return (
     <div>
       <ResultadoHeader pacote={pacote} exportacao={exportacao} />
-      <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0">
           <p className="mb-6 text-[var(--fg-muted)]">{pacote.conteudo_adaptado.introducao_contextualizada}</p>
           <ContentRenderer conteudo={pacote.conteudo_adaptado} />
