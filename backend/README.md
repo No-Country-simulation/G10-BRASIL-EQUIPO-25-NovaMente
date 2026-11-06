@@ -3,9 +3,10 @@
 ## Configuração
 
 ```bash
-# 1. Instale as dependências
+# 1. Instale as dependências (produção: requirements.txt;
+#    desenvolvimento e testes: requirements-dev.txt)
 cd backend
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
 # 2. Crie o arquivo de variáveis de ambiente
 cp .env.example .env
@@ -35,8 +36,11 @@ Com o servidor rodando, acesse:
 
 ## Testes
 
+Os testes precisam das dependências de desenvolvimento:
+
 ```bash
 cd backend
+pip install -r requirements-dev.txt
 pytest tests/ -v
 ```
 
