@@ -18,11 +18,17 @@ export function SkinSwitcher() {
           aria-pressed={skin === id}
           onClick={() => setSkin(id)}
           className={cn(
-            'rounded-full px-3 py-1 text-xs transition-colors',
+            // Abaixo de sm: botão redondo de 24 × 24 px com a cor do tema; a partir de sm, o rótulo de sempre.
+            'grid h-6 w-6 place-items-center rounded-full text-xs transition-colors sm:block sm:h-auto sm:w-auto sm:px-3 sm:py-1',
             skin === id ? 'bg-[var(--accent)] text-[var(--accent-fg)]' : 'text-[var(--fg-muted)]',
           )}
         >
-          {SKINS[id].nome}
+          <span
+            aria-hidden="true"
+            className="h-3.5 w-3.5 rounded-full border border-[var(--bg)] sm:hidden"
+            style={{ backgroundColor: SKINS[id].cor }}
+          />
+          <span className="sr-only sm:not-sr-only">{SKINS[id].nome}</span>
         </button>
       ))}
     </div>
