@@ -7,7 +7,9 @@ para que conteúdo gerado pelo LLM não provoque requisições de saída.
 
 from __future__ import annotations
 
+import csv
 import html
+import io
 
 from app.models import AdaptacaoPacote
 
@@ -234,14 +236,21 @@ def gerar_pdf(pacote: AdaptacaoPacote) -> bytes:
 
 
 def gerar_csv(pacote: AdaptacaoPacote) -> bytes:
-    """CSV (separador ';') com frente, verso e dica. Só para Flashcards."""
-    conteudo = pacote.conteudo_adaptado
-    linhas = ["frente;verso;dica"]
-    for item in conteudo.itens:
-        dica = item.dica_didatica or ""
-        linhas.append(
-            f'"{item.frente.replace(chr(34), chr(34)*2)}";'
-            f'"{item.verso.replace(chr(34), chr(34)*2)}";'
-            f'"{dica.replace(chr(34), chr(34)*2)}"'
-        )
-    return "\n".join(linhas).encode("utf-8")
+    """CSV pronto para importar no Anki. Só para Flashcards.
+
+    As diretivas ``#separator`` e ``#html`` dizem ao Anki o separador e que os
+    campos são HTML; não há linha de cabeçalho. Cada cartão tem duas colunas
+    (frente e verso), com o texto escapado e a dica, se houver, no fim do verso.
+    """
+    saida = io.StringIO()
+    saida.write("#separator:Semicolon\n#html:true\n")
+    escritor = csv.writer(saida, delimiter=";", quoting=csv.QUOTE_ALL, lineterminator="\n")
+    for item in pacote.conteudo_adaptado.itens:
+        verso = html.escape(item.verso, quote=False)
+        if item.dica_didatica:
+            verso += (
+                "<br><br><small><b>Dica:</b> <i>"
+                f"{html.escape(item.dica_didatica, quote=False)}</i></small>"
+            )
+        escritor.writerow([html.escape(item.frente, quote=False), verso])
+    return saida.getvalue().encode("utf-8")

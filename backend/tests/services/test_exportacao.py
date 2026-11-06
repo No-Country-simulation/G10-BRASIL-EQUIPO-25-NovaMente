@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import csv
+import html
 import io
 import re
 
@@ -280,19 +282,67 @@ def test_rota_csv_de_quiz_e_incompativel(salvar):
     assert resp.json()["erro"]["codigo"] == "FORMATO_INCOMPATIVEL"
 
 
-def test_rota_csv_de_flashcards_igual_ao_anterior(salvar):
+def test_rota_csv_de_flashcards_no_formato_anki(salvar):
     salvar(_flashcards(adaptacao_id="EXP_FLASH_CSV"))
     resp = client.get("/api/v1/adaptacoes/EXP_FLASH_CSV/exportacao?formato=csv")
     assert resp.status_code == 200
     assert resp.headers["content-type"] == "text/csv; charset=utf-8"
     assert resp.headers["content-disposition"] == 'attachment; filename="novamente-exp_flash_csv.csv"'
     esperado = (
-        "frente;verso;dica\n"
-        '"O que é GET?";"Busca um recurso.";"Pense em leitura."\n'
-        '"O que é ""POST""?";"Cria um recurso.";""\n'
-        '"O que é 404?";"Recurso não encontrado.";"Erro do cliente."'
+        "#separator:Semicolon\n"
+        "#html:true\n"
+        '"O que é GET?";"Busca um recurso.<br><br><small><b>Dica:</b> <i>Pense em leitura.</i></small>"\n'
+        '"O que é ""POST""?";"Cria um recurso."\n'
+        '"O que é 404?";"Recurso não encontrado.<br><br><small><b>Dica:</b> <i>Erro do cliente.</i></small>"\n'
     )
     assert resp.content == esperado.encode("utf-8")
+    assert not resp.content.startswith(b"\xef\xbb\xbf")  # UTF-8 sem BOM
+
+
+def _linhas_csv(dados: bytes) -> list[list[str]]:
+    texto = dados.decode("utf-8")
+    cartoes = [linha for linha in texto.splitlines(keepends=True) if not linha.startswith("#")]
+    return list(csv.reader(io.StringIO("".join(cartoes)), delimiter=";"))
+
+
+def test_csv_cartao_sem_dica_nao_tem_rodape():
+    linhas = _linhas_csv(exportacao.gerar_csv(_flashcards()))
+    verso_sem_dica = linhas[1][1]
+    assert verso_sem_dica == "Cria um recurso."
+    assert "<br>" not in verso_sem_dica
+    assert "Dica" not in verso_sem_dica
+
+
+def test_csv_escapa_html_e_dobra_aspas():
+    perigoso = '<script>alert(1)</script> P&D "citado"'
+    pacote = _pacote(
+        ConteudoFlashcards(
+            titulo="Escape",
+            introducao_contextualizada="Teste de escape.",
+            itens=[
+                FlashcardItem(frente=f"Frente {perigoso}", verso=f"Verso {perigoso}", dica_didatica=f"Dica {perigoso}"),
+                FlashcardItem(frente="b", verso="b", dica_didatica=None),
+                FlashcardItem(frente="c", verso="c", dica_didatica=None),
+            ],
+        )
+    )
+    texto = exportacao.gerar_csv(pacote).decode("utf-8")
+    primeira = texto.splitlines()[2]
+    assert "<script>" not in texto
+    assert primeira.count("&lt;script&gt;alert(1)&lt;/script&gt;") == 3
+    assert primeira.count("P&amp;D") == 3
+    assert primeira.count('""citado""') == 3  # aspas do texto dobradas no CSV
+
+
+def test_csv_le_de_volta_uma_linha_por_cartao():
+    pacote = _flashcards()
+    linhas = _linhas_csv(exportacao.gerar_csv(pacote))
+    itens = pacote.conteudo_adaptado.itens
+    assert len(linhas) == len(itens)
+    for linha, item in zip(linhas, itens):
+        assert len(linha) == 2
+        assert html.unescape(linha[0]) == item.frente
+        assert html.unescape(linha[1]).startswith(item.verso)
 
 
 def test_rota_md_usa_o_novo_markdown(salvar):
