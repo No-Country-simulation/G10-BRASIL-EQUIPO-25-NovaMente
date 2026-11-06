@@ -60,7 +60,7 @@ Falhas do serviço de embeddings, na indexação e na consulta, viram `RuntimeEr
 | `GOOGLE_API_KEY` | Chave do Gemini, lida do ambiente. Nunca vai para o código nem para o repositório |
 | `CHROMA_DIR` | Pasta do banco vetorial. Padrão: `/data/chroma`, fora do repositório |
 
-Dependências do módulo: `backend/requirements-rag.txt`.
+Dependências do módulo: `backend/requirements-rag.txt` (incluído por `backend/requirements.txt`). Para rodar os testes, instale `backend/requirements-dev.txt`.
 
 ### Como testar
 
