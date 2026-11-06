@@ -24,6 +24,12 @@ from app.models import (
     PerfilDestinatario,
 )
 from app.services import repositorio
+from app.services.exportacao import (
+    DependenciasPdfAusentes,
+    gerar_csv,
+    gerar_markdown,
+    gerar_pdf,
+)
 from app.services.extracao import extrair_texto_markdown, extrair_texto_pdf
 from app.workers.job_worker import criar_job
 
@@ -318,61 +324,27 @@ def exportar(adaptacao_id: str, formato: str) -> Response:
                 status_code=409,
                 detail={"erro": {"codigo": "FORMATO_INCOMPATIVEL", "mensagem": "CSV-Anki disponível apenas para Flashcards."}},
             )
-        linhas = ["frente;verso;dica"]
-        for item in conteudo.itens:
-            dica = item.dica_didatica or ""
-            linhas.append(
-                f'"{item.frente.replace(chr(34), chr(34)*2)}";'
-                f'"{item.verso.replace(chr(34), chr(34)*2)}";'
-                f'"{dica.replace(chr(34), chr(34)*2)}"'
-            )
-        body = "\n".join(linhas).encode("utf-8")
         return Response(
-            content=body,
+            content=gerar_csv(pacote),
             media_type="text/csv; charset=utf-8",
             headers={"Content-Disposition": f'attachment; filename="{nome_base}.csv"'},
         )
 
     if formato == "md":
-        if conteudo.tipo == "markdown":
-            md_texto = f"# {conteudo.titulo}\n\n{conteudo.introducao_contextualizada}\n\n{conteudo.itens}"
-        elif conteudo.tipo == "flashcards":
-            linhas = [f"# {conteudo.titulo}\n\n{conteudo.introducao_contextualizada}\n"]
-            for i, item in enumerate(conteudo.itens, 1):
-                linhas.append(f"## Card {i}\n**Frente:** {item.frente}\n**Verso:** {item.verso}")
-                if item.dica_didatica:
-                    linhas.append(f"*Dica:* {item.dica_didatica}")
-            md_texto = "\n\n".join(linhas)
-        else:  # quiz
-            linhas = [f"# {conteudo.titulo}\n\n{conteudo.introducao_contextualizada}\n"]
-            for i, item in enumerate(conteudo.itens, 1):
-                opcoes = "\n".join(
-                    f"{'✓' if j == item.resposta_correta else ' '} {op}"
-                    for j, op in enumerate(item.opcoes)
-                )
-                linhas.append(f"## Questão {i}\n{item.pergunta}\n\n{opcoes}\n\n*{item.explicacao}*")
-            md_texto = "\n\n".join(linhas)
         return Response(
-            content=md_texto.encode("utf-8"),
+            content=gerar_markdown(pacote).encode("utf-8"),
             media_type="text/markdown; charset=utf-8",
             headers={"Content-Disposition": f'attachment; filename="{nome_base}.md"'},
         )
 
     if formato == "pdf":
         try:
-            from markdown_it import MarkdownIt  # type: ignore
-            import weasyprint  # type: ignore
-        except ImportError:
+            pdf_bytes = gerar_pdf(pacote)
+        except DependenciasPdfAusentes:
             raise HTTPException(
                 status_code=501,
                 detail={"erro": {"codigo": "INTERNO", "mensagem": "Dependências de PDF não instaladas."}},
             )
-        # Gera o MD primeiro, depois converte para HTML → PDF
-        md_resp = exportar(adaptacao_id, "md")
-        md_texto = md_resp.body.decode("utf-8")
-        md = MarkdownIt()
-        html = f"<html><body>{md.render(md_texto)}</body></html>"
-        pdf_bytes = weasyprint.HTML(string=html).write_pdf()
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
