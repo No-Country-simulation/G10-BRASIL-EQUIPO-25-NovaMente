@@ -10,6 +10,9 @@ $env:NEXT_PUBLIC_API_MOCK=1   # PowerShell
 npm run dev
 ```
 
+> Na raiz do monorepo, `make dev-frontend` sobe o servidor (equivalente a `npm run dev`).
+> Veja o [README principal](../README.md#atalhos-com-make-recomendado) para os demais atalhos.
+
 Abra http://localhost:3000. O MSW intercepta `/api/v1/*` e simula todo o pipeline, incluindo erros.
 
 O worker do MSW é servido de `public/mockServiceWorker.js`; se ele for apagado, `npm install`
