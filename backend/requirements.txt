@@ -16,6 +16,7 @@ chromadb==1.5.9
 
 # ── LLM / Google Gemini ───────────────────────────────────────────────────────
 google-generativeai==0.8.4
+google-genai==2.33.0
 
 # ── Extração de texto ─────────────────────────────────────────────────────────
 pypdf==5.1.0                  # PDF → texto
