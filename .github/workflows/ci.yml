@@ -13,6 +13,21 @@ jobs:
       run:
         working-directory: ./backend
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: novamente_ci
+          POSTGRES_PASSWORD: senha_ci_ficticia
+          POSTGRES_DB: novamente_teste
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U novamente_ci -d novamente_teste"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - name: Checkout do Código
         uses: actions/checkout@v4
@@ -31,6 +46,7 @@ jobs:
       - name: Executar Testes com Pytest
         env:
           GOOGLE_API_KEY: "fake_key_for_ci_testing"
+          DATABASE_URL: "postgresql://novamente_ci:senha_ci_ficticia@localhost:5432/novamente_teste"
         run: |
           pytest tests/ -v
 
