@@ -594,7 +594,7 @@ Query obrigatória `formato` = `md` | `pdf` | `csv`.
 | `pdf` | `application/pdf` | Todos os formatos |
 | `csv` | `text/csv; charset=utf-8` | Somente `Flashcards` |
 
-CSV no formato Anki: separador `;`, aspas duplas como escape, quebras de linha preservadas dentro de campos citados. A linha de cabeçalho `frente;verso;dica` é sempre incluída.
+CSV pensado para importar no Anki (UTF-8 sem BOM, cada linha terminada em `\n`): começa com as diretivas `#separator:Semicolon` e `#html:true`, sem aspas, e não tem linha de cabeçalho. Cada cartão ocupa uma linha com duas colunas, frente e verso, separadas por `;` e sempre entre aspas duplas (aspas internas viram `""`). Frente, verso e dica têm o HTML escapado (`&`, `<` e `>`); quando há dica, ela vai no fim do verso como `<br><br><small><b>Dica:</b> <i>…</i></small>`. Aberto numa planilha, as duas linhas `#` aparecem como dados.
 
 Erros: `400 FORMATO_DESCONHECIDO`, `409 FORMATO_INCOMPATIVEL` (CSV para pacote que não é Flashcards), `404 ADAPTACAO_NAO_ENCONTRADA`.
 

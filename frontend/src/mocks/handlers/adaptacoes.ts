@@ -33,6 +33,27 @@ function problemas(campos: Record<string, string>) {
   );
 }
 
+// ── CSV de Flashcards no formato do Anki (igual a gerar_csv do backend) ──────
+
+// Mesma ordem do html.escape(quote=False) do Python: & antes de < e >; aspas ficam.
+const escaparHtml = (texto: string) =>
+  texto.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// Aspas duplas como escape (RFC 4180/Anki): `"` vira `""` dentro do campo.
+const campoCsv = (valor: string) => `"${valor.replace(/"/g, '""')}"`;
+
+function montarCsvAnki(itens: { frente: string; verso: string; dica_didatica?: string | null }[]) {
+  const linhas = ['#separator:Semicolon', '#html:true'];
+  for (const item of itens) {
+    let verso = escaparHtml(item.verso);
+    if (item.dica_didatica) {
+      verso += `<br><br><small><b>Dica:</b> <i>${escaparHtml(item.dica_didatica)}</i></small>`;
+    }
+    linhas.push(`${campoCsv(escaparHtml(item.frente))};${campoCsv(verso)}`);
+  }
+  return linhas.map((linha) => `${linha}\n`).join('');
+}
+
 function naoEncontrado() {
   return HttpResponse.json(
     { erro: { codigo: 'ADAPTACAO_NAO_ENCONTRADA', mensagem: 'Material não encontrado.' } },
@@ -276,13 +297,7 @@ export const handlersAdaptacoes = [
           { status: 409 },
         );
       }
-      const linhas = ['frente;verso;dica'];
-      // Aspas duplas como escape (RFC 4180/Anki): `"` vira `""` dentro do campo.
-      const campo = (valor: string) => `"${valor.replace(/"/g, '""')}"`;
-      pacote.conteudo_adaptado.itens.forEach((i) =>
-        linhas.push(`${campo(i.frente)};${campo(i.verso)};${campo(i.dica_didatica ?? '')}`),
-      );
-      return new HttpResponse(linhas.join('\n'), {
+      return new HttpResponse(montarCsvAnki(pacote.conteudo_adaptado.itens), {
         headers: {
           'Content-Type': 'text/csv; charset=utf-8',
           'Content-Disposition': `attachment; filename="${nomeArquivoExportacao(pacote, 'csv')}"`,
