@@ -319,6 +319,10 @@ export const M = {
     toastPublicado: 'Material publicado.',
     toastDespublicado: 'Material despublicado.',
     toastExcluido: 'Material excluído.',
+    remocao: {
+      avisoOciPadrao:
+        'Não foi possível remover o objeto do OCI; a remoção local foi concluída.',
+    },
   },
   oci: {
     titulo: 'Armazenamento OCI',

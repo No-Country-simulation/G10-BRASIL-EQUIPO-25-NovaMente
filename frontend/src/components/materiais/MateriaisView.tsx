@@ -108,7 +108,7 @@ export function MateriaisView() {
     setAviso({
       tipo: 'sucesso',
       texto: M.materiais.toastExcluido,
-      aviso: remocao.oci_removido ? undefined : (remocao.aviso ?? M.resultado.naoPersistido),
+      aviso: remocao.oci_removido ? undefined : (remocao.aviso ?? M.materiais.remocao.avisoOciPadrao),
     });
     setExcluindo(null);
   };

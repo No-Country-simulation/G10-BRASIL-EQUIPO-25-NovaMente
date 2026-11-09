@@ -9,7 +9,6 @@ import type { ListarMateriaisParams } from '@/services/api/NovaMenteApi';
 import {
   formatoSaidaSchema,
   LIMITES,
-  MaterialDetalheSchema,
   MaterialResumoSchema,
   PaginaMateriaisSchema,
   perfilSchema,
@@ -283,20 +282,3 @@ export function useExcluirMaterial() {
   });
 }
 
-export function useMaterial(materialId: string) {
-  const api = useApi();
-
-  return useQuery({
-    queryKey: ['material', materialId],
-    queryFn: async () => {
-      const bruto = await api.obterMaterial(materialId);
-      const analisado = MaterialDetalheSchema.safeParse(bruto);
-      if (!analisado.success) {
-        throw new ErroContrato(analisado.error.issues.map((i) => i.message).join('; '));
-      }
-      return analisado.data;
-    },
-    staleTime: 30_000,
-    retry: false,
-  });
-}
