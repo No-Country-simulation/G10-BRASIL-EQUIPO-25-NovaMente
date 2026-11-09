@@ -215,3 +215,16 @@ class HealthResposta(BaseModel):
     oci: Literal["ok", "indisponivel"]
     llm: Literal["ok", "indisponivel"]
     verificado_em: str
+
+
+# ── Materiais (empresa) ───────────────────────────────────────────────────────
+# Importado no fim para reexportar os schemas sem ciclo de importação.
+
+from app.models.materiais import (  # noqa: E402
+    MaterialAtualizacao,
+    MaterialDetalhe,
+    MaterialResumo,
+    PaginaMateriais,
+    RemocaoMaterialResposta,
+    VisibilidadeMaterial,
+)

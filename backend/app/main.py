@@ -14,7 +14,7 @@ from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 import app.models.db  # noqa: F401  # registra os modelos no metadata
-from app.api.v1.routers import adaptacoes, health, jobs, oci
+from app.api.v1.routers import adaptacoes, health, jobs, materiais, oci
 from app.core.config import settings
 from app.core.db import Base, engine
 
@@ -54,6 +54,7 @@ app.add_middleware(
 _V1 = "/api/v1"
 app.include_router(adaptacoes.router, prefix=_V1)
 app.include_router(jobs.router, prefix=_V1)
+app.include_router(materiais.router, prefix=_V1)
 app.include_router(oci.router, prefix=_V1)
 app.include_router(health.router, prefix=_V1)
 

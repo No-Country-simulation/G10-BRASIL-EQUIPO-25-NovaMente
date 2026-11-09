@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import select
 
-from app.models import AdaptacaoPacote, AdaptacaoResumo, DocumentoRef
+from app.models import AdaptacaoPacote, AdaptacaoResumo, DocumentoRef, MaterialResumo
 from app.models.db import MaterialDB
 
 if TYPE_CHECKING:
@@ -84,4 +84,28 @@ def resumo_de_adaptacao(row: MaterialDB) -> AdaptacaoResumo:
         ancoragem_fonte_score=row.ancoragem_score,
         status_upload=row.status_upload,
         conceitos_chave=json.loads(row.conceitos_chave_json)[:6],
+    )
+
+
+def resumo_de_material(row: MaterialDB) -> MaterialResumo:
+    """Monta o resumo do catálogo a partir das colunas desnormalizadas.
+
+    Assim como ``resumo_de_adaptacao``, nunca abre ``pacote_json``: a
+    listagem continua funcionando mesmo se o pacote estiver corrompido.
+    """
+    return MaterialResumo(
+        material_id=row.material_id,
+        adaptacao_id=row.adaptacao_id,
+        titulo=row.titulo,
+        documento_titulo=row.documento_titulo,
+        perfil=row.perfil,
+        formato=row.formato,
+        nivel=row.nivel,
+        nicho=row.nicho,
+        visibilidade=row.visibilidade,
+        tempo_estimado_estudo_minutos=row.tempo_estimado_minutos,
+        ancoragem_fonte_score=row.ancoragem_score,
+        status_upload=row.status_upload,
+        criado_em=row.criado_em,
+        atualizado_em=row.atualizado_em,
     )

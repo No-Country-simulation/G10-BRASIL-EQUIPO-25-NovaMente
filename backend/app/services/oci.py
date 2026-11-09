@@ -74,6 +74,27 @@ def fazer_upload(pacote: AdaptacaoPacote, objeto_id: str) -> ArmazenamentoOci:
         )
 
 
+def remover_objeto(objeto_id: str) -> bool:
+    """Remove um objeto do bucket OCI.
+
+    Retorna ``False`` quando o OCI não está configurado ou a remoção falha;
+    nunca lança exceção para o caller (a exclusão local não depende do OCI).
+    """
+    client, namespace = _cliente_oci()
+    if client is None:
+        return False
+    try:
+        client.delete_object(
+            namespace_name=namespace,
+            bucket_name=settings.oci_bucket,
+            object_name=objeto_id,
+        )
+        return True
+    except Exception as exc:
+        logger.error("Falha ao remover objeto OCI: %s", exc)
+        return False
+
+
 def obter_status() -> OciStatus:
     """Consulta o bucket e devolve um ``OciStatus``.
 
