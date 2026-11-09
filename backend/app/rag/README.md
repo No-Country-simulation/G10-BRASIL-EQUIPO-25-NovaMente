@@ -49,6 +49,8 @@ for t in trechos:
 
 **Erros:** `ValueError` quando a entrada é inválida (a API devolve HTTP 422) e `LookupError` quando o documento não foi indexado (HTTP 404).
 
+Falhas do serviço de embeddings, na indexação e na consulta, viram `RuntimeError` com mensagem em português, sem o texto técnico (que vai só para o log). Cada chamada tem timeout de 30 s (`EMBEDDING_TIMEOUT_SEGUNDOS` em `config.py`). Limite de taxa (429), indisponibilidade (5xx), timeout e erro de conexão têm até 3 tentativas, com espera exponencial e variação aleatória. Erros de configuração (400, 401, 403, 404: chave inválida ou modelo inexistente) falham na hora.
+
 **Relevância:** é `1 - distância cosseno`, limitada entre 0 e 1. Ela mede a proximidade vetorial entre o trecho e a consulta. Não é o `ancoragem_fonte_score` final, que combina essa distância com o LLM-as-a-judge e fica na camada de integração (veja *Pendências*).
 
 ### Configuração
@@ -58,7 +60,7 @@ for t in trechos:
 | `GOOGLE_API_KEY` | Chave do Gemini, lida do ambiente. Nunca vai para o código nem para o repositório |
 | `CHROMA_DIR` | Pasta do banco vetorial. Padrão: `/data/chroma`, fora do repositório |
 
-Dependências do módulo: `backend/requirements-rag.txt`.
+Dependências do módulo: `backend/requirements-rag.txt` (incluído por `backend/requirements.txt`). Para rodar os testes, instale `backend/requirements-dev.txt`.
 
 ### Como testar
 

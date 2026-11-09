@@ -29,6 +29,10 @@ source .venv/bin/activate          # Linux/macOS
 
 # 2. Instale as dependências
 pip install -r requirements.txt
+# 1. Instale as dependências (produção: requirements.txt;
+#    desenvolvimento e testes: requirements-dev.txt)
+cd backend
+pip install -r requirements-dev.txt
 
 # 3. Crie o arquivo de variáveis de ambiente
 cp .env.example .env
@@ -58,8 +62,11 @@ Com o servidor rodando, acesse:
 
 ## Testes
 
+Os testes precisam das dependências de desenvolvimento:
+
 ```bash
 cd backend
+pip install -r requirements-dev.txt
 pytest tests/ -v
 ```
 

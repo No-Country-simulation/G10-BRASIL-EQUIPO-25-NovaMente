@@ -26,7 +26,7 @@ jobs:
       - name: Instalar Dependências do Backend
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
 
       - name: Executar Testes com Pytest
         env:

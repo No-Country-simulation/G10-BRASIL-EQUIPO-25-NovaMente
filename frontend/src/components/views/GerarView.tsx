@@ -57,7 +57,7 @@ export function GerarView() {
   }, [repetir]);
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[380px_minmax(0,1fr)]">
       <section aria-labelledby="form-titulo">
         <h1 id="form-titulo" className="mb-4 text-xl font-semibold">
           {M.formulario.titulo}

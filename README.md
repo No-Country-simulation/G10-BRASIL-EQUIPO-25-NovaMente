@@ -171,6 +171,11 @@ source .venv/bin/activate          # Linux/macOS
 ```
 
 ##### Instale as dependências do projeto:
+Para desenvolvimento e testes (inclui as de produção):
+```bash
+pip install -r requirements-dev.txt
+```
+Em produção, apenas:
 ```bash
 pip install -r requirements.txt
 ```
@@ -208,7 +213,7 @@ npm run dev
 
 ##### No Backend (Testes de Contrato e Integração):
 
-Certifique-se de estar com o ambiente virtual ativado na pasta backend/ e execute:
+Certifique-se de estar com o ambiente virtual ativado na pasta backend/, com `requirements-dev.txt` instalado, e execute:
 ```bash
 PYTHONPATH=. pytest tests/ -v
 ```
