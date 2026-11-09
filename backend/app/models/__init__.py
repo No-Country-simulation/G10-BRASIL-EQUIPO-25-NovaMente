@@ -228,3 +228,13 @@ from app.models.materiais import (  # noqa: E402
     RemocaoMaterialResposta,
     VisibilidadeMaterial,
 )
+
+# ── Alunos (empresa) ─────────────────────────────────────────────────────────
+
+from app.models.alunos import (  # noqa: E402
+    AlunoAtualizacao,
+    AlunoCriacao,
+    AlunoResumo,
+    PaginaAlunos,
+    StatusAluno,
+)

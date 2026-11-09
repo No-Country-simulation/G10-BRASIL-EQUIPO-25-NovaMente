@@ -25,7 +25,7 @@ from app.models import (  # noqa: E402
     FlashcardItem,
     MetadadosAdaptacao,
 )
-from app.models.db import MaterialDB  # noqa: E402
+from app.models.db import AlunoDB, MaterialDB  # noqa: E402
 
 
 def _pacote_exemplo(adaptacao_id: str | None = None) -> AdaptacaoPacote:
@@ -120,6 +120,30 @@ def cliente(db_session):
 def pacote_exemplo():
     """Pacote de adaptação completo para testes de persistência."""
     return _pacote_exemplo()
+
+
+@pytest.fixture
+def semear_aluno(db_session):
+    """Grava um aluno no banco e devolve o ``aluno_id``."""
+
+    def _semear(status: str = "ativo", **campos) -> str:
+        agora = datetime.now(timezone.utc).isoformat()
+        aluno_id = campos.get("aluno_id") or str(ULID())
+        valores = {
+            "aluno_id": aluno_id,
+            "nome": "Aluno de teste",
+            "email": f"aluno-{aluno_id.lower()}@exemplo.com",
+            "status": status,
+            "owner_id": None,
+            "criado_em": agora,
+            "atualizado_em": agora,
+        }
+        valores.update(campos)
+        db_session.add(AlunoDB(**valores))
+        db_session.commit()
+        return valores["aluno_id"]
+
+    return _semear
 
 
 @pytest.fixture
