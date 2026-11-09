@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useApi } from '@/services/api/ApiProvider';
 import { ErroContrato } from '@/services/api/erros';
 import type { ListarMateriaisParams } from '@/services/api/NovaMenteApi';
@@ -85,12 +85,29 @@ function validarResumo(bruto: unknown): MaterialResumo {
   return analisado.data;
 }
 
-export function useMateriais() {
+export interface OpcoesMateriais {
+  /**
+   * Mantém os filtros apenas em memória em vez de espelhá-los na URL. Usado
+   * em telas que embutem a listagem sem serem a rota de materiais.
+   */
+  filtrosLocais?: boolean;
+}
+
+const FILTROS_LOCAIS_INICIAIS: FiltrosMateriais = {
+  pagina: 1,
+  q: '',
+  ordenar: ORDENACAO_PADRAO,
+};
+
+export function useMateriais(opcoes: OpcoesMateriais = {}) {
   const api = useApi();
   const router = useRouter();
   const params = useSearchParams();
+  const filtrosLocais = opcoes.filtrosLocais ?? false;
+  const [filtrosEmMemoria, setFiltrosEmMemoria] =
+    useState<FiltrosMateriais>(FILTROS_LOCAIS_INICIAIS);
 
-  const filtros = useMemo<FiltrosMateriais>(
+  const filtrosDaUrl = useMemo<FiltrosMateriais>(
     () => ({
       pagina: lerPagina(params.get('pagina')),
       q: params.get('q') ?? '',
@@ -102,9 +119,15 @@ export function useMateriais() {
     [params],
   );
 
+  const filtros = filtrosLocais ? filtrosEmMemoria : filtrosDaUrl;
+
   const atualizar = useCallback(
     (mudanca: Partial<FiltrosMateriais>) => {
       const proximos: FiltrosMateriais = { ...filtros, ...mudanca };
+      if (filtrosLocais) {
+        setFiltrosEmMemoria(proximos);
+        return;
+      }
       const busca = new URLSearchParams();
       if (proximos.pagina > 1) busca.set('pagina', String(proximos.pagina));
       if (proximos.formato) busca.set('formato', proximos.formato);
@@ -115,7 +138,7 @@ export function useMateriais() {
       const query = busca.toString();
       router.replace(query ? `${ROTAS.empresaMateriais}?${query}` : ROTAS.empresaMateriais);
     },
-    [filtros, router],
+    [filtros, filtrosLocais, router],
   );
 
   // O timer de busca precisa enxergar os filtros mais recentes mesmo quando o

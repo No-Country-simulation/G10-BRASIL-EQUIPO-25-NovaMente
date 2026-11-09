@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatarDataRelativa } from '@/lib/formatadores';
@@ -20,6 +21,10 @@ export interface AlunoCardProps {
  */
 export function AlunoCard({ aluno, onEditar, onExcluir }: AlunoCardProps) {
   const ativo = aluno.status === 'ativo';
+  const query = useSearchParams().toString();
+  const hrefAluno = query
+    ? `${ROTAS.empresaAluno(aluno.aluno_id)}?${query}`
+    : ROTAS.empresaAluno(aluno.aluno_id);
 
   return (
     <tr className="mb-3 block rounded-xl border p-4 align-top md:mb-0 md:table-row md:rounded-none md:border-0 md:border-b md:p-0">
@@ -63,7 +68,7 @@ export function AlunoCard({ aluno, onEditar, onExcluir }: AlunoCardProps) {
       <td className="mt-3 block px-1 md:mt-0 md:table-cell md:px-3 md:py-4 md:text-right">
         <div className="flex flex-wrap items-center gap-2 md:justify-end">
           <Button asChild variant="outline" size="sm">
-            <Link href={ROTAS.empresaAluno(aluno.aluno_id)}>{M.alunos.materiais}</Link>
+            <Link href={hrefAluno}>{M.alunos.materiais}</Link>
           </Button>
           <Button variant="ghost" size="sm" onClick={() => onEditar(aluno)}>
             {M.alunos.editar}
