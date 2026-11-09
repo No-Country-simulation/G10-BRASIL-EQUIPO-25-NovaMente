@@ -4,12 +4,19 @@ import type {
   AdaptacaoPacoteSchema,
   AdaptacaoResumoSchema,
   AdaptacaoUploadInputSchema,
+  AlunoAtualizacaoSchema,
+  AlunoCriacaoSchema,
+  AlunoResumoSchema,
   ApiProblemaErroSchema,
+  AtualizarVinculosInputSchema,
   EtapaJobSchema,
   HealthRespostaSchema,
   JobRespostaSchema,
   OciStatusSchema,
   PaginaAdaptacoesSchema,
+  PaginaAlunosSchema,
+  VinculoMaterialSchema,
+  VinculosAlunoSchema,
   perfilSchema,
   formatoSaidaSchema,
   nichoSchema,
@@ -18,6 +25,8 @@ import type {
   ConteudoAdaptadoSchema,
   FlashcardItemSchema,
   QuizItemSchema,
+  statusAlunoSchema,
+  visibilidadeMaterialSchema,
 } from './schemas';
 
 export type PerfilDestinatario = z.infer<typeof perfilSchema>;
@@ -41,3 +50,13 @@ export type ApiProblema = { erro: ApiProblemaErro };
 export type OciStatus = z.infer<typeof OciStatusSchema>;
 export type HealthResposta = z.infer<typeof HealthRespostaSchema>;
 export type OrigemDocumento = 'upload' | 'texto';
+
+export type StatusAluno = z.infer<typeof statusAlunoSchema>;
+export type AlunoCriacao = z.infer<typeof AlunoCriacaoSchema>;
+export type AlunoAtualizacao = z.infer<typeof AlunoAtualizacaoSchema>;
+export type AlunoResumo = z.infer<typeof AlunoResumoSchema>;
+export type PaginaAlunos = z.infer<typeof PaginaAlunosSchema>;
+export type VisibilidadeMaterial = z.infer<typeof visibilidadeMaterialSchema>;
+export type VinculoMaterial = z.infer<typeof VinculoMaterialSchema>;
+export type VinculosAluno = z.infer<typeof VinculosAlunoSchema>;
+export type AtualizarVinculosInput = z.infer<typeof AtualizarVinculosInputSchema>;

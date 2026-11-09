@@ -159,6 +159,9 @@ export const CodigoErroSchema = z.enum([
   'FORMATO_INCOMPATIVEL',
   'FORMATO_DESCONHECIDO',
   'OCI_INDISPONIVEL',
+  'ALUNO_NAO_ENCONTRADO',
+  'EMAIL_JA_CADASTRADO',
+  'MATERIAL_NAO_ENCONTRADO',
   'INTERNO',
 ]);
 
@@ -270,6 +273,90 @@ export const PaginaAdaptacoesSchema = z
     tamanho_pagina: z.number().int().min(1).max(LIMITES.paginaMax),
     total: z.number().int().min(0),
     total_paginas: z.number().int().min(0),
+  })
+  .strict();
+
+export const statusAlunoSchema = z.enum(['ativo', 'inativo']);
+
+export const nomeAlunoSchema = z
+  .string()
+  .trim()
+  .min(3, 'Mínimo de 3 caracteres')
+  .max(120, 'Máximo de 120 caracteres');
+
+export const emailAlunoSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .email('E-mail inválido')
+  .max(254, 'Máximo de 254 caracteres');
+
+export const AlunoCriacaoSchema = z
+  .object({
+    nome: nomeAlunoSchema,
+    email: emailAlunoSchema,
+    status: statusAlunoSchema.optional(),
+  })
+  .strict();
+
+export const AlunoAtualizacaoSchema = z
+  .object({
+    nome: nomeAlunoSchema.optional(),
+    email: emailAlunoSchema.optional(),
+    status: statusAlunoSchema.optional(),
+  })
+  .strict()
+  .superRefine((dados, ctx) => {
+    if (dados.nome === undefined && dados.email === undefined && dados.status === undefined) {
+      ctx.addIssue({ code: 'custom', message: 'Informe ao menos um campo para atualizar.' });
+    }
+  });
+
+export const AlunoResumoSchema = z
+  .object({
+    aluno_id: z.string().min(1),
+    nome: z.string().min(1),
+    email: z.string().min(1),
+    status: statusAlunoSchema,
+    total_materiais: z.number().int().min(0),
+    criado_em: dataIso,
+    atualizado_em: dataIso,
+  })
+  .strict();
+
+export const PaginaAlunosSchema = z
+  .object({
+    itens: z.array(AlunoResumoSchema),
+    pagina: z.number().int().min(1),
+    tamanho_pagina: z.number().int().min(1).max(LIMITES.paginaMax),
+    total: z.number().int().min(0),
+    total_paginas: z.number().int().min(0),
+  })
+  .strict();
+
+export const visibilidadeMaterialSchema = z.enum(['rascunho', 'publicado']);
+
+export const VinculoMaterialSchema = z
+  .object({
+    material_id: z.string().min(1),
+    titulo: z.string().min(1),
+    formato: formatoSaidaSchema,
+    perfil: perfilSchema,
+    visibilidade: visibilidadeMaterialSchema,
+    vinculado_em: dataIso,
+  })
+  .strict();
+
+export const VinculosAlunoSchema = z
+  .object({
+    aluno_id: z.string().min(1),
+    itens: z.array(VinculoMaterialSchema),
+  })
+  .strict();
+
+export const AtualizarVinculosInputSchema = z
+  .object({
+    material_ids: z.array(z.string().min(1)).max(500),
   })
   .strict();
 
