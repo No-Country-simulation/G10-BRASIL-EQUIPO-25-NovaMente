@@ -1,6 +1,7 @@
 import type { ZodType } from 'zod';
 import type {
   ListarAdaptacoesParams,
+  ListarCatalogoAlunoParams,
   ListarMateriaisParams,
   NovaMenteApi,
 } from './NovaMenteApi';
@@ -10,12 +11,14 @@ import {
   AdaptacaoPacoteSchema,
   AlunoResumoSchema,
   HealthRespostaSchema,
+  IdentificacaoAlunoRespostaSchema,
   JobRespostaSchema,
   MaterialDetalheSchema,
   MaterialResumoSchema,
   OciStatusSchema,
   PaginaAdaptacoesSchema,
   PaginaAlunosSchema,
+  PaginaCatalogoAlunoSchema,
   PaginaMateriaisSchema,
   RemocaoMaterialRespostaSchema,
   VinculoMaterialSchema,
@@ -31,6 +34,7 @@ import type {
   AtualizarVinculosInput,
   FormatoExportacao,
   HealthResposta,
+  IdentificacaoAlunoResposta,
   JobResposta,
   MaterialAtualizacao,
   MaterialDetalhe,
@@ -38,6 +42,7 @@ import type {
   OciStatus,
   PaginaAdaptacoes,
   PaginaAlunos,
+  PaginaCatalogoAluno,
   PaginaMateriais,
   RemocaoMaterialResposta,
   StatusAluno,
@@ -246,4 +251,32 @@ export const httpApiClient: NovaMenteApi = {
     pedir<RemocaoMaterialResposta>(urls.material(materialId), RemocaoMaterialRespostaSchema, {
       method: 'DELETE',
     }),
+
+  listarIdentificacaoAluno: async () => {
+    const resposta = await pedir<IdentificacaoAlunoResposta>(
+      urls.alunoIdentificacao,
+      IdentificacaoAlunoRespostaSchema,
+    );
+    return resposta.itens;
+  },
+
+  listarCatalogoAluno: (alunoId, params: ListarCatalogoAlunoParams = {}) =>
+    pedir<PaginaCatalogoAluno>(
+      `${urls.alunoCatalogo}${montarQuery({
+        aluno_id: alunoId,
+        pagina: params.pagina,
+        tamanho_pagina: params.tamanho_pagina,
+        q: params.q,
+        formato: params.formato,
+        perfil: params.perfil,
+        ordenar: params.ordenar,
+      })}`,
+      PaginaCatalogoAlunoSchema,
+    ),
+
+  obterMaterialAluno: (alunoId, materialId) =>
+    pedir<MaterialDetalhe>(
+      `${urls.alunoMaterial(materialId)}${montarQuery({ aluno_id: alunoId })}`,
+      MaterialDetalheSchema,
+    ),
 };

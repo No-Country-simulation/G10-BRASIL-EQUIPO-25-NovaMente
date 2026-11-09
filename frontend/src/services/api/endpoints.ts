@@ -14,6 +14,10 @@ export const urls = {
   alunoMateriais: (id: string) => `${BASE}/alunos/${encodeURIComponent(id)}/materiais`,
   alunoVinculo: (id: string, materialId: string) =>
     `${BASE}/alunos/${encodeURIComponent(id)}/materiais/${encodeURIComponent(materialId)}`,
+  alunoIdentificacao: `${BASE}/aluno/identificacao`,
+  alunoCatalogo: `${BASE}/aluno/materiais`,
+  alunoMaterial: (materialId: string) =>
+    `${BASE}/aluno/materiais/${encodeURIComponent(materialId)}`,
   materiais: `${BASE}/materiais`,
   material: (id: string) => `${BASE}/materiais/${encodeURIComponent(id)}`,
 };

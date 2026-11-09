@@ -160,8 +160,10 @@ export const CodigoErroSchema = z.enum([
   'FORMATO_DESCONHECIDO',
   'OCI_INDISPONIVEL',
   'ALUNO_NAO_ENCONTRADO',
+  'ALUNO_INATIVO',
   'EMAIL_JA_CADASTRADO',
   'MATERIAL_NAO_ENCONTRADO',
+  'MATERIAL_NAO_DISPONIVEL',
   'INTERNO',
 ]);
 
@@ -401,6 +403,43 @@ export const MaterialDetalheSchema = z
 export const PaginaMateriaisSchema = z
   .object({
     itens: z.array(MaterialResumoSchema),
+    pagina: z.number().int().min(1),
+    tamanho_pagina: z.number().int().min(1).max(LIMITES.paginaMax),
+    total: z.number().int().min(0),
+    total_paginas: z.number().int().min(0),
+  })
+  .strict();
+
+export const IdentificacaoAlunoItemSchema = z
+  .object({
+    aluno_id: z.string().min(1),
+    nome: z.string().min(1),
+  })
+  .strict();
+
+export const IdentificacaoAlunoRespostaSchema = z
+  .object({
+    itens: z.array(IdentificacaoAlunoItemSchema),
+  })
+  .strict();
+
+export const ItemCatalogoAlunoSchema = z
+  .object({
+    material_id: z.string().min(1),
+    titulo: z.string().min(1),
+    documento_titulo: z.string().min(1),
+    formato: formatoSaidaSchema,
+    perfil: perfilSchema,
+    nivel: nivelDetalheSchema,
+    tempo_estimado_estudo_minutos: z.number().int().min(1),
+    criado_em: dataIso,
+    conceitos_chave: z.array(z.string().min(1)).max(6),
+  })
+  .strict();
+
+export const PaginaCatalogoAlunoSchema = z
+  .object({
+    itens: z.array(ItemCatalogoAlunoSchema),
     pagina: z.number().int().min(1),
     tamanho_pagina: z.number().int().min(1).max(LIMITES.paginaMax),
     total: z.number().int().min(0),

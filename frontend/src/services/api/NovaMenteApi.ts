@@ -9,6 +9,7 @@ import type {
   FormatoExportacao,
   FormatoSaida,
   HealthResposta,
+  IdentificacaoAlunoItem,
   JobResposta,
   MaterialAtualizacao,
   MaterialDetalhe,
@@ -16,6 +17,7 @@ import type {
   OciStatus,
   PaginaAdaptacoes,
   PaginaAlunos,
+  PaginaCatalogoAluno,
   PaginaMateriais,
   PerfilDestinatario,
   RemocaoMaterialResposta,
@@ -52,6 +54,15 @@ export interface ListarMateriaisParams {
   ordenar?: 'criado_em:desc' | 'criado_em:asc' | 'ancoragem:desc' | 'titulo:asc';
 }
 
+export interface ListarCatalogoAlunoParams {
+  pagina?: number;
+  tamanho_pagina?: number;
+  q?: string;
+  formato?: FormatoSaida;
+  perfil?: PerfilDestinatario;
+  ordenar?: 'criado_em:desc' | 'titulo:asc';
+}
+
 export interface NovaMenteApi {
   criarPorTexto(input: AdaptacaoInput): Promise<JobResposta>;
   criarPorArquivo(input: AdaptacaoUploadInput): Promise<JobResposta>;
@@ -79,4 +90,11 @@ export interface NovaMenteApi {
   obterMaterial(materialId: string): Promise<MaterialDetalhe>;
   atualizarMaterial(materialId: string, input: MaterialAtualizacao): Promise<MaterialResumo>;
   excluirMaterial(materialId: string): Promise<RemocaoMaterialResposta>;
+
+  listarIdentificacaoAluno(): Promise<IdentificacaoAlunoItem[]>;
+  listarCatalogoAluno(
+    alunoId: string,
+    params?: ListarCatalogoAlunoParams,
+  ): Promise<PaginaCatalogoAluno>;
+  obterMaterialAluno(alunoId: string, materialId: string): Promise<MaterialDetalhe>;
 }

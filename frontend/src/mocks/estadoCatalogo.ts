@@ -4,9 +4,12 @@ import type {
   AlunoCriacao,
   AlunoResumo,
   FormatoSaida,
+  IdentificacaoAlunoItem,
+  ItemCatalogoAluno,
   MaterialAtualizacao,
   MaterialResumo,
   PaginaAlunos,
+  PaginaCatalogoAluno,
   PaginaMateriais,
   PerfilDestinatario,
   RemocaoMaterialResposta,
@@ -50,6 +53,15 @@ export interface FiltrosMateriaisMock {
   ordenar?: 'criado_em:desc' | 'criado_em:asc' | 'ancoragem:desc' | 'titulo:asc';
 }
 
+export interface FiltrosCatalogoAlunoMock {
+  pagina?: number;
+  tamanho_pagina?: number;
+  q?: string;
+  formato?: FormatoSaida;
+  perfil?: PerfilDestinatario;
+  ordenar?: 'criado_em:desc' | 'titulo:asc';
+}
+
 export class AlunoNaoEncontrado extends Error {
   constructor() {
     super('Aluno não encontrado.');
@@ -57,10 +69,24 @@ export class AlunoNaoEncontrado extends Error {
   }
 }
 
+export class AlunoInativo extends Error {
+  constructor() {
+    super('Aluno inativo.');
+    this.name = 'AlunoInativo';
+  }
+}
+
 export class MaterialNaoEncontrado extends Error {
   constructor() {
     super('Material não encontrado.');
     this.name = 'MaterialNaoEncontrado';
+  }
+}
+
+export class MaterialNaoDisponivel extends Error {
+  constructor() {
+    super('Material não disponível.');
+    this.name = 'MaterialNaoDisponivel';
   }
 }
 
@@ -90,6 +116,8 @@ const PACOTES_POR_ADAPTACAO: Record<string, AdaptacaoPacote> = {
   [tutorialFixture.adaptacao_id]: tutorialFixture as unknown as AdaptacaoPacote,
   [resumoFixture.adaptacao_id]: resumoFixture as unknown as AdaptacaoPacote,
 };
+
+const VINCULO_SEMEADO_EM = '2026-10-24T09:00:00Z';
 
 let sequencia = 0;
 
@@ -123,6 +151,12 @@ function comTotal(aluno: AlunoResumo): AlunoResumo {
 function exigirAluno(alunoId: string): AlunoResumo {
   const aluno = alunos.get(alunoId);
   if (!aluno) throw new AlunoNaoEncontrado();
+  return aluno;
+}
+
+function exigirAlunoAtivo(alunoId: string): AlunoResumo {
+  const aluno = exigirAluno(alunoId);
+  if (aluno.status !== 'ativo') throw new AlunoInativo();
   return aluno;
 }
 
@@ -165,6 +199,29 @@ function vinculoDe(material: MaterialMock, vinculadoEm: string): VinculoMaterial
   };
 }
 
+/**
+ * Semeia vínculos do primeiro aluno ativo com os materiais da fixture.
+ *
+ * Só roda quando alunos e catálogo estão completos e ainda não há vínculos,
+ * para não interferir em testes que montam um estado mínimo próprio.
+ */
+function semearVinculosIniciaisMock() {
+  if (vinculos.size > 0) return;
+  if (alunos.size === 0 || catalogo.size !== materiaisFixture.length) return;
+
+  const primeiroAtivo = [...alunos.values()]
+    .filter((aluno) => aluno.status === 'ativo')
+    .sort(
+      (a, b) => a.nome.localeCompare(b.nome, 'pt-BR') || a.aluno_id.localeCompare(b.aluno_id),
+    )[0];
+  if (!primeiroAtivo) return;
+
+  vinculos.set(
+    primeiroAtivo.aluno_id,
+    new Map([...catalogo.keys()].sort().map((materialId) => [materialId, VINCULO_SEMEADO_EM])),
+  );
+}
+
 /** Recarrega os 6 alunos de demonstração da fixture, com um inativo. */
 export function semearAlunosMock() {
   alunos.clear();
@@ -173,6 +230,7 @@ export function semearAlunosMock() {
     const aluno = structuredClone(base);
     alunos.set(aluno.aluno_id, { ...aluno, total_materiais: 0 });
   }
+  semearVinculosIniciaisMock();
 }
 
 /** Recarrega os materiais da fixture e os pacotes das fixtures de adaptação. */
@@ -187,6 +245,7 @@ export function semearMateriaisMock() {
     const pacote = PACOTES_POR_ADAPTACAO[material.adaptacao_id];
     if (pacote) pacotes.set(material.material_id, structuredClone(pacote));
   }
+  semearVinculosIniciaisMock();
 }
 
 /** Zera todo o catálogo mock (alunos, vínculos e materiais). */
@@ -382,6 +441,95 @@ export function listarMateriaisMock(filtros: FiltrosMateriaisMock = {}): PaginaM
     total,
     total_paginas: total ? Math.ceil(total / tamanho) : 0,
   };
+}
+
+function itemCatalogoDe(material: MaterialResumo): ItemCatalogoAluno {
+  return {
+    material_id: material.material_id,
+    titulo: material.titulo,
+    documento_titulo: material.documento_titulo,
+    formato: material.formato,
+    perfil: material.perfil,
+    nivel: material.nivel,
+    tempo_estimado_estudo_minutos: material.tempo_estimado_estudo_minutos,
+    criado_em: material.criado_em,
+    conceitos_chave: (pacotes.get(material.material_id)?.metadados.conceitos_chave ?? []).slice(
+      0,
+      6,
+    ),
+  };
+}
+
+/** Identificação da área do aluno: apenas ativos, por nome, sem e-mail. */
+export function listarIdentificacaoAlunoMock(): IdentificacaoAlunoItem[] {
+  return [...alunos.values()]
+    .filter((aluno) => aluno.status === 'ativo')
+    .sort(
+      (a, b) => a.nome.localeCompare(b.nome, 'pt-BR') || a.aluno_id.localeCompare(b.aluno_id),
+    )
+    .map((aluno) => ({ aluno_id: aluno.aluno_id, nome: aluno.nome }));
+}
+
+/** Catálogo do aluno: somente publicados e vinculados ao aluno ativo. */
+export function listarCatalogoAlunoMock(
+  alunoId: string,
+  filtros: FiltrosCatalogoAlunoMock = {},
+): PaginaCatalogoAluno {
+  exigirAlunoAtivo(alunoId);
+
+  const pagina = filtros.pagina ?? 1;
+  const tamanho = filtros.tamanho_pagina ?? LIMITES.paginaPadrao;
+  const termo = (filtros.q ?? '').trim().toLowerCase();
+  const ordenar = filtros.ordenar ?? 'criado_em:desc';
+  const vinculados = vinculos.get(alunoId) ?? new Map<string, string>();
+
+  const filtrados = [...vinculados.keys()]
+    .flatMap((materialId) => {
+      const material = catalogo.get(materialId);
+      return material && material.visibilidade === 'publicado' ? [material] : [];
+    })
+    .filter(
+      (material) =>
+        !termo ||
+        material.titulo.toLowerCase().includes(termo) ||
+        material.documento_titulo.toLowerCase().includes(termo),
+    )
+    .filter((material) => (filtros.formato ? material.formato === filtros.formato : true))
+    .filter((material) => (filtros.perfil ? material.perfil === filtros.perfil : true))
+    .sort((a, b) => {
+      const porId = a.material_id.localeCompare(b.material_id);
+      if (ordenar === 'titulo:asc') {
+        return a.titulo.localeCompare(b.titulo, 'pt-BR') || porId;
+      }
+      return Date.parse(b.criado_em) - Date.parse(a.criado_em) || porId;
+    });
+
+  const total = filtrados.length;
+  const inicio = (pagina - 1) * tamanho;
+
+  return {
+    itens: filtrados.slice(inicio, inicio + tamanho).map(itemCatalogoDe),
+    pagina,
+    tamanho_pagina: tamanho,
+    total,
+    total_paginas: total ? Math.ceil(total / tamanho) : 0,
+  };
+}
+
+/** Detalhe do aluno: aluno ativo, material publicado e vinculado. */
+export function obterMaterialAlunoMock(
+  alunoId: string,
+  materialId: string,
+): { material: MaterialResumo; pacote: AdaptacaoPacote } {
+  exigirAlunoAtivo(alunoId);
+
+  const material = catalogo.get(materialId);
+  const vinculado = vinculos.get(alunoId)?.has(materialId) ?? false;
+  if (!material || material.visibilidade !== 'publicado' || !vinculado) {
+    throw new MaterialNaoDisponivel();
+  }
+
+  return obterMaterialMock(materialId);
 }
 
 export function obterMaterialMock(materialId: string): {

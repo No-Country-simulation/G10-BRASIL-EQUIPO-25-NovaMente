@@ -11,6 +11,9 @@ import type {
   AtualizarVinculosInputSchema,
   EtapaJobSchema,
   HealthRespostaSchema,
+  IdentificacaoAlunoItemSchema,
+  IdentificacaoAlunoRespostaSchema,
+  ItemCatalogoAlunoSchema,
   JobRespostaSchema,
   MaterialAtualizacaoSchema,
   MaterialDetalheSchema,
@@ -18,6 +21,7 @@ import type {
   OciStatusSchema,
   PaginaAdaptacoesSchema,
   PaginaAlunosSchema,
+  PaginaCatalogoAlunoSchema,
   PaginaMateriaisSchema,
   RemocaoMaterialRespostaSchema,
   VinculoMaterialSchema,
@@ -70,3 +74,8 @@ export type MaterialResumo = z.infer<typeof MaterialResumoSchema>;
 export type MaterialDetalhe = z.infer<typeof MaterialDetalheSchema>;
 export type PaginaMateriais = z.infer<typeof PaginaMateriaisSchema>;
 export type RemocaoMaterialResposta = z.infer<typeof RemocaoMaterialRespostaSchema>;
+
+export type IdentificacaoAlunoItem = z.infer<typeof IdentificacaoAlunoItemSchema>;
+export type IdentificacaoAlunoResposta = z.infer<typeof IdentificacaoAlunoRespostaSchema>;
+export type ItemCatalogoAluno = z.infer<typeof ItemCatalogoAlunoSchema>;
+export type PaginaCatalogoAluno = z.infer<typeof PaginaCatalogoAlunoSchema>;
