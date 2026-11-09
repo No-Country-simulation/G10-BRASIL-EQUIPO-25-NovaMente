@@ -1,6 +1,10 @@
-import { EmConstrucao } from '@/components/layout/EmConstrucao';
-import { M } from '@/lib/mensagens';
+import { Suspense } from 'react';
+import { AlunosSkeleton, AlunosView } from '@/components/alunos/AlunosView';
 
 export default function AlunosPage() {
-  return <EmConstrucao titulo={M.app.navAlunos} />;
+  return (
+    <Suspense fallback={<AlunosSkeleton />}>
+      <AlunosView />
+    </Suspense>
+  );
 }
