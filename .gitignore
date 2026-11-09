@@ -225,6 +225,9 @@ __marimo__/
 .env.*
 !.env.example
 backend/data/chroma/
+backend/data/*.db
+backend/data/*.db-wal
+backend/data/*.db-shm
 
 # Metadados de download do Windows (Zone.Identifier)
 *Zone.Identifier

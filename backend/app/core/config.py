@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     google_api_key: str = ""
     modelo_llm: str = "gemini-3.5-flash-lite"
 
+    # ── Banco de dados ───────────────────────────────────────────────────────
+    database_url: str = "sqlite:///./data/novamente.db"
+
     # ── RAG / Chroma ─────────────────────────────────────────────────────────
     chroma_dir: str = "/data/chroma"
 

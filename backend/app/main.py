@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -12,17 +13,27 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+import app.models.db  # noqa: F401  # registra os modelos no metadata
 from app.api.v1.routers import adaptacoes, health, jobs, oci
 from app.core.config import settings
+from app.core.db import Base, engine
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
+
 
 app = FastAPI(
     title=settings.app_nome,
     version=settings.app_versao,
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
     description=(
         "API do NovaMente — Sistema Inteligente de Adaptação e Geração "
         "de Conteúdo Educacional via RAG + Google Gemini."
