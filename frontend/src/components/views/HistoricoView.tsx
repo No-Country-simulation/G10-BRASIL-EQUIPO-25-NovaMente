@@ -11,6 +11,7 @@ import { FORMATOS, PERFIS } from '@/lib/constants';
 import { formatarDataRelativa, formatarPercentual } from '@/lib/formatadores';
 import { mensagemDoErro } from '@/services/api/erros';
 import { M } from '@/lib/mensagens';
+import { ROTAS } from '@/lib/rotas';
 
 export function HistoricoSkeleton() {
   return (
@@ -119,7 +120,7 @@ export function HistoricoView() {
         <div className="rounded-xl border border-dashed p-10 text-center">
           <p className="text-[var(--fg-muted)]">{M.historico.vazio}</p>
           <Button asChild className="mt-4">
-            <Link href="/">{M.historico.vazioCta}</Link>
+            <Link href={ROTAS.empresaGerar}>{M.historico.vazioCta}</Link>
           </Button>
         </div>
       )}
@@ -129,7 +130,7 @@ export function HistoricoView() {
           {data.itens.map((item) => (
             <li key={item.adaptacao_id}>
               <Link
-                href={`/resultado/${item.adaptacao_id}`}
+                href={ROTAS.empresaResultado(item.adaptacao_id)}
                 className="block h-full rounded-xl border p-5 transition-colors hover:border-[var(--accent)]"
               >
                 <p className="font-medium">{item.documento.titulo}</p>

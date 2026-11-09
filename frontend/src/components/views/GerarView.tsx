@@ -9,6 +9,7 @@ import { useApi } from '@/services/api/ApiProvider';
 import { mensagemDoErro } from '@/services/api/erros';
 import { useAdaptationJob } from '@/features/jobs/useAdaptationJob';
 import { M } from '@/lib/mensagens';
+import { ROTAS } from '@/lib/rotas';
 import type { JobResposta } from '@/types/novamente';
 
 export function GerarView() {
@@ -19,7 +20,7 @@ export function GerarView() {
   const [erroAcao, setErroAcao] = useState<string | null>(null);
 
   const aoConcluir = useCallback(
-    (pacote: { adaptacao_id: string }) => router.push(`/resultado/${pacote.adaptacao_id}`),
+    (pacote: { adaptacao_id: string }) => router.push(ROTAS.empresaResultado(pacote.adaptacao_id)),
     [router],
   );
 

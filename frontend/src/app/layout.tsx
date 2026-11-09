@@ -8,7 +8,10 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'sw
 const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'NovaMente — material didático a partir de documentação técnica',
+  title: {
+    default: 'NovaMente — material didático a partir de documentação técnica',
+    template: '%s · NovaMente',
+  },
   description: 'Gere flashcards, quizzes, tutoriais e resumos executivos ancorados na sua documentação.',
 };
 

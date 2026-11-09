@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ExportMenu } from './ExportMenu';
 import { FORMATOS, NICHOS, NIVEIS, PERFIS } from '@/lib/constants';
 import { M } from '@/lib/mensagens';
+import { ROTAS } from '@/lib/rotas';
 import type { Exportacao } from '@/features/adaptations/useExport';
 import type { AdaptacaoPacote } from '@/types/novamente';
 
@@ -34,7 +35,7 @@ export function ResultadoHeader({ pacote, exportacao }: { pacote: AdaptacaoPacot
               {M.resultado.baixarJson}
             </Button>
             <Button asChild variant="ghost">
-              <Link href="/">{M.resultado.novaGeracao}</Link>
+              <Link href={ROTAS.empresaGerar}>{M.resultado.novaGeracao}</Link>
             </Button>
           </div>
           {erro && (

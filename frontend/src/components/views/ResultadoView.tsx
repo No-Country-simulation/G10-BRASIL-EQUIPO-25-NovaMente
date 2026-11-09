@@ -10,6 +10,7 @@ import { useAdaptation } from '@/features/adaptations/useAdaptation';
 import { useExport } from '@/features/adaptations/useExport';
 import { useOciStatus } from '@/features/oci/useOciStatus';
 import { M } from '@/lib/mensagens';
+import { ROTAS } from '@/lib/rotas';
 import { ErroApi, mensagemDoErro } from '@/services/api/erros';
 
 export function ResultadoView({ adaptacaoId }: { adaptacaoId: string }) {
@@ -72,7 +73,7 @@ export function ResultadoView({ adaptacaoId }: { adaptacaoId: string }) {
         <div className="mt-4 flex gap-3">
           {!naoEncontrado && <Button onClick={() => refetch()}>{M.comum.tentarNovamente}</Button>}
           <Button asChild variant="outline">
-            <a href="/historico">{M.resultado.irParaHistorico}</a>
+            <a href={ROTAS.empresaHistorico}>{M.resultado.irParaHistorico}</a>
           </Button>
         </div>
       </div>

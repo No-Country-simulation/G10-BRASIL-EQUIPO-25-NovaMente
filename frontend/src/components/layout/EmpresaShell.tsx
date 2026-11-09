@@ -1,8 +1,8 @@
-import { Header } from './Header';
+import { EmpresaHeader } from './EmpresaHeader';
 import { HealthBanner } from './HealthBanner';
 import { M } from '@/lib/mensagens';
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function EmpresaShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh bg-[var(--bg)] text-[var(--fg)]">
       <a
@@ -11,7 +11,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         {M.comum.irParaConteudo}
       </a>
-      <Header />
+      <EmpresaHeader />
       <HealthBanner />
       <main id="conteudo" className="mx-auto max-w-[1280px] px-4 py-8">
         {children}

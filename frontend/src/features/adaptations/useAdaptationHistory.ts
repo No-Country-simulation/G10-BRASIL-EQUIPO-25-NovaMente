@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useApi } from '@/services/api/ApiProvider';
 import { ErroContrato } from '@/services/api/erros';
 import { formatoSaidaSchema, LIMITES, PaginaAdaptacoesSchema, perfilSchema } from '@/types/schemas';
+import { ROTAS } from '@/lib/rotas';
 
 export interface FiltrosHistorico {
   pagina: number;
@@ -53,7 +54,7 @@ export function useAdaptationHistory() {
       if (proximos.perfil) busca.set('perfil', proximos.perfil);
       if (proximos.q.trim()) busca.set('q', proximos.q.trim());
       const query = busca.toString();
-      router.replace(query ? `/historico?${query}` : '/historico');
+      router.replace(query ? `${ROTAS.empresaHistorico}?${query}` : ROTAS.empresaHistorico);
     },
     [filtros, router],
   );

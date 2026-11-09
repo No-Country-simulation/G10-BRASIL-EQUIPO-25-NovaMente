@@ -1,11 +1,164 @@
 export const M = {
+  landing: {
+    header: {
+      navPrincipal: 'Navegação da landing',
+      comoFunciona: 'Como funciona',
+      formatos: 'Formatos',
+      tecnologia: 'Tecnologia',
+      equipe: 'Equipe',
+      souAluno: 'Sou aluno',
+      areaEmpresa: 'Área da empresa',
+    },
+    hero: {
+      selo: 'ONE G10 Brasil · No Country · Alura',
+      titulo: 'Da documentação técnica ao material didático personalizado',
+      subtitulo:
+        'Envie um PDF, Markdown ou texto e receba flashcards, quizzes, tutoriais e resumos executivos adaptados ao perfil do seu público, com ancoragem estrita na fonte usando RAG, Gemini e OCI.',
+      ctaEmpresa: 'Começar pela empresa',
+      ctaAluno: 'Acessar como aluno',
+    },
+    problema: {
+      titulo: 'Documentação rica, aprendizado distante',
+      subtitulo:
+        'Manuais técnicos são escritos para especialistas. Transformá-los em aulas costuma exigir semanas de trabalho manual.',
+      itens: [
+        {
+          titulo: 'Semanas de produção manual',
+          texto: 'Reescrever um manual para cada público consome tempo de especialistas que deveriam estar ensinando.',
+        },
+        {
+          titulo: 'Jargão inacessível',
+          texto: 'Quem está começando encontra termos e pré-requisitos que o documento assume, mas não explica.',
+        },
+        {
+          titulo: 'O mesmo manual para públicos diferentes',
+          texto: 'Iniciantes, desenvolvedores, líderes técnicos e gestores precisam de recortes e profundidades distintas.',
+        },
+      ],
+    },
+    comoFunciona: {
+      titulo: 'Como funciona',
+      subtitulo: 'Da ingestão ao estudo, em quatro passos.',
+      passos: [
+        {
+          titulo: 'Envie o documento',
+          texto: 'Aceitamos PDF, Markdown ou texto puro, sem pré-processamento manual.',
+        },
+        {
+          titulo: 'Escolha o público',
+          texto: 'Defina perfil, formato e nível de detalhe para o material.',
+        },
+        {
+          titulo: 'A pipeline ancora e gera',
+          texto: 'O RAG recupera os trechos relevantes e o Gemini redige com fidelidade à fonte.',
+        },
+        {
+          titulo: 'Publique e estude',
+          texto: 'A empresa revisa, publica e vincula o material ao aluno, que estuda na área dele.',
+        },
+      ],
+    },
+    formatos: {
+      titulo: 'Formatos para cada objetivo',
+      subtitulo: 'Um mesmo documento pode virar experiências de estudo diferentes.',
+      itens: [
+        { nome: 'Flashcards', descricao: 'Memorização ativa por repetição.' },
+        { nome: 'Quiz interativo', descricao: 'Perguntas com justificativa para fixar conceitos.' },
+        { nome: 'Tutorial', descricao: 'Passo a passo para aplicar o conteúdo.' },
+        { nome: 'Resumo executivo', descricao: 'A essência do documento em poucos minutos.' },
+      ],
+    },
+    publicos: {
+      titulo: 'Dois públicos, uma só fonte',
+      subtitulo: 'A empresa prepara o material; o aluno estuda o que foi liberado para ele.',
+      empresa: {
+        titulo: 'Para empresas e educadores',
+        texto:
+          'Gere materiais a partir da sua documentação, acompanhe o histórico, publique e vincule conteúdos aos alunos.',
+        cta: 'Começar pela empresa',
+      },
+      aluno: {
+        titulo: 'Para alunos',
+        texto: 'Entre com seu nome e estude os materiais publicados pela sua empresa, sem gerar nem enviar nada.',
+        cta: 'Acessar como aluno',
+      },
+    },
+    tecnologia: {
+      titulo: 'Tecnologia e confiança',
+      subtitulo: 'A geração é ancorada na fonte; você consegue verificar de onde cada conceito veio.',
+      itens: [
+        {
+          titulo: 'Ancoragem estrita na fonte',
+          texto: 'O conteúdo gerado é confrontado com os trechos recuperados do documento original.',
+        },
+        {
+          titulo: 'Score de ancoragem',
+          texto: 'Cada pacote traz uma avaliação de fidelidade ao documento que serviu de base.',
+        },
+        {
+          titulo: 'ChromaDB + Gemini',
+          texto: 'Busca vetorial para recuperar trechos e um LLM para reescrever com propósito pedagógico.',
+        },
+        {
+          titulo: 'Persistência no OCI',
+          texto: 'Documentos e artefatos gerados são armazenados no OCI Object Storage.',
+        },
+      ],
+    },
+    pedagogia: {
+      titulo: 'Fundamentação pedagógica',
+      subtitulo: 'A geração não é só reescrita: ela segue princípios de aprendizagem.',
+      itens: [
+        {
+          titulo: 'Scaffolding',
+          texto: 'A complexidade é reduzida de forma gradual, preenchendo lacunas conforme o nível do destinatário.',
+        },
+        {
+          titulo: 'Carga cognitiva',
+          texto: 'Manuais extensos são fragmentados em formatos objetivos, evitando a sobrecarga de informação.',
+        },
+        {
+          titulo: 'Microlearning',
+          texto: 'Flashcards e quizzes estimulam recuperação ativa e estudo em pílulas curtas.',
+        },
+      ],
+    },
+    equipe: {
+      titulo: 'Equipe e realização',
+      subtitulo: 'Quatro integrantes, um produto construído durante o programa ONE.',
+      integrantes: [
+        { nome: 'Alex Grellet', papel: 'Vibe Coder / Developer' },
+        { nome: 'Luan Carvalho', papel: 'Vibe Coder / Developer' },
+        { nome: 'Mario Lucio Breder Junior', papel: 'Product Manager / Developer' },
+        { nome: 'Renato Campos', papel: 'Tech Lead / Vibe Coder' },
+      ],
+      repositorioRotulo: 'Repositório no GitHub',
+      repositorio: 'https://github.com/No-Country-simulation/G10-BRASIL-EQUIPO-25-NovaMente',
+      programa: 'Projeto desenvolvido no programa ONE (Oracle Next Education) e Alura, em parceria com a No Country.',
+    },
+    footer: {
+      navegacao: 'Navegação',
+      projeto: 'Projeto',
+      aviso: 'Projeto de hackathon. Nenhum dado real de aluno é usado nesta versão.',
+      creditos: 'NovaMente · ONE G10 Brasil · No Country · Alura',
+    },
+  },
   app: {
     nome: 'NovaMente',
     navGerar: 'Gerar',
     navHistorico: 'Histórico',
+    navMateriais: 'Materiais',
+    navAlunos: 'Alunos',
     navPrincipal: 'Principal',
+    navMobile: 'Menu da empresa',
+    areaAluno: 'Área do aluno',
+    areaEmpresa: 'Área da empresa',
+    trocarAluno: 'Trocar aluno',
+    abrirMenu: 'Abrir menu',
+    fecharMenu: 'Fechar menu',
     tema: 'Tema',
     emConstrucao: 'Em construção',
+    emConstrucaoDescricao: 'Esta área está sendo preparada e estará disponível em breve.',
     preparandoDemo: 'Preparando ambiente de demonstração…',
     degradado: (oci: string, llm: string) => `Serviço parcialmente indisponível — OCI: ${oci}, LLM: ${llm}`,
   },
