@@ -14,6 +14,8 @@ export const urls = {
   alunoMateriais: (id: string) => `${BASE}/alunos/${encodeURIComponent(id)}/materiais`,
   alunoVinculo: (id: string, materialId: string) =>
     `${BASE}/alunos/${encodeURIComponent(id)}/materiais/${encodeURIComponent(materialId)}`,
+  materiais: `${BASE}/materiais`,
+  material: (id: string) => `${BASE}/materiais/${encodeURIComponent(id)}`,
 };
 
 export function montarQuery(params: Record<string, string | number | undefined>): string {

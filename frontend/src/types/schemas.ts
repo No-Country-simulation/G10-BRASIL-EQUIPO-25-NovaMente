@@ -360,6 +360,63 @@ export const AtualizarVinculosInputSchema = z
   })
   .strict();
 
+export const MaterialAtualizacaoSchema = z
+  .object({
+    titulo: tituloSchema.optional(),
+    visibilidade: visibilidadeMaterialSchema.optional(),
+  })
+  .strict()
+  .superRefine((dados, ctx) => {
+    if (dados.titulo === undefined && dados.visibilidade === undefined) {
+      ctx.addIssue({ code: 'custom', message: 'Informe ao menos um campo para atualizar.' });
+    }
+  });
+
+export const MaterialResumoSchema = z
+  .object({
+    material_id: z.string().min(1),
+    adaptacao_id: z.string().min(1),
+    titulo: z.string().min(1),
+    documento_titulo: z.string().min(1),
+    perfil: perfilSchema,
+    formato: formatoSaidaSchema,
+    nivel: nivelDetalheSchema,
+    nicho: nichoSchema,
+    visibilidade: visibilidadeMaterialSchema,
+    tempo_estimado_estudo_minutos: z.number().int().min(1),
+    ancoragem_fonte_score: z.number().min(0).max(1),
+    status_upload: z.enum(['concluido', 'falha']),
+    criado_em: dataIso,
+    atualizado_em: dataIso,
+  })
+  .strict();
+
+export const MaterialDetalheSchema = z
+  .object({
+    material: MaterialResumoSchema,
+    pacote: AdaptacaoPacoteSchema,
+  })
+  .strict();
+
+export const PaginaMateriaisSchema = z
+  .object({
+    itens: z.array(MaterialResumoSchema),
+    pagina: z.number().int().min(1),
+    tamanho_pagina: z.number().int().min(1).max(LIMITES.paginaMax),
+    total: z.number().int().min(0),
+    total_paginas: z.number().int().min(0),
+  })
+  .strict();
+
+export const RemocaoMaterialRespostaSchema = z
+  .object({
+    material_id: z.string().min(1),
+    removido: z.literal(true),
+    oci_removido: z.boolean(),
+    aviso: z.string().min(1).nullable().optional(),
+  })
+  .strict();
+
 export const OciStatusSchema = z
   .object({
     configurado: z.boolean(),

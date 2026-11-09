@@ -1,5 +1,9 @@
 import type { ZodType } from 'zod';
-import type { NovaMenteApi, ListarAdaptacoesParams } from './NovaMenteApi';
+import type {
+  ListarAdaptacoesParams,
+  ListarMateriaisParams,
+  NovaMenteApi,
+} from './NovaMenteApi';
 import { montarQuery, urls } from './endpoints';
 import { ErroApi, ErroContrato, ErroRede, paraProblema } from './erros';
 import {
@@ -7,9 +11,13 @@ import {
   AlunoResumoSchema,
   HealthRespostaSchema,
   JobRespostaSchema,
+  MaterialDetalheSchema,
+  MaterialResumoSchema,
   OciStatusSchema,
   PaginaAdaptacoesSchema,
   PaginaAlunosSchema,
+  PaginaMateriaisSchema,
+  RemocaoMaterialRespostaSchema,
   VinculoMaterialSchema,
   VinculosAlunoSchema,
 } from '@/types/schemas';
@@ -24,9 +32,14 @@ import type {
   FormatoExportacao,
   HealthResposta,
   JobResposta,
+  MaterialAtualizacao,
+  MaterialDetalhe,
+  MaterialResumo,
   OciStatus,
   PaginaAdaptacoes,
   PaginaAlunos,
+  PaginaMateriais,
+  RemocaoMaterialResposta,
   StatusAluno,
   VinculoMaterial,
   VinculosAluno,
@@ -204,4 +217,33 @@ export const httpApiClient: NovaMenteApi = {
 
   removerVinculo: (alunoId, materialId) =>
     pedirSemCorpo(urls.alunoVinculo(alunoId, materialId), { method: 'DELETE' }),
+
+  listarMateriais: (params: ListarMateriaisParams = {}) =>
+    pedir<PaginaMateriais>(
+      `${urls.materiais}${montarQuery({
+        pagina: params.pagina,
+        tamanho_pagina: params.tamanho_pagina,
+        q: params.q,
+        formato: params.formato,
+        perfil: params.perfil,
+        visibilidade: params.visibilidade,
+        ordenar: params.ordenar,
+      })}`,
+      PaginaMateriaisSchema,
+    ),
+
+  obterMaterial: (materialId) =>
+    pedir<MaterialDetalhe>(urls.material(materialId), MaterialDetalheSchema),
+
+  atualizarMaterial: (materialId, input: MaterialAtualizacao) =>
+    pedir<MaterialResumo>(urls.material(materialId), MaterialResumoSchema, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    }),
+
+  excluirMaterial: (materialId) =>
+    pedir<RemocaoMaterialResposta>(urls.material(materialId), RemocaoMaterialRespostaSchema, {
+      method: 'DELETE',
+    }),
 };

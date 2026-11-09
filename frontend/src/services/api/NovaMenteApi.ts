@@ -7,14 +7,22 @@ import type {
   AlunoResumo,
   AtualizarVinculosInput,
   FormatoExportacao,
+  FormatoSaida,
   HealthResposta,
   JobResposta,
+  MaterialAtualizacao,
+  MaterialDetalhe,
+  MaterialResumo,
   OciStatus,
   PaginaAdaptacoes,
   PaginaAlunos,
+  PaginaMateriais,
+  PerfilDestinatario,
+  RemocaoMaterialResposta,
   StatusAluno,
   VinculoMaterial,
   VinculosAluno,
+  VisibilidadeMaterial,
 } from '@/types/novamente';
 
 export interface ListarAdaptacoesParams {
@@ -32,6 +40,16 @@ export interface ListarAlunosParams {
   q?: string;
   status?: StatusAluno;
   ordenar?: 'nome:asc' | 'nome:desc' | 'criado_em:desc';
+}
+
+export interface ListarMateriaisParams {
+  pagina?: number;
+  tamanho_pagina?: number;
+  q?: string;
+  formato?: FormatoSaida;
+  perfil?: PerfilDestinatario;
+  visibilidade?: VisibilidadeMaterial;
+  ordenar?: 'criado_em:desc' | 'criado_em:asc' | 'ancoragem:desc' | 'titulo:asc';
 }
 
 export interface NovaMenteApi {
@@ -56,4 +74,9 @@ export interface NovaMenteApi {
   substituirVinculos(alunoId: string, input: AtualizarVinculosInput): Promise<VinculosAluno>;
   adicionarVinculo(alunoId: string, materialId: string): Promise<VinculoMaterial>;
   removerVinculo(alunoId: string, materialId: string): Promise<void>;
+
+  listarMateriais(params?: ListarMateriaisParams): Promise<PaginaMateriais>;
+  obterMaterial(materialId: string): Promise<MaterialDetalhe>;
+  atualizarMaterial(materialId: string, input: MaterialAtualizacao): Promise<MaterialResumo>;
+  excluirMaterial(materialId: string): Promise<RemocaoMaterialResposta>;
 }

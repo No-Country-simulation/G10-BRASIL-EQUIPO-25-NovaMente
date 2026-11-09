@@ -6,15 +6,20 @@ import {
   MateriaisInexistentes,
   adicionarVinculoMock,
   atualizarAlunoMock,
+  atualizarMaterialMock,
   criarAlunoMock,
   excluirAlunoMock,
+  excluirMaterialMock,
   limparEstadoCatalogo,
   listarAlunosMock,
+  listarMateriaisMock,
   listarVinculosMock,
   obterAlunoMock,
+  obterMaterialMock,
   registrarMaterialMock,
   removerVinculoMock,
   semearAlunosMock,
+  semearMateriaisMock,
   substituirVinculosMock,
 } from './estadoCatalogo';
 
@@ -225,5 +230,97 @@ describe('estadoCatalogo — vínculos', () => {
     expect(() => removerVinculoMock(criado.aluno_id, 'NAO_EXISTE')).toThrow(
       MaterialNaoEncontrado,
     );
+  });
+});
+
+describe('estadoCatalogo — materiais', () => {
+  it('semeia quatro materiais com pacote e visibilidades variadas', () => {
+    semearMateriaisMock();
+
+    const pagina = listarMateriaisMock({ tamanho_pagina: 50 });
+
+    expect(pagina.total).toBe(4);
+    expect(pagina.itens.filter((material) => material.visibilidade === 'rascunho')).toHaveLength(2);
+    for (const material of pagina.itens) {
+      const detalhe = obterMaterialMock(material.material_id);
+      expect(detalhe.material.material_id).toBe(material.material_id);
+      expect(detalhe.pacote.adaptacao_id).toBe(material.adaptacao_id);
+    }
+  });
+
+  it('filtra por q, formato, perfil e visibilidade, com paginação', () => {
+    semearMateriaisMock();
+
+    expect(listarMateriaisMock({ q: 'REDES' }).total).toBe(4);
+    expect(listarMateriaisMock({ q: 'roteamento' }).itens.map((m) => m.formato)).toEqual([
+      'Quiz',
+    ]);
+    expect(listarMateriaisMock({ formato: 'Tutorial' }).total).toBe(1);
+    expect(listarMateriaisMock({ perfil: 'Gestor' }).total).toBe(1);
+    expect(listarMateriaisMock({ visibilidade: 'publicado' }).total).toBe(2);
+
+    const pagina = listarMateriaisMock({ pagina: 2, tamanho_pagina: 3 });
+    expect(pagina.itens).toHaveLength(1);
+    expect(pagina.total_paginas).toBe(2);
+  });
+
+  it('ordena por data, ancoragem e título', () => {
+    semearMateriaisMock();
+
+    const recentes = listarMateriaisMock({ ordenar: 'criado_em:desc' }).itens.map(
+      (m) => m.material_id,
+    );
+    expect(recentes[0]).toBe('01JAVCNRESU000000000004');
+
+    const antigos = listarMateriaisMock({ ordenar: 'criado_em:asc' }).itens.map(
+      (m) => m.material_id,
+    );
+    expect(antigos[0]).toBe('01JAVCNFLCARD00000000001');
+
+    const ancoragem = listarMateriaisMock({ ordenar: 'ancoragem:desc' }).itens.map(
+      (m) => m.ancoragem_fonte_score,
+    );
+    expect(ancoragem).toEqual([...ancoragem].sort((a, b) => b - a));
+
+    const titulos = listarMateriaisMock({ ordenar: 'titulo:asc' }).itens.map((m) => m.titulo);
+    expect(titulos).toEqual([...titulos].sort((a, b) => a.localeCompare(b, 'pt-BR')));
+  });
+
+  it('atualiza apenas título e visibilidade e mantém o vínculo coerente', () => {
+    semearMateriaisMock();
+    const aluno = criarAlunoMock({ nome: 'Ana', email: 'ana@exemplo.com' });
+    adicionarVinculoMock(aluno.aluno_id, '01JAVCNFLCARD00000000001');
+
+    const atualizado = atualizarMaterialMock('01JAVCNFLCARD00000000001', {
+      titulo: '  Novo título  ',
+      visibilidade: 'publicado',
+    });
+
+    expect(atualizado.titulo).toBe('Novo título');
+    expect(atualizado.visibilidade).toBe('publicado');
+    expect(listarVinculosMock(aluno.aluno_id).itens[0]).toMatchObject({
+      titulo: 'Novo título',
+      visibilidade: 'publicado',
+    });
+    expect(() => atualizarMaterialMock('NAO_EXISTE', { titulo: 'Novo' })).toThrow(
+      MaterialNaoEncontrado,
+    );
+  });
+
+  it('exclui material e remove os vínculos em cascata', () => {
+    semearMateriaisMock();
+    const aluno = criarAlunoMock({ nome: 'Ana', email: 'ana@exemplo.com' });
+    adicionarVinculoMock(aluno.aluno_id, '01JAVCNFLCARD00000000001');
+
+    const remocao = excluirMaterialMock('01JAVCNFLCARD00000000001');
+
+    expect(remocao).toMatchObject({
+      material_id: '01JAVCNFLCARD00000000001',
+      removido: true,
+      oci_removido: true,
+    });
+    expect(listarVinculosMock(aluno.aluno_id).itens).toEqual([]);
+    expect(() => obterMaterialMock('01JAVCNFLCARD00000000001')).toThrow(MaterialNaoEncontrado);
+    expect(() => excluirMaterialMock('01JAVCNFLCARD00000000001')).toThrow(MaterialNaoEncontrado);
   });
 });

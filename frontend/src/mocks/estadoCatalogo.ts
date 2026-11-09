@@ -1,16 +1,27 @@
 import type {
+  AdaptacaoPacote,
   AlunoAtualizacao,
   AlunoCriacao,
   AlunoResumo,
   FormatoSaida,
+  MaterialAtualizacao,
+  MaterialResumo,
   PaginaAlunos,
+  PaginaMateriais,
   PerfilDestinatario,
+  RemocaoMaterialResposta,
   StatusAluno,
   VinculoMaterial,
   VinculosAluno,
+  VisibilidadeMaterial,
 } from '@/types/novamente';
 import { LIMITES } from '@/types/schemas';
 import alunosFixture from './fixtures/alunos.json';
+import flashcardsFixture from './fixtures/flashcards-vcn-iniciante.json';
+import materiaisFixture from './fixtures/materiais.json';
+import quizFixture from './fixtures/quiz-vcn-desenvolvedor.json';
+import resumoFixture from './fixtures/resumo-vcn-gestor.json';
+import tutorialFixture from './fixtures/tutorial-vcn-lider.json';
 
 /** Dados mínimos de um material necessários para montar um vínculo. */
 export interface MaterialMock {
@@ -27,6 +38,16 @@ export interface FiltrosAlunosMock {
   q?: string;
   status?: StatusAluno;
   ordenar?: 'nome:asc' | 'nome:desc' | 'criado_em:desc';
+}
+
+export interface FiltrosMateriaisMock {
+  pagina?: number;
+  tamanho_pagina?: number;
+  q?: string;
+  formato?: FormatoSaida;
+  perfil?: PerfilDestinatario;
+  visibilidade?: VisibilidadeMaterial;
+  ordenar?: 'criado_em:desc' | 'criado_em:asc' | 'ancoragem:desc' | 'titulo:asc';
 }
 
 export class AlunoNaoEncontrado extends Error {
@@ -60,6 +81,15 @@ export class MateriaisInexistentes extends Error {
 const alunos = new Map<string, AlunoResumo>();
 const vinculos = new Map<string, Map<string, string>>();
 const materiais = new Map<string, MaterialMock>();
+const catalogo = new Map<string, MaterialResumo>();
+const pacotes = new Map<string, AdaptacaoPacote>();
+
+const PACOTES_POR_ADAPTACAO: Record<string, AdaptacaoPacote> = {
+  [flashcardsFixture.adaptacao_id]: flashcardsFixture as unknown as AdaptacaoPacote,
+  [quizFixture.adaptacao_id]: quizFixture as unknown as AdaptacaoPacote,
+  [tutorialFixture.adaptacao_id]: tutorialFixture as unknown as AdaptacaoPacote,
+  [resumoFixture.adaptacao_id]: resumoFixture as unknown as AdaptacaoPacote,
+};
 
 let sequencia = 0;
 
@@ -102,6 +132,22 @@ function exigirMaterial(materialId: string): MaterialMock {
   return material;
 }
 
+function exigirMaterialDoCatalogo(materialId: string): MaterialResumo {
+  const material = catalogo.get(materialId);
+  if (!material) throw new MaterialNaoEncontrado();
+  return material;
+}
+
+function materialParaVinculo(material: MaterialResumo): MaterialMock {
+  return {
+    material_id: material.material_id,
+    titulo: material.titulo,
+    formato: material.formato,
+    perfil: material.perfil,
+    visibilidade: material.visibilidade,
+  };
+}
+
 function emailEmUso(email: string, ignorarAlunoId?: string) {
   return [...alunos.values()].some(
     (aluno) => aluno.aluno_id !== ignorarAlunoId && aluno.email.toLowerCase() === email,
@@ -129,11 +175,27 @@ export function semearAlunosMock() {
   }
 }
 
+/** Recarrega os materiais da fixture e os pacotes das fixtures de adaptação. */
+export function semearMateriaisMock() {
+  materiais.clear();
+  catalogo.clear();
+  pacotes.clear();
+  for (const base of materiaisFixture as unknown as MaterialResumo[]) {
+    const material = structuredClone(base);
+    catalogo.set(material.material_id, material);
+    materiais.set(material.material_id, materialParaVinculo(material));
+    const pacote = PACOTES_POR_ADAPTACAO[material.adaptacao_id];
+    if (pacote) pacotes.set(material.material_id, structuredClone(pacote));
+  }
+}
+
 /** Zera todo o catálogo mock (alunos, vínculos e materiais). */
 export function limparEstadoCatalogo() {
   alunos.clear();
   vinculos.clear();
   materiais.clear();
+  catalogo.clear();
+  pacotes.clear();
   sequencia = 0;
 }
 
@@ -280,5 +342,99 @@ export function removerVinculoMock(alunoId: string, materialId: string): void {
   vinculos.get(alunoId)?.delete(materialId);
 }
 
-// A demo abre com o catálogo de alunos preenchido.
+export function listarMateriaisMock(filtros: FiltrosMateriaisMock = {}): PaginaMateriais {
+  const pagina = filtros.pagina ?? 1;
+  const tamanho = filtros.tamanho_pagina ?? LIMITES.paginaPadrao;
+  const termo = (filtros.q ?? '').trim().toLowerCase();
+  const ordenar = filtros.ordenar ?? 'criado_em:desc';
+
+  const filtrados = [...catalogo.values()]
+    .filter(
+      (material) =>
+        !termo ||
+        material.titulo.toLowerCase().includes(termo) ||
+        material.documento_titulo.toLowerCase().includes(termo),
+    )
+    .filter((material) => (filtros.formato ? material.formato === filtros.formato : true))
+    .filter((material) => (filtros.perfil ? material.perfil === filtros.perfil : true))
+    .filter((material) =>
+      filtros.visibilidade ? material.visibilidade === filtros.visibilidade : true,
+    )
+    .sort((a, b) => {
+      const porId = a.material_id.localeCompare(b.material_id);
+      if (ordenar === 'ancoragem:desc') {
+        return b.ancoragem_fonte_score - a.ancoragem_fonte_score || porId;
+      }
+      if (ordenar === 'titulo:asc') {
+        return a.titulo.localeCompare(b.titulo, 'pt-BR') || porId;
+      }
+      const porData = Date.parse(a.criado_em) - Date.parse(b.criado_em);
+      return (ordenar === 'criado_em:asc' ? porData : -porData) || porId;
+    });
+
+  const total = filtrados.length;
+  const inicio = (pagina - 1) * tamanho;
+
+  return {
+    itens: filtrados.slice(inicio, inicio + tamanho).map((material) => structuredClone(material)),
+    pagina,
+    tamanho_pagina: tamanho,
+    total,
+    total_paginas: total ? Math.ceil(total / tamanho) : 0,
+  };
+}
+
+export function obterMaterialMock(materialId: string): {
+  material: MaterialResumo;
+  pacote: AdaptacaoPacote;
+} {
+  const material = exigirMaterialDoCatalogo(materialId);
+  const pacote = pacotes.get(materialId);
+  if (!pacote) throw new MaterialNaoEncontrado();
+  return { material: structuredClone(material), pacote: structuredClone(pacote) };
+}
+
+export function atualizarMaterialMock(
+  materialId: string,
+  dados: MaterialAtualizacao,
+): MaterialResumo {
+  const material = exigirMaterialDoCatalogo(materialId);
+
+  if (dados.titulo !== undefined) material.titulo = dados.titulo.trim();
+  if (dados.visibilidade !== undefined) material.visibilidade = dados.visibilidade;
+  material.atualizado_em = agoraIso();
+
+  // O vínculo guarda uma cópia do título/visibilidade; mantém os painéis
+  // de alunos coerentes sem obrigar a recarregar o catálogo.
+  const vinculo = materiais.get(materialId);
+  if (vinculo) {
+    vinculo.titulo = material.titulo;
+    vinculo.visibilidade = material.visibilidade;
+  }
+
+  return structuredClone(material);
+}
+
+export function excluirMaterialMock(materialId: string): RemocaoMaterialResposta {
+  exigirMaterialDoCatalogo(materialId);
+  const pacote = pacotes.get(materialId);
+
+  catalogo.delete(materialId);
+  materiais.delete(materialId);
+  pacotes.delete(materialId);
+  for (const doAluno of vinculos.values()) doAluno.delete(materialId);
+
+  const ociRemovido = pacote?.armazenamento_oci.status_upload === 'concluido';
+  return {
+    material_id: materialId,
+    removido: true,
+    oci_removido: ociRemovido,
+    ...(ociRemovido
+      ? {}
+      : { aviso: 'Objeto OCI indisponível; a remoção local foi concluída.' }),
+  };
+}
+
+// A demo abre com o catálogo de alunos e materiais preenchido.
 semearAlunosMock();
+semearMateriaisMock();
