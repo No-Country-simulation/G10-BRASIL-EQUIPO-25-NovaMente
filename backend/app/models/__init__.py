@@ -241,3 +241,12 @@ from app.models.alunos import (  # noqa: E402
     VinculoMaterial,
     VinculosAluno,
 )
+
+# ── Área do aluno (somente leitura) ───────────────────────────────────────────
+
+from app.models.aluno_catalogo import (  # noqa: E402
+    IdentificacaoAlunoItem,
+    IdentificacaoAlunoResposta,
+    ItemCatalogoAluno,
+    PaginaCatalogoAluno,
+)

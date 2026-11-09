@@ -13,12 +13,19 @@ from app.models import (
     AlunoAtualizacao,
     AlunoCriacao,
     AlunoResumo,
+    AtualizarVinculosInput,
+    FormatoSaida,
+    IdentificacaoAlunoItem,
+    IdentificacaoAlunoResposta,
     PaginaAlunos,
+    PaginaCatalogoAluno,
+    PerfilDestinatario,
     StatusAluno,
     VinculoMaterial,
     VinculosAluno,
 )
 from app.models.db import AlunoDB, MaterialDB, VinculoDB
+from app.services.materiais import item_catalogo_de_material
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
@@ -318,3 +325,103 @@ def remover_vinculo(
         )
     )
     session.commit()
+
+
+# ── Área do aluno (somente leitura) ───────────────────────────────────────────
+
+_ORDENACAO_CATALOGO = {
+    "criado_em:desc": MaterialDB.criado_em.desc(),
+    "titulo:asc": MaterialDB.titulo.asc(),
+}
+
+
+def identificacao_de_alunos(session: "Session") -> IdentificacaoAlunoResposta:
+    """Lista apenas alunos ativos, por nome, sem revelar e-mail."""
+    linhas = session.execute(
+        select(AlunoDB.aluno_id, AlunoDB.nome)
+        .where(AlunoDB.status == "ativo")
+        .order_by(AlunoDB.nome, AlunoDB.aluno_id)
+    ).all()
+    return IdentificacaoAlunoResposta(
+        itens=[
+            IdentificacaoAlunoItem(aluno_id=aluno_id, nome=nome)
+            for aluno_id, nome in linhas
+        ]
+    )
+
+
+def listar_catalogo_aluno(
+    session: "Session",
+    aluno_id: str,
+    *,
+    pagina: int,
+    tamanho_pagina: int,
+    q: str | None,
+    formato: FormatoSaida | None,
+    perfil: PerfilDestinatario | None,
+    ordenar: str,
+) -> PaginaCatalogoAluno:
+    """Catálogo paginado do aluno: só materiais publicados e vinculados.
+
+    Filtros e paginação são aplicados no SQL. Nenhuma linha de ``pacote_json``
+    é desserializada.
+    """
+    condicoes = [
+        VinculoDB.aluno_id == aluno_id,
+        MaterialDB.visibilidade == "publicado",
+    ]
+    if q:
+        termo = f"%{q}%"
+        condicoes.append(
+            or_(
+                MaterialDB.titulo.ilike(termo),
+                MaterialDB.documento_titulo.ilike(termo),
+            )
+        )
+    if formato:
+        condicoes.append(MaterialDB.formato == formato)
+    if perfil:
+        condicoes.append(MaterialDB.perfil == perfil)
+
+    total = (
+        session.scalar(
+            select(func.count())
+            .select_from(MaterialDB)
+            .join(VinculoDB, VinculoDB.material_id == MaterialDB.material_id)
+            .where(*condicoes)
+        )
+        or 0
+    )
+
+    linhas = session.scalars(
+        select(MaterialDB)
+        .join(VinculoDB, VinculoDB.material_id == MaterialDB.material_id)
+        .where(*condicoes)
+        .order_by(_ORDENACAO_CATALOGO[ordenar], MaterialDB.material_id)
+        .offset((pagina - 1) * tamanho_pagina)
+        .limit(tamanho_pagina)
+    ).all()
+
+    total_paginas = (total + tamanho_pagina - 1) // tamanho_pagina if total else 0
+    return PaginaCatalogoAluno(
+        itens=[item_catalogo_de_material(row) for row in linhas],
+        pagina=pagina,
+        tamanho_pagina=tamanho_pagina,
+        total=total,
+        total_paginas=total_paginas,
+    )
+
+
+def material_do_aluno(
+    session: "Session", aluno_id: str, material_id: str
+) -> MaterialDB | None:
+    """Material publicado e vinculado ao aluno; ``None`` em qualquer outro caso."""
+    return session.scalar(
+        select(MaterialDB)
+        .join(VinculoDB, VinculoDB.material_id == MaterialDB.material_id)
+        .where(
+            VinculoDB.aluno_id == aluno_id,
+            MaterialDB.material_id == material_id,
+            MaterialDB.visibilidade == "publicado",
+        )
+    )

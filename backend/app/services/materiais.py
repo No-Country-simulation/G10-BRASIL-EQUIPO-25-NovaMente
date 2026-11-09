@@ -8,7 +8,13 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import select
 
-from app.models import AdaptacaoPacote, AdaptacaoResumo, DocumentoRef, MaterialResumo
+from app.models import (
+    AdaptacaoPacote,
+    AdaptacaoResumo,
+    DocumentoRef,
+    ItemCatalogoAluno,
+    MaterialResumo,
+)
 from app.models.db import MaterialDB
 
 if TYPE_CHECKING:
@@ -108,4 +114,23 @@ def resumo_de_material(row: MaterialDB) -> MaterialResumo:
         status_upload=row.status_upload,
         criado_em=row.criado_em,
         atualizado_em=row.atualizado_em,
+    )
+
+
+def item_catalogo_de_material(row: MaterialDB) -> ItemCatalogoAluno:
+    """Monta o item do catálogo do aluno sem abrir ``pacote_json``.
+
+    Expõe apenas as colunas desnormalizadas permitidas para o aluno e no
+    máximo seis conceitos-chave.
+    """
+    return ItemCatalogoAluno(
+        material_id=row.material_id,
+        titulo=row.titulo,
+        documento_titulo=row.documento_titulo,
+        formato=row.formato,
+        perfil=row.perfil,
+        nivel=row.nivel,
+        tempo_estimado_estudo_minutos=row.tempo_estimado_minutos,
+        criado_em=row.criado_em,
+        conceitos_chave=json.loads(row.conceitos_chave_json)[:6],
     )
