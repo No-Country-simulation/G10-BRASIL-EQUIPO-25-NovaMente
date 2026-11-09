@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import select
 
-from app.models import AdaptacaoPacote
+from app.models import AdaptacaoPacote, AdaptacaoResumo, DocumentoRef
 from app.models.db import MaterialDB
 
 if TYPE_CHECKING:
@@ -60,3 +60,28 @@ def material_de_pacote(session: "Session", pacote: AdaptacaoPacote) -> MaterialD
 def pacote_de_material(row: MaterialDB) -> AdaptacaoPacote:
     """Reconstrói o pacote a partir do JSON persistido na linha."""
     return AdaptacaoPacote.model_validate_json(row.pacote_json)
+
+
+def resumo_de_adaptacao(row: MaterialDB) -> AdaptacaoResumo:
+    """Monta o resumo da listagem apenas com colunas desnormalizadas.
+
+    Não toca em ``pacote_json``: listagens nunca desserializam o pacote.
+    """
+    return AdaptacaoResumo(
+        adaptacao_id=row.adaptacao_id,
+        criado_em=row.criado_em,
+        documento=DocumentoRef(
+            titulo=row.documento_titulo,
+            origem=row.documento_origem,
+            nome_arquivo=row.documento_nome_arquivo,
+            tamanho_bytes=row.documento_tamanho_bytes,
+        ),
+        perfil_aplicado=row.perfil,
+        formato_gerado=row.formato,
+        nivel_detalhe_aplicado=row.nivel,
+        nicho_setor_aplicado=row.nicho,
+        tempo_estimado_estudo_minutos=row.tempo_estimado_minutos,
+        ancoragem_fonte_score=row.ancoragem_score,
+        status_upload=row.status_upload,
+        conceitos_chave=json.loads(row.conceitos_chave_json)[:6],
+    )

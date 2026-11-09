@@ -14,7 +14,6 @@ from app.core.erros import NovaMenteError
 from app.models import (
     AdaptacaoInput,
     AdaptacaoPacote,
-    AdaptacaoResumo,
     FormatoExportacao,
     FormatoSaida,
     JobResposta,
@@ -208,53 +207,36 @@ def listar_adaptacoes(
             detail={"erro": {"codigo": "VALIDACAO", "mensagem": "Parâmetros inválidos.", "campos": erros}},
         )
 
-    todos = repositorio.listar_pacotes()
+    todos = repositorio.listar_resumos()
 
     # Filtros
     if formato:
-        todos = [p for p in todos if p.metadados.formato_gerado == formato]
+        todos = [s for s in todos if s.formato_gerado == formato]
     if perfil:
-        todos = [p for p in todos if p.metadados.perfil_aplicado == perfil]
+        todos = [s for s in todos if s.perfil_aplicado == perfil]
     if q:
         q_lower = q.lower()
         todos = [
-            p for p in todos
-            if q_lower in p.documento.titulo.lower()
-            or any(q_lower in c.lower() for c in p.metadados.conceitos_chave)
+            s for s in todos
+            if q_lower in s.documento.titulo.lower()
+            or any(q_lower in c.lower() for c in s.conceitos_chave)
         ]
 
     # Ordenação
     if ordenar == "criado_em:desc":
-        todos.sort(key=lambda p: p.criado_em, reverse=True)
+        todos.sort(key=lambda s: s.criado_em, reverse=True)
     elif ordenar == "criado_em:asc":
-        todos.sort(key=lambda p: p.criado_em)
+        todos.sort(key=lambda s: s.criado_em)
     elif ordenar == "ancoragem:desc":
-        todos.sort(key=lambda p: p.avaliacao_qualidade.ancoragem_fonte_score, reverse=True)
+        todos.sort(key=lambda s: s.ancoragem_fonte_score, reverse=True)
 
     total = len(todos)
     total_paginas = max(1, (total + tamanho_pagina - 1) // tamanho_pagina) if total else 0
     inicio = (pagina - 1) * tamanho_pagina
     pagina_itens = todos[inicio: inicio + tamanho_pagina]
 
-    resumos = [
-        AdaptacaoResumo(
-            adaptacao_id=p.adaptacao_id,
-            criado_em=p.criado_em,
-            documento=p.documento,
-            perfil_aplicado=p.metadados.perfil_aplicado,
-            formato_gerado=p.metadados.formato_gerado,
-            nivel_detalhe_aplicado=p.metadados.nivel_detalhe_aplicado,
-            nicho_setor_aplicado=p.metadados.nicho_setor_aplicado,
-            tempo_estimado_estudo_minutos=p.metadados.tempo_estimado_estudo_minutos,
-            ancoragem_fonte_score=p.avaliacao_qualidade.ancoragem_fonte_score,
-            status_upload=p.armazenamento_oci.status_upload,
-            conceitos_chave=p.metadados.conceitos_chave[:6],
-        )
-        for p in pagina_itens
-    ]
-
     return PaginaAdaptacoes(
-        itens=resumos,
+        itens=pagina_itens,
         pagina=pagina,
         tamanho_pagina=tamanho_pagina,
         total=total,

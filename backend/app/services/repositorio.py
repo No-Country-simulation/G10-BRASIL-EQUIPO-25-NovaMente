@@ -16,9 +16,9 @@ from typing import TYPE_CHECKING
 from sqlalchemy import select
 
 from app.core.db import SessionLocal
-from app.models import AdaptacaoPacote
+from app.models import AdaptacaoPacote, AdaptacaoResumo
 from app.models.db import MaterialDB
-from app.services.materiais import material_de_pacote
+from app.services.materiais import material_de_pacote, resumo_de_adaptacao
 
 if TYPE_CHECKING:
     from app.models import JobResposta
@@ -61,6 +61,13 @@ def listar_pacotes() -> list[AdaptacaoPacote]:
         linhas = session.scalars(select(MaterialDB)).all()
         pacotes = (_pacote_do_json(row.pacote_json) for row in linhas)
         return [pacote for pacote in pacotes if pacote is not None]
+
+
+def listar_resumos() -> list[AdaptacaoResumo]:
+    """Lista resumos usando só colunas desnormalizadas (sem abrir ``pacote_json``)."""
+    with SessionLocal() as session:
+        linhas = session.scalars(select(MaterialDB)).all()
+        return [resumo_de_adaptacao(row) for row in linhas]
 
 
 def _pacote_do_json(pacote_json: str) -> AdaptacaoPacote | None:

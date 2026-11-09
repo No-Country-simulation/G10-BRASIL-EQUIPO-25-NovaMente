@@ -89,6 +89,43 @@ def test_listar_pacotes_ignora_pacote_json_corrompido(db_session, semear_materia
     assert repositorio.listar_pacotes() == []
 
 
+def test_listar_adaptacoes_usa_colunas_quando_pacote_json_corrompido(
+    cliente, db_session, semear_material
+):
+    material_id = semear_material(
+        titulo="Resumo sem pacote",
+        documento_titulo="Documento íntegro",
+        formato="Quiz",
+        perfil="Desenvolvedor",
+        nivel="Tecnico",
+        nicho="Fintech",
+        tempo_estimado_minutos=7,
+        ancoragem_score=0.77,
+        status_upload="falha",
+        conceitos_chave_json='["VCN", "Subnet"]',
+        visibilidade="publicado",
+    )
+    db_session.execute(text("UPDATE materiais SET pacote_json = '{'"))
+    db_session.commit()
+
+    resp = cliente.get("/api/v1/adaptacoes")
+
+    assert resp.status_code == 200
+    corpo = resp.json()
+    assert corpo["total"] == 1
+    item = corpo["itens"][0]
+    assert item["adaptacao_id"] == material_id
+    assert item["documento"]["titulo"] == "Documento íntegro"
+    assert item["perfil_aplicado"] == "Desenvolvedor"
+    assert item["formato_gerado"] == "Quiz"
+    assert item["nivel_detalhe_aplicado"] == "Tecnico"
+    assert item["nicho_setor_aplicado"] == "Fintech"
+    assert item["tempo_estimado_estudo_minutos"] == 7
+    assert item["ancoragem_fonte_score"] == 0.77
+    assert item["status_upload"] == "falha"
+    assert item["conceitos_chave"] == ["VCN", "Subnet"]
+
+
 def test_listar_adaptacoes_le_materiais_do_banco(cliente, semear_material):
     assert cliente.get("/api/v1/adaptacoes").json()["total"] == 0
 
