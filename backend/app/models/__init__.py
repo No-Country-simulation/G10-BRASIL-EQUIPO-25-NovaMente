@@ -235,6 +235,9 @@ from app.models.alunos import (  # noqa: E402
     AlunoAtualizacao,
     AlunoCriacao,
     AlunoResumo,
+    AtualizarVinculosInput,
     PaginaAlunos,
     StatusAluno,
+    VinculoMaterial,
+    VinculosAluno,
 )

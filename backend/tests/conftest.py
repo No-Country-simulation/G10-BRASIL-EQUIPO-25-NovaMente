@@ -25,7 +25,7 @@ from app.models import (  # noqa: E402
     FlashcardItem,
     MetadadosAdaptacao,
 )
-from app.models.db import AlunoDB, MaterialDB  # noqa: E402
+from app.models.db import AlunoDB, MaterialDB, VinculoDB  # noqa: E402
 
 
 def _pacote_exemplo(adaptacao_id: str | None = None) -> AdaptacaoPacote:
@@ -182,3 +182,24 @@ def semear_material(db_session):
         return valores["material_id"]
 
     return _semear
+
+
+@pytest.fixture
+def vincular(db_session):
+    """Vincula um aluno a um material e devolve o ``material_id``."""
+
+    def _vincular(
+        aluno_id: str, material_id: str, *, criado_em: str | None = None
+    ) -> str:
+        db_session.add(
+            VinculoDB(
+                aluno_id=aluno_id,
+                material_id=material_id,
+                criado_em=criado_em
+                or datetime.now(timezone.utc).isoformat(),
+            )
+        )
+        db_session.commit()
+        return material_id
+
+    return _vincular

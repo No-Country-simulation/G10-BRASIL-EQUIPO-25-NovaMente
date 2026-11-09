@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from ulid import ULID
 
@@ -15,8 +15,10 @@ from app.models import (
     AlunoResumo,
     PaginaAlunos,
     StatusAluno,
+    VinculoMaterial,
+    VinculosAluno,
 )
-from app.models.db import AlunoDB, VinculoDB
+from app.models.db import AlunoDB, MaterialDB, VinculoDB
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
@@ -30,6 +32,14 @@ _ORDENACAO = {
 
 class EmailJaCadastrado(Exception):
     """O e-mail informado já pertence a outro aluno."""
+
+
+class MateriaisInexistentes(Exception):
+    """Um ou mais ``material_id`` informados não existem."""
+
+    def __init__(self, material_ids: list[str]) -> None:
+        super().__init__(", ".join(material_ids))
+        self.material_ids = material_ids
 
 
 def normalizar_email(email: str) -> str:
@@ -188,4 +198,123 @@ def atualizar_aluno(
 def excluir_aluno(session: "Session", row: AlunoDB) -> None:
     """Remove o aluno; o banco aplica a cascata dos vínculos."""
     session.delete(row)
+    session.commit()
+
+
+# ── Vínculos aluno ↔ material ─────────────────────────────────────────────────
+
+
+def vinculo_de_material(
+    row: MaterialDB, vinculado_em: str
+) -> VinculoMaterial:
+    """Serializa um vínculo a partir das colunas do material.
+
+    Usa apenas as colunas desnormalizadas de ``MaterialDB``, sem abrir
+    ``pacote_json``.
+    """
+    return VinculoMaterial(
+        material_id=row.material_id,
+        titulo=row.titulo,
+        formato=row.formato,
+        perfil=row.perfil,
+        visibilidade=row.visibilidade,
+        vinculado_em=vinculado_em,
+    )
+
+
+def vinculos_do_aluno(session: "Session", aluno_id: str) -> VinculosAluno:
+    """Devolve todos os vínculos do aluno, mais recentes primeiro."""
+    linhas = session.execute(
+        select(MaterialDB, VinculoDB.criado_em)
+        .join(VinculoDB, VinculoDB.material_id == MaterialDB.material_id)
+        .where(VinculoDB.aluno_id == aluno_id)
+        .order_by(VinculoDB.criado_em.desc(), MaterialDB.material_id)
+    ).all()
+    return VinculosAluno(
+        aluno_id=aluno_id,
+        itens=[
+            vinculo_de_material(material, vinculado_em)
+            for material, vinculado_em in linhas
+        ],
+    )
+
+
+def _materiais_inexistentes(
+    session: "Session", material_ids: list[str]
+) -> list[str]:
+    """Ids informados que não existem no catálogo, em ordem estável."""
+    if not material_ids:
+        return []
+    existentes = set(
+        session.scalars(
+            select(MaterialDB.material_id).where(
+                MaterialDB.material_id.in_(material_ids)
+            )
+        ).all()
+    )
+    return sorted({mid for mid in material_ids if mid not in existentes})
+
+
+def substituir_vinculos(
+    session: "Session", aluno_id: str, material_ids: list[str]
+) -> None:
+    """Substitui o conjunto inteiro de vínculos de forma atômica.
+
+    Valida todos os ids antes de apagar/inserir; se algum não existir, nada é
+    alterado. Duplicatas são deduplicadas preservando a primeira ocorrência.
+    """
+    unicos = list(dict.fromkeys(material_ids))
+    faltando = _materiais_inexistentes(session, unicos)
+    if faltando:
+        raise MateriaisInexistentes(faltando)
+
+    agora = _agora()
+    session.execute(delete(VinculoDB).where(VinculoDB.aluno_id == aluno_id))
+    session.add_all(
+        VinculoDB(aluno_id=aluno_id, material_id=material_id, criado_em=agora)
+        for material_id in unicos
+    )
+    try:
+        session.commit()
+    except IntegrityError as exc:  # material removido entre a validação e o insert
+        session.rollback()
+        faltando = _materiais_inexistentes(session, unicos)
+        if faltando:
+            raise MateriaisInexistentes(faltando) from exc
+        raise
+
+
+def adicionar_vinculo(
+    session: "Session", aluno_id: str, material_id: str
+) -> tuple[VinculoDB, bool]:
+    """Cria o vínculo se necessário; devolve ``(linha, criado)``."""
+    row = session.get(VinculoDB, (aluno_id, material_id))
+    if row is not None:
+        return row, False
+
+    row = VinculoDB(
+        aluno_id=aluno_id, material_id=material_id, criado_em=_agora()
+    )
+    session.add(row)
+    try:
+        session.commit()
+    except IntegrityError as exc:  # corrida entre duas requisições
+        session.rollback()
+        existente = session.get(VinculoDB, (aluno_id, material_id))
+        if existente is None:
+            raise
+        return existente, False
+    return row, True
+
+
+def remover_vinculo(
+    session: "Session", aluno_id: str, material_id: str
+) -> None:
+    """Remove o vínculo, se existir; idempotente."""
+    session.execute(
+        delete(VinculoDB).where(
+            VinculoDB.aluno_id == aluno_id,
+            VinculoDB.material_id == material_id,
+        )
+    )
     session.commit()

@@ -14,6 +14,9 @@ from pydantic import (
     model_validator,
 )
 
+from app.models import FormatoSaida, PerfilDestinatario
+from app.models.materiais import VisibilidadeMaterial
+
 StatusAluno = Literal["ativo", "inativo"]
 
 
@@ -82,3 +85,30 @@ class PaginaAlunos(BaseModel):
     tamanho_pagina: int
     total: int
     total_paginas: int
+
+
+class VinculoMaterial(BaseModel):
+    """Item de ``GET /api/v1/alunos/{aluno_id}/materiais``."""
+
+    material_id: str
+    titulo: str
+    formato: FormatoSaida
+    perfil: PerfilDestinatario
+    visibilidade: VisibilidadeMaterial
+    vinculado_em: str
+
+
+class VinculosAluno(BaseModel):
+    """Resposta de ``GET/PUT /api/v1/alunos/{aluno_id}/materiais``."""
+
+    aluno_id: str
+    itens: list[VinculoMaterial]
+
+
+class AtualizarVinculosInput(BaseModel):
+    """Corpo de ``PUT /api/v1/alunos/{aluno_id}/materiais``.
+
+    O conjunto inteiro de vínculos é substituído; até 500 ids são aceitos.
+    """
+
+    material_ids: list[str] = Field(max_length=500)
