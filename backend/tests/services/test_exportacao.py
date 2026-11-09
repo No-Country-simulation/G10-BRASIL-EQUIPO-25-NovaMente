@@ -251,16 +251,11 @@ def test_pdf_nao_busca_urls_de_conteudo_malicioso(gerar, monkeypatch):
 
 @pytest.fixture
 def salvar():
-    salvos = []
-
     def _salvar(pacote):
         repositorio.salvar_pacote(pacote)
-        salvos.append(pacote.adaptacao_id)
         return pacote
 
-    yield _salvar
-    for adaptacao_id in salvos:
-        repositorio._pacotes.pop(adaptacao_id, None)
+    return _salvar
 
 
 def test_rota_formato_desconhecido():
