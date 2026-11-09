@@ -1,6 +1,10 @@
-import { EmConstrucao } from '@/components/layout/EmConstrucao';
-import { M } from '@/lib/mensagens';
+import { Suspense } from 'react';
+import { MateriaisSkeleton, MateriaisView } from '@/components/materiais/MateriaisView';
 
 export default function MateriaisPage() {
-  return <EmConstrucao titulo={M.app.navMateriais} />;
+  return (
+    <Suspense fallback={<MateriaisSkeleton />}>
+      <MateriaisView />
+    </Suspense>
+  );
 }
