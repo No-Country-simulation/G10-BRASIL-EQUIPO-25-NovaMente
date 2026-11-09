@@ -68,8 +68,14 @@ function agoraIso() {
 }
 
 function novoIdAluno() {
-  sequencia += 1;
-  return `01JALUNO${String(sequencia).padStart(18, '0')}`;
+  // Os ids da fixture usam a mesma faixa; avança até um id livre para que um
+  // POST nunca sobrescreva um aluno semeado.
+  let id: string;
+  do {
+    sequencia += 1;
+    id = `01JALUNO${String(sequencia).padStart(18, '0')}`;
+  } while (alunos.has(id));
+  return id;
 }
 
 function normalizarEmail(email: string) {

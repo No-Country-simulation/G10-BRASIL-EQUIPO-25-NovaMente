@@ -52,6 +52,21 @@ describe('estadoCatalogo — alunos', () => {
     expect(new Set(pagina.itens.map((aluno) => aluno.aluno_id)).size).toBe(6);
   });
 
+  it('criar aluno não sobrescreve nenhum aluno semeado', () => {
+    semearAlunosMock();
+    const idsOriginais = listarAlunosMock({ tamanho_pagina: 50 }).itens.map(
+      (aluno) => aluno.aluno_id,
+    );
+
+    const criado = criarAlunoMock({ nome: 'Novo Aluno', email: 'novo@exemplo.com' });
+
+    expect(idsOriginais).not.toContain(criado.aluno_id);
+    expect(listarAlunosMock({ tamanho_pagina: 50 }).total).toBe(7);
+    for (const alunoId of idsOriginais) {
+      expect(obterAlunoMock(alunoId).aluno_id).toBe(alunoId);
+    }
+  });
+
   it('limparEstadoCatalogo devolve o estado ao vazio', () => {
     semearAlunosMock();
     limparEstadoCatalogo();
