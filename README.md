@@ -165,13 +165,22 @@ Com o [GNU Make](https://www.gnu.org/software/make/) instalado, os comandos abai
 | Comando | O que faz |
 |---|---|
 | `make venv` | Cria `backend/.venv` e instala `backend/requirements.txt` |
+| `make install-backend-dev` | Cria o venv e instala também `requirements-dev.txt` (pytest) |
+| `make install` | Cria o venv com deps de dev e instala as dependências do frontend |
 | `make dev-backend` | Sobe a API FastAPI em `http://localhost:8000` |
 | `make dev-frontend` | Sobe o Next.js em `http://localhost:3000` |
-| `make install` | Cria o venv e instala as dependências do frontend |
+| `make test` | Roda `pytest` e `vitest` |
+| `make test-backend` | Roda somente `pytest` |
+| `make test-frontend` | Roda somente `vitest` |
+| `make typecheck` | Roda `tsc --noEmit` |
+| `make lint` | Roda o ESLint |
+| `make build` | Build de produção do Next.js |
+| `make e2e` | Roda o Playwright |
+| `make verificar` | DoD completo: pytest + `npm run verificar` |
 | `make help` | Lista todos os comandos disponíveis |
 
 ```bash
-make venv           # primeira execução
+make install        # primeira execução (deps de dev + frontend)
 make dev-backend    # terminal 1
 make dev-frontend   # terminal 2
 ```

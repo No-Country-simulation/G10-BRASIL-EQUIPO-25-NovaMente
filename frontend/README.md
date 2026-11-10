@@ -11,6 +11,7 @@ npm run dev
 ```
 
 > Na raiz do monorepo, `make dev-frontend` sobe o servidor (equivalente a `npm run dev`).
+> Também há `make test-frontend`, `make typecheck`, `make lint`, `make build` e `make e2e`.
 > Veja o [README principal](../README.md#atalhos-com-make-recomendado) para os demais atalhos.
 
 Abra http://localhost:3000. O MSW intercepta `/api/v1/*` e simula todo o pipeline, incluindo erros.

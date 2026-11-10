@@ -7,10 +7,14 @@
 A partir da **raiz do repositório** (funciona em Linux/macOS e Windows com GNU Make instalado):
 
 ```bash
-make venv                        # cria backend/.venv e instala requirements.txt
+make install-backend-dev         # cria backend/.venv com requirements-dev.txt
 cp backend/.env.example backend/.env   # depois preencha GOOGLE_API_KEY
 make dev-backend                 # sobe a API em http://localhost:8000
+make test-backend                # roda pytest
 ```
+
+Use `make venv` se quiser apenas as dependências de produção
+(`requirements.txt`).
 
 > No Windows (PowerShell/CMD), use `copy backend\.env.example backend\.env`.
 
