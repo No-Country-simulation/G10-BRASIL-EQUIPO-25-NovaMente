@@ -143,6 +143,56 @@ export const M = {
       creditos: 'NovaMente · ONE G10 Brasil · No Country · Alura',
     },
   },
+  tour: {
+    verTour: 'Ver tour',
+    proximo: 'Próximo',
+    anterior: 'Anterior',
+    concluir: 'Concluir',
+    pular: 'Pular tour',
+    progresso: '{{current}} de {{total}}',
+    passos: {
+      boasVindas: {
+        titulo: 'Bem-vindo ao NovaMente',
+        descricao:
+          'Transforme documentação técnica em material didático personalizado, com ancoragem na fonte.',
+      },
+      publicos: {
+        titulo: 'Empresa ou aluno',
+        descricao:
+          'A empresa gera, publica e vincula materiais. O aluno estuda apenas o que foi liberado para ele.',
+      },
+      empresa: {
+        titulo: 'Área da empresa',
+        descricao:
+          'Navegue entre gerar, histórico, materiais e alunos. O tour segue por cada uma dessas etapas.',
+      },
+      gerar: {
+        titulo: 'Gerar material',
+        descricao:
+          'Envie um PDF, Markdown ou texto, escolha perfil, formato e nível e acompanhe a geração.',
+      },
+      historico: {
+        titulo: 'Histórico',
+        descricao:
+          'Todo material gerado fica registrado aqui, com filtros e acesso ao resultado.',
+      },
+      materiais: {
+        titulo: 'Catálogo e publicação',
+        descricao:
+          'Revise o título, publique ou volte para rascunho e exclua materiais. Só publicados e vinculados chegam ao aluno.',
+      },
+      alunos: {
+        titulo: 'Alunos e vínculos',
+        descricao:
+          'Cadastre alunos e escolha quais materiais publicados cada um pode estudar.',
+      },
+      aluno: {
+        titulo: 'Área do aluno',
+        descricao:
+          'O aluno se identifica sem senha e vê apenas os materiais publicados e vinculados a ele.',
+      },
+    },
+  },
   app: {
     nome: 'NovaMente',
     navGerar: 'Gerar',

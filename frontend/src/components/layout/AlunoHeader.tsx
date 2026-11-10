@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { SkinSwitcher } from './SkinSwitcher';
+import { TourLauncher } from './TourLauncher';
 import { useIdentidadeAluno } from '@/features/aluno/useIdentidadeAluno';
 import { M } from '@/lib/mensagens';
 import { ROTAS } from '@/lib/rotas';
@@ -30,6 +31,7 @@ export function AlunoHeader() {
               {M.app.trocarAluno}
             </Link>
           )}
+          <TourLauncher origem="aluno" />
           <SkinSwitcher />
           <Link
             href={ROTAS.empresaGerar}

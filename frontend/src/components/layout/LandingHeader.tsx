@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { SkinSwitcher } from './SkinSwitcher';
+import { TourLauncher } from './TourLauncher';
 import { M } from '@/lib/mensagens';
 import { ROTAS } from '@/lib/rotas';
 
@@ -28,6 +29,7 @@ export function LandingHeader() {
           </nav>
         </div>
         <div className="flex items-center gap-2">
+          <TourLauncher origem="landing" />
           <SkinSwitcher />
           <Link href={ROTAS.aluno} className="inline-flex h-11 items-center px-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]">
             {M.landing.header.souAluno}

@@ -37,7 +37,7 @@ export function HistoricoView() {
   }, [busca]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour="empresa-historico-lista">
       <h1 className="text-2xl font-semibold">{M.historico.titulo}</h1>
 
       <div className="flex flex-wrap gap-3">

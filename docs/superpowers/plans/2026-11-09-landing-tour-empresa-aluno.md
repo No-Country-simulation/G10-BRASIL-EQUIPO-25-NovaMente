@@ -1190,7 +1190,7 @@ git commit -m "feat(frontend): adiciona identificação, catálogo e leitura do 
 - Consumes: `ROTAS`, `router.push`.
 - Produces: `iniciarTour(origem: 'landing' | 'empresa' | 'aluno' | 'completo'): Promise<void>`; `deveAutoIniciar(): boolean`; `marcarConcluido(): void`; `useTour()`; `TourLauncher({ origem, iniciar? })`; `criarDriver(passos)` em `driver.ts`.
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```tsx
 it('auto-inicia uma única vez em /empresa/gerar', async () => {
@@ -1215,12 +1215,12 @@ it('pula passo cujo alvo não existe e continua', async () => {
 
 Cobrir: subconjuntos por origem; `?tour=1` completo; `Esc`/pular persiste; não auto-inicia em `/aluno`.
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `cd frontend && npm test -- src/features/tour src/components/layout/TourLauncher.test.tsx`
 Expected: FAIL.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 Instalar `driver.js` (1.x). `useTour` importa `./driver` de forma dinâmica (`await import('./driver')`); `driver.ts` importa `driver.js/dist/driver.css`, faz `const { driver } = await import('driver.js')` e expõe `criarDriver(passos)`, `aguardarElemento(seletor, 2500)` com `MutationObserver`/timeout e `filtrarPassosDisponiveis(passos, existe = (s) => !!document.querySelector(s))`. Assim o wrapper, a lib e o CSS ficam fora do bundle inicial. `useTour` monta os 8 passos e os subconjuntos:
 
@@ -1237,12 +1237,12 @@ Adicionar `TourLauncher` ao `LandingHeader` (`origem="landing"`), `EmpresaHeader
 
 Adicionar os `data-tour` exatos da spec: `landing-hero`, `landing-publicos`, `empresa-nav`, `empresa-gerar-form`, `empresa-historico-lista`, `empresa-materiais-lista`, `empresa-alunos-lista`, `aluno-identificacao`, `aluno-catalogo`.
 
-- [ ] **Step 4: Rodar e confirmar**
+- [x] **Step 4: Rodar e confirmar**
 
 Run: `cd frontend && npm test -- src/features/tour src/components/layout/TourLauncher.test.tsx && npm run build`
 Expected: PASS; `driver.js` não aparece no bundle inicial.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/package.json frontend/package-lock.json frontend/src

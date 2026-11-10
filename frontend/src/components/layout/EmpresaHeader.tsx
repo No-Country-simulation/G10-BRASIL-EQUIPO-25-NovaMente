@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { SkinSwitcher } from './SkinSwitcher';
+import { TourLauncher } from './TourLauncher';
 import { M } from '@/lib/mensagens';
 import { ROTAS } from '@/lib/rotas';
 import { cn } from '@/lib/cn';
@@ -56,6 +57,7 @@ export function EmpresaHeader() {
           >
             {M.app.areaAluno}
           </Link>
+          <TourLauncher origem="empresa" />
           <SkinSwitcher />
           <button
             type="button"

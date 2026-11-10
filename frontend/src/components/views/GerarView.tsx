@@ -59,7 +59,7 @@ export function GerarView() {
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[380px_minmax(0,1fr)]">
-      <section aria-labelledby="form-titulo">
+      <section aria-labelledby="form-titulo" data-tour="empresa-gerar-form">
         <h1 id="form-titulo" className="mb-4 text-xl font-semibold">
           {M.formulario.titulo}
         </h1>

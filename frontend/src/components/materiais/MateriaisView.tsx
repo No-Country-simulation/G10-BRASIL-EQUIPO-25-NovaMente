@@ -114,7 +114,7 @@ export function MateriaisView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour="empresa-materiais-lista">
       <h1 className="text-2xl font-semibold">{M.materiais.titulo}</h1>
 
       <div className="flex flex-wrap gap-3">
@@ -275,10 +275,7 @@ export function MateriaisView() {
       )}
 
       {data && data.itens.length > 0 && (
-        <ul
-          data-tour="empresa-materiais-lista"
-          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-        >
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {data.itens.map((material) => (
             <li key={material.material_id}>
               <MaterialCard

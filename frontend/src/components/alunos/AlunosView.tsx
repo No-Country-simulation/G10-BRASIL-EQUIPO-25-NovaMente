@@ -83,7 +83,7 @@ export function AlunosView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour="empresa-alunos-lista">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">{M.alunos.titulo}</h1>
         <Button onClick={abrirCriacao}>{M.alunos.novo}</Button>
@@ -188,7 +188,7 @@ export function AlunosView() {
       )}
 
       {data && data.itens.length > 0 && (
-        <div className="overflow-x-auto" data-tour="empresa-alunos-lista">
+        <div className="overflow-x-auto">
           <table className="block w-full md:table">
             <caption className="sr-only">{M.alunos.titulo}</caption>
             <thead className="hidden md:table-header-group">

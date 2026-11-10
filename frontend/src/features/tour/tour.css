@@ -1,0 +1,62 @@
+.novamente-tour {
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  max-width: min(24rem, calc(100vw - 2rem));
+}
+
+.novamente-tour .driver-popover-title {
+  color: var(--fg);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.novamente-tour .driver-popover-description {
+  color: var(--fg-muted);
+  line-height: 1.5;
+}
+
+.novamente-tour .driver-popover-footer-btn,
+.novamente-tour .driver-popover-close-btn {
+  min-height: 44px;
+  min-width: 44px;
+  border-radius: 0.5rem;
+}
+
+.novamente-tour .driver-popover-footer-btn {
+  padding: 0 1rem;
+  font-weight: 500;
+}
+
+.novamente-tour .driver-popover-next-btn {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: transparent;
+  text-shadow: none;
+}
+
+.novamente-tour .driver-popover-next-btn:hover,
+.novamente-tour .driver-popover-next-btn:focus-visible {
+  background: var(--accent-hover);
+}
+
+.novamente-tour .driver-popover-prev-btn {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  text-shadow: none;
+}
+
+.novamente-tour .driver-popover-progress-text {
+  color: var(--fg-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .driver-overlay-animated,
+  .driver-popover,
+  .driver-popover * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
