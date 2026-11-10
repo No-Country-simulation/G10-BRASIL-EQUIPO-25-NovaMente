@@ -1,24 +1,99 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-const ROTAS = [
-  { rota: '/', titulo: /gerar material didático/i },
-  { rota: '/historico', titulo: 'Histórico' },
-  { rota: '/resultado/01JAVCNFLCARD00000000001', titulo: /dominando redes na nuvem/i },
-];
+interface CasoAcessibilidade {
+  rota: string;
+  titulo: RegExp | string;
+  preparar?: (page: Page) => Promise<void>;
+  espera?: (page: Page) => Promise<void>;
+}
 
-for (const { rota, titulo } of ROTAS) {
-  test(`sem violação crítica de acessibilidade em ${rota}`, async ({ page }) => {
-    await page.goto(rota);
-    // A página só ganha conteúdo depois do worker do MSW e da query do pacote.
-    await expect(page.getByRole('heading', { name: titulo })).toBeVisible();
-    if (rota === '/historico') {
-      // O <h1> aparece antes da query terminar; sem um item real o axe analisaria
-      // o skeleton da lista.
+const ROTAS: CasoAcessibilidade[] = [
+  {
+    rota: '/',
+    titulo: /material didático/i,
+    espera: async (page) => {
+      await expect(page.getByRole('link', { name: /área da empresa/i }).first()).toBeVisible();
+    },
+  },
+  {
+    rota: '/empresa/gerar',
+    titulo: /gerar material didático/i,
+    espera: async (page) => {
+      await expect(page.getByRole('button', { name: /iniciante \+ flashcards/i })).toBeVisible();
+    },
+  },
+  {
+    rota: '/empresa/historico',
+    titulo: 'Histórico',
+    espera: async (page) => {
+      // O <h1> aparece antes da query terminar; sem um item real o axe
+      // analisaria o skeleton da lista.
       await page
         .getByRole('link', { name: /introdução à arquitetura de redes vcn/i })
+        .first()
         .waitFor();
-    }
+    },
+  },
+  {
+    rota: '/empresa/resultado/01JAVCNFLCARD00000000001',
+    titulo: /dominando redes na nuvem/i,
+    espera: async (page) => {
+      await page.getByRole('button', { name: /mostrar verso/i }).first().waitFor();
+    },
+  },
+  {
+    rota: '/empresa/materiais',
+    titulo: 'Materiais',
+    espera: async (page) => {
+      await page.getByRole('link', { name: /dominando redes na nuvem/i }).first().waitFor();
+    },
+  },
+  {
+    rota: '/empresa/alunos',
+    titulo: 'Alunos',
+    espera: async (page) => {
+      await page.getByText('Ana Beatriz Silva').waitFor();
+    },
+  },
+  {
+    rota: '/aluno',
+    titulo: /quem está estudando/i,
+    espera: async (page) => {
+      await page.getByRole('button', { name: /selecionar ana beatriz/i }).waitFor();
+    },
+  },
+  {
+    rota: '/aluno/materiais/01JAVCNQUIZ000000000002',
+    titulo: /vcn na prática/i,
+    preparar: async (page) => {
+      await page.addInitScript(() => {
+        window.localStorage.setItem(
+          'novamente.aluno',
+          JSON.stringify({ aluno_id: '01JALUNO000000000000000001', nome: 'Ana Beatriz Silva' }),
+        );
+      });
+    },
+    espera: async (page) => {
+      await page.getByRole('radio').first().waitFor();
+    },
+  },
+];
+
+for (const { rota, titulo, preparar, espera } of ROTAS) {
+  test(`sem violação crítica de acessibilidade em ${rota}`, async ({ page }) => {
+    // O tour auto-iniciado em /empresa/gerar cobriria a tela com o overlay.
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        'novamente.tour',
+        JSON.stringify({ versao: 1, concluido_em: new Date().toISOString() }),
+      );
+    });
+    await preparar?.(page);
+
+    await page.goto(rota);
+    await expect(page.getByRole('heading', { name: titulo }).first()).toBeVisible();
+    await espera?.(page);
     await page.waitForLoadState('networkidle');
 
     const resultado = await new AxeBuilder({ page }).analyze();

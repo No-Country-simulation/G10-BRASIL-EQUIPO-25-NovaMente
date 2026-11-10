@@ -54,17 +54,34 @@ servidor) e o Chromium do Playwright instalado uma vez com `npx playwright insta
 
 ## Estrutura
 
-- `src/app` — rotas do App Router (`/`, `/historico`, `/resultado/[id]`), layout, providers
+- `src/app` — rotas do App Router:
+  - `/` — landing pública;
+  - `/empresa/gerar`, `/empresa/historico`, `/empresa/resultado/[id]` — geração e histórico;
+  - `/empresa/materiais` — catálogo administrativo;
+  - `/empresa/alunos`, `/empresa/alunos/[id]` — alunos e vínculos;
+  - `/aluno`, `/aluno/materiais/[id]` — identificação, catálogo e leitura do aluno.
 - `src/components/ui` — átomos e primitivos (shadcn)
-- `src/components/layout` — shell, header, banner de saúde, troca de skin
+- `src/components/landing` — seções da landing pública
+- `src/components/layout` — shells, headers, banner de saúde, troca de skin e `TourLauncher`
 - `src/components/views` — visualizadores e páginas client
 - `src/components/forms` — formulário de ingestão e cenários
-- `src/features` — hooks de fluxo (formulário, job, histórico, exportação, OCI, saúde)
+- `src/components/materiais` — catálogo, edição e exclusão de materiais
+- `src/components/alunos` — lista, formulário, detalhe e painel de vínculos
+- `src/components/aluno` — identificação, catálogo e material do aluno
+- `src/features` — hooks de fluxo (formulário, job, histórico, materiais, alunos, aluno, exportação, OCI, saúde e tour)
 - `src/services/api` — `NovaMenteApi`, cliente HTTP e normalização de erros
-- `src/mocks` — handlers MSW e fixtures validadas por zod
+- `src/mocks` — handlers MSW, estado em memória e fixtures validadas por zod
 - `src/types` — schemas zod e tipos do contrato
 - `src/themes` — tokens e skins `violeta` e `ciano`
-- `e2e` — os três cenários do edital e a checagem de acessibilidade com axe
+- `e2e` — cenários de geração, histórico, landing/empresa, aluno, tour, responsividade e acessibilidade com axe
+
+## Tour guiado
+
+- `driver.js` é carregado por import dinâmico em `src/features/tour/driver.ts`; a lib e o CSS não entram no bundle inicial.
+- São 8 passos sobre as telas reais. O subconjunto depende da origem: landing (1–8), empresa (3–8), aluno (8) e `?tour=1` (1–8).
+- O tour auto-inicia **uma vez** em `/empresa/gerar`, após 600 ms, se `localStorage['novamente.tour']` não existir ou tiver versão antiga.
+- "Ver tour" sempre reinicia; `Esc`/fechar gravam a conclusão em `novamente.tour = { versao: 1, concluido_em }`.
+- Passos sem alvo no DOM são pulados após 2.500 ms.
 
 ## Decisões que valem saber
 
@@ -146,20 +163,34 @@ Cobertura de `src/features/**` + `src/services/**`: 90,4% statements, 82,1% bran
 
 ## Testes E2E (Playwright)
 
-Os testes cobrem os três cenários do edital e a acessibilidade (axe) das rotas principais,
-rodando com o mock de API no browser (NEXT_PUBLIC_API_MOCK=1).
+Os testes cobrem os cenários de geração, upload, histórico, landing, área da empresa, área do aluno, tour, responsividade e acessibilidade (axe), rodando com o mock de API no browser (`NEXT_PUBLIC_API_MOCK=1`).
 
 ```bash
 npx playwright install chromium   # uma vez por máquina
-npm run e2e                       # sobe o next dev e roda os 6 testes
-npm run e2e -- 3-historico        # filtra por arquivo
+npm run e2e                       # sobe o next dev e roda os 16 testes
+npm run e2e -- 6-landing          # filtra por arquivo
 ```
+
+| Arquivo | Cobertura |
+|---|---|
+| `1-gerar-flashcards.spec.ts` | Geração, virar cartão e exportar Markdown/CSV |
+| `2-upload-quiz.spec.ts` | Upload de Markdown, quiz e placar |
+| `3-historico-exportacao.spec.ts` | Histórico, download JSON e CSV indisponível |
+| `4-acessibilidade.spec.ts` | axe sem violação crítica nas rotas principais |
+| `5-responsivo.spec.ts` | Sem rolagem horizontal em 375 px e 320 px |
+| `6-landing-empresa.spec.ts` | Landing, geração, publicação, edição, aluno, vínculo e exclusão |
+| `7-aluno-catalogo.spec.ts` | Identificação, catálogo, quiz, 404 unificado e troca de aluno |
+| `8-tour.spec.ts` | Auto-start, persistência, reinício e `?tour=1` |
 
 - `playwright.config.ts` usa `workers: 1` e nunca reaproveita um servidor já no ar
   (`reuseExistingServer: false`), para não rodar contra o FastAPI real por acidente.
   Pare qualquer `next dev` na porta 3000 antes de rodar.
-- Cada teste abre um contexto de browser novo; o estado do mock (jobs e pacotes) vive na
-  memória da página, então recarregar a página reseta o histórico para a fixture semeada.
+- Cada teste abre um contexto de browser novo; o estado do mock (jobs, pacotes,
+  alunos e vínculos) vive na memória da página, então recarregar a página reseta
+  o estado para as fixtures semeadas. A navegação entre telas é feita por links
+  para preservar o que foi gerado na mesma sessão.
+- Os specs que não testam o tour gravam `novamente.tour` via `addInitScript`
+  para impedir que o auto-start cubra a tela durante o fluxo.
 - Reporter `list` no terminal e relatório HTML em `playwright-report/` (`open: 'never'`, não abre
   sozinho); traces de retry ficam em `test-results/`. Ambos são ignorados pelo git.
 

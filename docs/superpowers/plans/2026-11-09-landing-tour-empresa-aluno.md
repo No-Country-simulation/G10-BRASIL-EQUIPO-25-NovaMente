@@ -1269,7 +1269,7 @@ git commit -m "feat(frontend): adiciona tour guiado nas telas reais"
 - Consumes: tudo das tarefas anteriores.
 - Produces: suíte E2E verde, axe sem violação crítica, documentação atualizada.
 
-- [ ] **Step 1: Escrever os E2E**
+- [x] **Step 1: Escrever os E2E**
 
 `6-landing-empresa.spec.ts`:
 1. Abre `/`, confere hero, CTAs e os quatro formatos.
@@ -1294,12 +1294,12 @@ git commit -m "feat(frontend): adiciona tour guiado nas telas reais"
 
 Atualizar os E2E existentes para as rotas novas (`/empresa/gerar`, `/empresa/historico`, `/empresa/resultado/...`).
 
-- [ ] **Step 2: Rodar e ver falhar**
+- [x] **Step 2: Rodar e ver falhar**
 
 Run: `cd frontend && npm run e2e`
 Expected: FAIL nos specs novos antes dos ajustes finais.
 
-- [ ] **Step 3: Corrigir e cobrir acessibilidade**
+- [x] **Step 3: Corrigir e cobrir acessibilidade**
 
 Adicionar às rotas `/`, `/empresa/materiais`, `/empresa/alunos`, `/aluno`, `/aluno/materiais/[id]` a checagem `@axe-core/playwright` sem violações críticas. Ajustar foco, rótulos, contraste e diálogos até passar.
 
@@ -1309,7 +1309,7 @@ Atualizar READMEs:
 - Frontend: mapa de rotas `/`, `/empresa/*`, `/aluno/*`; tour; modo mock; comandos.
 - README raiz: nova estrutura de telas e fluxo empresa × aluno.
 
-- [ ] **Step 4: Verificação final**
+- [x] **Step 4: Verificação final**
 
 Run: `backend/.venv/Scripts/python.exe -m pytest backend/tests -v`
 Expected: PASS.
@@ -1317,7 +1317,7 @@ Expected: PASS.
 Run: `cd frontend && npm run typecheck && npm run lint && npm run test:coverage && npm run build && npm run e2e`
 Expected: PASS; cobertura ≥ 80% em `features`/`services`; axe sem violação crítica.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/e2e frontend/README.md backend/README.md README.md

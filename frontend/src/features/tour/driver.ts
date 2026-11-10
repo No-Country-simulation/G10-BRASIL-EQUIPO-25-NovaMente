@@ -1,5 +1,6 @@
 import type { Config, DriveStep, Driver } from 'driver.js';
 import { M } from '@/lib/mensagens';
+import 'driver.js/dist/driver.css';
 import './tour.css';
 
 /** Passo do tour com a rota em que o alvo deve estar montado. */

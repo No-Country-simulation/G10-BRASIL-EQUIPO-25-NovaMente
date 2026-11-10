@@ -34,6 +34,10 @@
 ## Principais Funcionalidades
 ### Funcionalidades Planejadas / Previstas para o MVP:
 - Formulário de ingestão multiorigem (upload de arquivos `.pdf`, `.md`, `.txt` ou inserção de texto copiado).
+- Landing pública com apresentação do produto, formatos e tour guiado pelas telas reais.
+- Separação entre **área da empresa** (`/empresa/*`) e **área do aluno** (`/aluno/*`).
+- Catálogo durável de materiais em SQLite, com rascunho, publicação, edição e exclusão.
+- CRUD de alunos e vínculos aluno ↔ material, com identificação leve do aluno (sem senha).
 - Parametrização por perfil de destinatário, formato de saída, nicho/setor e nível de detalhe.
 - Execução assíncrona com monitoramento de etapas e progresso via polling de jobs.
 - Renderizadores visuais dedicados para Flashcards, Quiz Interativo e Documentos Markdown.
@@ -67,7 +71,7 @@ O desenvolvimento do projeto segue uma metodologia ágil adaptada para entregas 
 ---
 
 ## Stack Tecnológica
-- **Backend:** Python 3.11+, FastAPI, Pydantic v2, Uvicorn, LangChain, ChromaDB (Vector Store), Google Gemini API (LLM).
+- **Backend:** Python 3.11+, FastAPI, Pydantic v2, Uvicorn, SQLAlchemy 2 + SQLite (catálogo de materiais, alunos e vínculos), LangChain, ChromaDB (Vector Store), Google Gemini API (LLM).
 - **Frontend:** Next.js (App Router), TypeScript, Tailwind CSS, shadcn/ui, TanStack Query, Zustand, React Hook Form + Zod, Framer Motion, React Markdown.
 - **Armazenamento e Nuvem:** OCI Object Storage (Oracle Cloud Infrastructure - camada *Always Free*).
 - **Testes e Qualidade:** Pytest, Vitest, Testing Library, Playwright e MSW (*Mock Service Worker*) para contratos de rede.
@@ -83,26 +87,50 @@ O repositório está organizado como um monorepo contendo os módulos de backend
 ├── backend/
 │   ├── app/
 │   │   ├── api/v1/         # Rotas e endpoints REST da API
-│   │   ├── core/           # Configurações globais e tratamento de erros
-│   │   ├── models/         # Schemas Pydantic v2
+│   │   ├── core/           # Configurações globais, erros e engine SQLite
+│   │   ├── models/         # Schemas Pydantic v2 e modelos ORM
 │   │   ├── rag/            # Lógica de pipeline RAG, embeddings e ChromaDB
-│   │   ├── services/       # Serviços de OCI, extração, jobs e repositório
+│   │   ├── services/       # OCI, extração, jobs, repositório, catálogo e alunos
 │   │   └── main.py         # Ponto de entrada da aplicação FastAPI
 │   ├── data/exemplos/      # Fixtures e textos de demonstração
+│   │   └── novamente.db    # Banco SQLite local (gitignored, criado em runtime)
 │   ├── tests/              # Testes unitários e de integração (pytest)
 │   └── requirements.txt    # Dependências Python do backend
 ├── frontend/
 │   ├── src/
-│   │   ├── app/            # Rotas do Next.js (Gerar, Resultado, Histórico)
-│   │   ├── components/     # Componentes de UI, formulários e visualizadores
+│   │   ├── app/            # Rotas: landing, /empresa/* e /aluno/*
+│   │   ├── components/     # UI, landing, empresa, aluno e visualizadores
 │   │   ├── features/       # Hooks e regras de negócio encapsuladas
 │   │   ├── services/       # Cliente de API e adaptadores de transporte
 │   │   ├── types/          # Schemas Zod e tipos globais
 │   │   └── mocks/          # Handlers e fixtures do MSW
+│   ├── e2e/                # Playwright: fluxos, tour, responsivo e axe
 │   └── package.json        # Dependências Node.js do frontend
 └── docs/                   # Documentação técnica e especificações do projeto
 
 ```
+
+## Áreas da aplicação
+
+```text
+/                     landing pública + tour
+/empresa/gerar        geração de material
+/empresa/historico    histórico de pacotes gerados
+/empresa/resultado/:id  detalhe, OCI e exportação
+/empresa/materiais    catálogo: rascunho, publicado, editar e excluir
+/empresa/alunos       CRUD de alunos
+/empresa/alunos/:id   detalhe do aluno + vínculos com materiais
+/aluno                identificação por nome + catálogo liberado
+/aluno/materiais/:id  leitura do material pelo aluno
+```
+
+Fluxo empresa × aluno:
+
+1. A empresa gera o material em `/empresa/gerar`; ele nasce como **rascunho**.
+2. Em `/empresa/materiais`, a empresa revisa, publica e pode excluir.
+3. Em `/empresa/alunos/:id`, vincula materiais publicados (ou ainda em rascunho) ao aluno.
+4. O aluno se identifica sem senha em `/aluno` e vê somente materiais **publicados e vinculados** ao seu `aluno_id`.
+5. Acesso direto a material não liberado responde `404 MATERIAL_NAO_DISPONIVEL`, sem revelar sua existência.
 
 
 
@@ -188,6 +216,7 @@ Edite o `.env` e preencha:
 - `GOOGLE_API_KEY`: chave da API Google Gemini (obrigatória; nunca a envie para o repositório).
 - `MODELO_LLM`: modelo Gemini usado na geração (padrão: `gemini-3.5-flash-lite`).
 - `CHROMA_DIR`: pasta do ChromaDB, relativa a `backend/` (ex.: `./data/chroma`).
+- `DATABASE_URL`: banco do catálogo (padrão: `sqlite:///./data/novamente.db`, relativo a `backend/`). O schema é criado no start da API; não há migrations nesta fase.
 
 ##### (Opcional) Liste os modelos disponíveis para a sua chave:
 ```bash

@@ -262,6 +262,37 @@ export function registrarMaterialMock(material: MaterialMock) {
   materiais.set(material.material_id, structuredClone(material));
 }
 
+/**
+ * Material criado pelo pipeline: espelha o backend, que persiste o pacote e
+ * cria o material em rascunho quando o job termina. Chamado pelo handler de
+ * jobs para que o resultado e o catálogo enxerguem o material gerado.
+ */
+export function registrarPacoteNoCatalogoMock(pacote: AdaptacaoPacote): MaterialResumo {
+  const existente = catalogo.get(pacote.adaptacao_id);
+  const resumo: MaterialResumo = {
+    material_id: pacote.adaptacao_id,
+    adaptacao_id: pacote.adaptacao_id,
+    titulo: existente?.titulo ?? pacote.conteudo_adaptado.titulo.slice(0, 150),
+    documento_titulo: pacote.documento.titulo,
+    perfil: pacote.metadados.perfil_aplicado,
+    formato: pacote.metadados.formato_gerado,
+    nivel: pacote.metadados.nivel_detalhe_aplicado,
+    nicho: pacote.metadados.nicho_setor_aplicado,
+    visibilidade: existente?.visibilidade ?? 'rascunho',
+    tempo_estimado_estudo_minutos: pacote.metadados.tempo_estimado_estudo_minutos,
+    ancoragem_fonte_score: pacote.avaliacao_qualidade.ancoragem_fonte_score,
+    status_upload: pacote.armazenamento_oci.status_upload,
+    criado_em: existente?.criado_em ?? pacote.criado_em,
+    atualizado_em: existente?.atualizado_em ?? pacote.criado_em,
+  };
+
+  catalogo.set(resumo.material_id, resumo);
+  materiais.set(resumo.material_id, materialParaVinculo(resumo));
+  pacotes.set(resumo.material_id, structuredClone(pacote));
+  return structuredClone(resumo);
+}
+
+
 export function listarAlunosMock(filtros: FiltrosAlunosMock = {}): PaginaAlunos {
   const pagina = filtros.pagina ?? 1;
   const tamanho = filtros.tamanho_pagina ?? LIMITES.paginaPadrao;

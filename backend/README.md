@@ -28,10 +28,7 @@ source .venv/bin/activate          # Linux/macOS
 # .venv\Scripts\Activate.ps1       # Windows (PowerShell)
 
 # 2. Instale as dependências
-pip install -r requirements.txt
-# 1. Instale as dependências (produção: requirements.txt;
-#    desenvolvimento e testes: requirements-dev.txt)
-cd backend
+#    Produção: requirements.txt | Desenvolvimento e testes: requirements-dev.txt
 pip install -r requirements-dev.txt
 
 # 3. Crie o arquivo de variáveis de ambiente
@@ -47,12 +44,41 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | Variável | Obrigatória | Descrição |
 |---|---|---|
 | `GOOGLE_API_KEY` | ✅ | Chave da API Google Gemini |
+| `DATABASE_URL` | — | Banco SQLAlchemy. Default: `sqlite:///./data/novamente.db` (relativo a `backend/`) |
 | `OCI_NAMESPACE` | — | Namespace do OCI Object Storage |
 | `OCI_BUCKET` | — | Nome do bucket (default: `novamente-conteudos-educativos`) |
 | `OCI_REGIAO` | — | Região OCI (ex: `sa-saopaulo-1`) |
 | `LLM_TIMEOUT_SEGUNDOS` | — | Tempo limite de cada chamada ao Gemini, em segundos (default: `120`) |
 | `CHROMA_DIR` | — | Diretório do ChromaDB (default: `/data/chroma`) |
 | `MODELO_LLM` | — | Modelo Gemini (default: `gemini-3.5-flash-lite`) |
+
+## Banco de dados e catálogo
+
+O catálogo de materiais, alunos e vínculos é persistido em SQLite via SQLAlchemy 2.
+
+- Arquivo padrão: `backend/data/novamente.db` (criado automaticamente no `lifespan`).
+- O engine habilita `PRAGMA foreign_keys=ON`, `PRAGMA journal_mode=WAL` e `check_same_thread=False`.
+- Os arquivos `*.db`, `*.db-wal` e `*.db-shm` ficam fora do git.
+- **Não há Alembic/migrations nesta fase.** `create_all` só cria tabelas ausentes; mudanças de schema exigem migração ou recriação controlada.
+- Jobs continuam **em memória** (TTL de 30 min). Pacotes já finalizados sobrevivem ao reinício.
+- `material_id` é igual a `adaptacao_id` nesta fase; todo material gerado nasce com `visibilidade = "rascunho"`.
+- Excluir aluno remove vínculos em cascata; excluir material remove vínculos em cascata e tenta apagar o objeto do OCI.
+
+### Rotas novas
+
+Base: `/api/v1`.
+
+| Grupo | Rotas |
+|---|---|
+| Materiais (empresa) | `GET/PATCH/DELETE /materiais`, `GET /materiais/{id}` |
+| Alunos (empresa) | `POST/GET /alunos`, `GET/PATCH/DELETE /alunos/{id}` |
+| Vínculos | `GET/PUT /alunos/{id}/materiais`, `POST/DELETE /alunos/{id}/materiais/{material_id}` |
+| Área do aluno | `GET /aluno/identificacao`, `GET /aluno/materiais`, `GET /aluno/materiais/{id}` |
+
+Não existe `POST /materiais`: a criação continua em `POST /adaptacoes` e `POST /adaptacoes/upload`, e o pipeline cria o material em rascunho ao concluir.
+
+O guia completo de alterações, schema, erros e checklist de handoff está em
+[`docs/backend-alteracoes-2026-11-09.md`](../docs/backend-alteracoes-2026-11-09.md).
 
 ## Documentação Interativa
 
@@ -69,6 +95,11 @@ cd backend
 pip install -r requirements-dev.txt
 pytest tests/ -v
 ```
+
+O `conftest.py` aponta `DATABASE_URL` para um diretório temporário por sessão,
+cria o schema e limpa as tabelas entre os testes. A suíte não toca em
+`backend/data/novamente.db`. A entrega adiciona 88 testes cobrindo banco,
+repositório, materiais, alunos, vínculos e catálogo do aluno.
 
 ## Integração com o Frontend
 

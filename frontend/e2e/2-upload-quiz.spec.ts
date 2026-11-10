@@ -1,7 +1,13 @@
 import { expect, test } from '@playwright/test';
 
 test('upload de Markdown gera quiz, responde tudo e mostra placar', async ({ page }) => {
-  await page.goto('/');
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      'novamente.tour',
+      JSON.stringify({ versao: 1, concluido_em: new Date().toISOString() }),
+    );
+  });
+  await page.goto('/empresa/gerar');
   await page.getByLabel(/título do documento/i).fill('Manual de VCN para devs');
   await page.getByRole('tab', { name: /enviar arquivo/i }).click();
   await page.setInputFiles('input[type="file"]', {
@@ -17,7 +23,7 @@ test('upload de Markdown gera quiz, responde tudo e mostra placar', async ({ pag
   await expect(page.getByRole('radio', { name: /quiz interativo/i })).toBeChecked();
   await page.getByRole('button', { name: /gerar material/i }).click();
 
-  await expect(page).toHaveURL(/\/resultado\//, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/empresa\/resultado\//, { timeout: 30_000 });
   await expect(page.getByRole('heading', { name: /vcn na prática/i })).toBeVisible();
 
   for (let i = 0; i < 6; i += 1) {
