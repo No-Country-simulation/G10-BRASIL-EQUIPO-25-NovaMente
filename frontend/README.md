@@ -14,6 +14,10 @@ npm run dev
 > Também há `make test-frontend`, `make typecheck`, `make lint`, `make build` e `make e2e`.
 > Veja o [README principal](../README.md#atalhos-com-make-recomendado) para os demais atalhos.
 
+> O CLI `shadcn` **não** é dependência do projeto. Para adicionar componentes, use
+> `npx shadcn@latest add ...`. O CSS base gerado por ele é vendorizado em
+> `src/styles/shadcn-tailwind.css` para manter o `npm audit` limpo.
+
 Abra http://localhost:3000. O MSW intercepta `/api/v1/*` e simula todo o pipeline, incluindo erros.
 
 O worker do MSW é servido de `public/mockServiceWorker.js`; se ele for apagado, `npm install`

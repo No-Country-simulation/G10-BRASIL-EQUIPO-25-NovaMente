@@ -176,6 +176,7 @@ Com o [GNU Make](https://www.gnu.org/software/make/) instalado, os comandos abai
 | `make lint` | Roda o ESLint |
 | `make build` | Build de produção do Next.js |
 | `make e2e` | Roda o Playwright |
+| `make audit` | Roda `npm audit` no `frontend/` |
 | `make verificar` | DoD completo: pytest + `npm run verificar` |
 | `make help` | Lista todos os comandos disponíveis |
 

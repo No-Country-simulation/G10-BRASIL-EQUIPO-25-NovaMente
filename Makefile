@@ -43,7 +43,7 @@ NPM ?= npm
 
 .PHONY: help venv install-backend install-backend-dev install-frontend install \
         dev-backend dev-frontend test-backend test-frontend test \
-        typecheck lint build e2e verificar
+        typecheck lint build e2e audit verificar
 
 help:
 	@echo NovaMente — comandos disponíveis (plataforma detectada: $(DETECTED_OS))
@@ -61,6 +61,7 @@ help:
 	@echo   make lint                 ESLint
 	@echo   make build                Build de produção do Next
 	@echo   make e2e                  Playwright
+	@echo   make audit                Roda npm audit no frontend
 	@echo   make verificar            DoD completo (backend + frontend)
 	@$(BLANK)
 	@echo Variáveis opcionais:
@@ -121,6 +122,9 @@ build:
 
 e2e:
 	@cd $(FRONTEND_DIR) && $(NPM) run e2e
+
+audit:
+	@cd $(FRONTEND_DIR) && $(NPM) audit
 
 verificar: test-backend
 	@cd $(FRONTEND_DIR) && $(NPM) run verificar
