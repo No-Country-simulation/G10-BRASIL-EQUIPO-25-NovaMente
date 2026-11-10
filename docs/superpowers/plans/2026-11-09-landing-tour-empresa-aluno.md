@@ -158,7 +158,7 @@ frontend/src/
 - Consumes: nada.
 - Produces: `DATABASE_URL` em `Settings`; `engine`, `SessionLocal`, `Base`, `get_db()` em `app.core.db`; classes `AlunoDB`, `MaterialDB`, `VinculoDB` em `app.models.db`; fixtures pytest `db_session` e `cliente`.
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```python
 # backend/tests/test_db.py
@@ -183,12 +183,12 @@ def test_excluir_aluno_remove_vinculos(db_session):
     ...
 ```
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `backend/.venv/Scripts/python.exe -m pytest backend/tests/test_db.py -v`
 Expected: FAIL com `ModuleNotFoundError: No module named 'app.core.db'`.
 
-- [ ] **Step 3: Implementar a fundação**
+- [x] **Step 3: Implementar a fundação**
 
 Criar `core/db.py`:
 
@@ -244,12 +244,12 @@ def cliente(db_session):
     app.dependency_overrides.clear()
 ```
 
-- [ ] **Step 4: Rodar e confirmar**
+- [x] **Step 4: Rodar e confirmar**
 
 Run: `backend/.venv/Scripts/python.exe -m pytest backend/tests/test_db.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/core backend/app/models/db.py backend/app/main.py backend/requirements.txt backend/tests .gitignore
@@ -269,7 +269,7 @@ git commit -m "feat(backend): adiciona base SQLite e modelos de alunos, materiai
 - Consumes: `SessionLocal`, `MaterialDB`, `AdaptacaoPacote`.
 - Produces: `salvar_pacote(pacote: AdaptacaoPacote) -> None`, `obter_pacote(adaptacao_id: str) -> AdaptacaoPacote | None`, `listar_pacotes() -> list[AdaptacaoPacote]` com assinaturas atuais preservadas; `material_de_pacote(session, pacote) -> MaterialDB`; `pacote_de_material(row) -> AdaptacaoPacote`; fixtures pytest `pacote_exemplo` e `semear_material(visibilidade="rascunho", **campos) -> str`.
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```python
 def test_salvar_pacote_cria_material_rascunho_e_sobrevive_a_nova_sessao(pacote_exemplo):
@@ -284,12 +284,12 @@ def test_salvar_pacote_cria_material_rascunho_e_sobrevive_a_nova_sessao(pacote_e
 
 Segundo teste: salvar de novo preserva `titulo` e `visibilidade` editados, atualizando o pacote. Terceiro: `listar_pacotes` não quebra com `pacote_json = "{"`.
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `backend/.venv/Scripts/python.exe -m pytest backend/tests/test_repositorio_sqlite.py -v`
 Expected: FAIL porque `salvar_pacote` ainda só grava em memória.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 `services/materiais.py` (nesta tarefa apenas criação/leitura do pacote; a serialização de resumo entra na tarefa 3):
 
@@ -304,12 +304,12 @@ Em `repositorio.py`, manter `_jobs` em memória e trocar `_pacotes` por acesso a
 
 Adicionar em `tests/conftest.py` a fixture `pacote_exemplo` (3 flashcards, scores, OCI `concluido`) e a factory `semear_material(visibilidade="rascunho", **campos) -> str`, que grava via `db_session` e devolve o `material_id`.
 
-- [ ] **Step 4: Rodar e confirmar**
+- [x] **Step 4: Rodar e confirmar**
 
 Run: `backend/.venv/Scripts/python.exe -m pytest backend/tests/test_repositorio_sqlite.py backend/tests/api/test_rotas.py -v`
 Expected: PASS; `/adaptacoes` continua vazio antes de semear e lê o banco depois.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app/services backend/tests
@@ -333,7 +333,7 @@ git commit -m "feat(backend): persiste pacotes em SQLite e cria material rascunh
 - Consumes: `MaterialDB`, `resumo_de_material`, `pacote_de_material`, `get_db`.
 - Produces: schemas `VisibilidadeMaterial`, `MaterialResumo`, `MaterialDetalhe`, `MaterialAtualizacao`, `PaginaMateriais`, `RemocaoMaterialResposta`; `resumo_de_material(row) -> MaterialResumo`; `remover_objeto(objeto_id: str) -> bool`; rotas `GET /api/v1/materiais`, `GET /api/v1/materiais/{id}`, `PATCH /api/v1/materiais/{id}`, `DELETE /api/v1/materiais/{id}`.
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```python
 def test_listar_materiais_nao_quebra_com_pacote_corrompido(cliente, db_session, semear_material):
@@ -361,12 +361,12 @@ def test_delete_material_informa_falha_oci(cliente, semear_material, monkeypatch
 
 Cobrir também filtros `q`, `formato`, `perfil`, `visibilidade`, `ordenar`, paginação e 404.
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `backend/.venv/Scripts/python.exe -m pytest backend/tests/api/test_materiais.py -v`
 Expected: FAIL com 404 nas rotas novas.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 Schemas Pydantic idênticos à seção 6.1 da spec. `MaterialAtualizacao` deve ser `model_config = ConfigDict(extra="forbid")` e exigir ao menos um campo. Implementar `resumo_de_material(row)` a partir das colunas (`json.loads(conceitos_chave_json)`), sem abrir `pacote_json`.
 
@@ -407,12 +407,12 @@ def remover_objeto(objeto_id: str) -> bool:
 
 Registrar o router em `main.py` e reexportar os schemas em `models/__init__.py`.
 
-- [ ] **Step 4: Rodar e confirmar**
+- [x] **Step 4: Rodar e confirmar**
 
 Run: `backend/.venv/Scripts/python.exe -m pytest backend/tests/api/test_materiais.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app
@@ -435,7 +435,7 @@ git commit -m "feat(backend): adiciona CRUD de materiais com publicação e excl
 - Consumes: `AlunoDB`, `get_db`.
 - Produces: `StatusAluno`, `AlunoCriacao`, `AlunoAtualizacao`, `AlunoResumo`, `PaginaAlunos`; `criar_aluno`, `listar_alunos`, `obter_aluno`, `atualizar_aluno`, `excluir_aluno`; rota `/api/v1/alunos`; fixture pytest `semear_aluno(status="ativo", **campos) -> str`.
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```python
 def test_email_duplicado_case_insensitive_retorna_409(cliente):
@@ -451,12 +451,12 @@ def test_patch_aluno_e_404(cliente):
 
 Cobrir create 201, normalização para minúsculas, listagem com `q`/`status`/ordenação/paginação, PATCH parcial, DELETE 204, 404 e cascata de vínculos.
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `backend/.venv/Scripts/python.exe -m pytest backend/tests/api/test_alunos.py -v`
 Expected: FAIL com 404.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 Schemas com `EmailStr`, `nome` 3..120, `status` default `ativo`.
 Serviço normaliza `email.strip().lower()`, detecta duplicidade antes do commit e devolve um resultado que o router converte em 409 com `campos.email`.
@@ -464,12 +464,12 @@ Listagem usa `LIKE` em nome/e-mail, filtro de status, ordenação permitida e pa
 DELETE usa `session.delete` e deixa a cascata do banco remover vínculos.
 Adicionar `semear_aluno` em `tests/conftest.py`, gravando via `db_session` e devolvendo `aluno_id`.
 
-- [ ] **Step 4: Rodar e confirmar**
+- [x] **Step 4: Rodar e confirmar**
 
 Run: `backend/.venv/Scripts/python.exe -m pytest backend/tests/api/test_alunos.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app
@@ -490,7 +490,7 @@ git commit -m "feat(backend): adiciona CRUD de alunos sem autenticação"
 - Consumes: `VinculoDB`, `MaterialDB`, `AlunoDB`.
 - Produces: `VinculoMaterial`, `VinculosAluno`, `AtualizarVinculosInput`; rotas `GET/PUT /api/v1/alunos/{id}/materiais`, `POST/DELETE /api/v1/alunos/{id}/materiais/{material_id}`; helper pytest `vincular(aluno_id, material_id)`.
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```python
 def test_put_vinculos_e_atomico(cliente, semear_aluno, semear_material):
@@ -508,12 +508,12 @@ def test_post_e_delete_de_vinculo_sao_idempotentes(cliente, semear_aluno, semear
 
 Cobrir GET ordenado, POST 201 depois 200, DELETE 204 duas vezes, 404 para aluno/material e cascata.
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `backend/.venv/Scripts/python.exe -m pytest backend/tests/api/test_vinculos.py -v`
 Expected: FAIL com 404.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 `GET` devolve todos os vínculos (sem paginação), ordenados por `vinculado_em DESC`.
 `PUT` valida todos os ids antes de apagar/inserir, dentro de uma transação; deduplica; 422 com `campos.material_ids` se qualquer id não existir.
@@ -521,12 +521,12 @@ Expected: FAIL com 404.
 Serialização usa `MaterialDB` diretamente, sem abrir `pacote_json`.
 Adicionar `vincular(aluno_id, material_id)` em `tests/conftest.py`, inserindo e commitando um `VinculoDB`.
 
-- [ ] **Step 4: Rodar e confirmar**
+- [x] **Step 4: Rodar e confirmar**
 
 Run: `backend/.venv/Scripts/python.exe -m pytest backend/tests/api/test_vinculos.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app backend/tests/api/test_vinculos.py
@@ -550,7 +550,7 @@ git commit -m "feat(backend): adiciona vínculos entre alunos e materiais"
 - Consumes: `AlunoDB`, `MaterialDB`, `VinculoDB`, `resumo_de_material`.
 - Produces: `IdentificacaoAlunoItem`, `IdentificacaoAlunoResposta`, `ItemCatalogoAluno`, `PaginaCatalogoAluno`; `GET /api/v1/aluno/identificacao`, `GET /api/v1/aluno/materiais`, `GET /api/v1/aluno/materiais/{material_id}`.
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```python
 def test_catalogo_so_publicado_e_vinculado(cliente, semear_aluno, semear_material):
@@ -570,24 +570,24 @@ def test_aluno_inativo_recebe_403(cliente, semear_aluno):
 
 Cobrir identificação apenas ativos e sem e-mail, filtros, paginação, 404 de aluno, 403 e os três casos de `MATERIAL_NAO_DISPONIVEL`.
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `backend/.venv/Scripts/python.exe -m pytest backend/tests/api/test_aluno_catalogo.py -v`
 Expected: FAIL com 404.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 Identificação: `SELECT aluno_id, nome FROM alunos WHERE status='ativo' ORDER BY nome`.
 Catálogo: `JOIN vinculos` + `WHERE materiais.visibilidade='publicado' AND vinculos.aluno_id=?`, filtros e paginação em SQL; `conceitos_chave` vem de `json.loads(conceitos_chave_json)[:6]`.
 Detalhe: verifica aluno ativo, vínculo e publicação; qualquer falha → `404 MATERIAL_NAO_DISPONIVEL`. Não usar `pacote_json` na listagem; o detalhe usa `pacote_de_material`.
 Registrar o router em `main.py`.
 
-- [ ] **Step 4: Rodar e confirmar**
+- [x] **Step 4: Rodar e confirmar**
 
 Run: `backend/.venv/Scripts/python.exe -m pytest backend/tests/api/test_aluno_catalogo.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/app backend/tests/api/test_aluno_catalogo.py
@@ -615,7 +615,7 @@ git commit -m "feat(backend): adiciona identificação e catálogo somente leitu
 - Consumes: `httpApiClient`, `NovaMenteApi`.
 - Produces: `StatusAluno`, `AlunoCriacao`, `AlunoAtualizacao`, `AlunoResumo`, `PaginaAlunos`, `VinculoMaterial`, `VinculosAluno`, `AtualizarVinculosInput`; métodos `listarAlunos`, `criarAluno`, `obterAluno`, `atualizarAluno`, `excluirAluno`, `listarVinculos`, `substituirVinculos`, `adicionarVinculo`, `removerVinculo`; estado mock `listarAlunosMock`, `criarAlunoMock`, etc.
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```ts
 it('cria aluno e envia o corpo normalizado', async () => {
@@ -631,12 +631,12 @@ it('excluirAluno aceita 204 sem corpo', async () => { ... });
 
 Testar também 409 com `campos.email`, paginação e os quatro endpoints de vínculo (incluindo DELETE 204).
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `cd frontend && npm test -- src/services/api/httpApiClient.alunos.test.ts`
 Expected: FAIL com `listarAlunos is not a function`.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 Adicionar schemas zod estritos em `schemas.ts` e reexports em `novamente.ts`.
 Adicionar as URLs:
@@ -659,12 +659,12 @@ async function pedirSemCorpo(caminho: string, init?: RequestInit): Promise<void>
 
 Mocks: `estadoCatalogo.ts` mantém arrays em memória, `limparEstadoCatalogo()` e operações CRUD. Semear 6 alunos de `alunos.json` (um inativo). Handlers MSW replicam todas as rotas e erros 404/409/422.
 
-- [ ] **Step 4: Rodar e confirmar**
+- [x] **Step 4: Rodar e confirmar**
 
 Run: `cd frontend && npm test -- src/services/api/httpApiClient.alunos.test.ts src/mocks/estadoCatalogo.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/types frontend/src/services frontend/src/mocks
@@ -691,7 +691,7 @@ git commit -m "feat(frontend): adiciona contrato e mocks de alunos e vínculos"
 - Consumes: `AdaptacaoPacoteSchema`, `estadoCatalogo`.
 - Produces: `VisibilidadeMaterial`, `MaterialResumo`, `MaterialDetalhe`, `MaterialAtualizacao`, `PaginaMateriais`, `RemocaoMaterialResposta`; métodos `listarMateriais`, `obterMaterial`, `atualizarMaterial`, `excluirMaterial`.
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```ts
 it('valida MaterialDetalhe com pacote', async () => {
@@ -710,12 +710,12 @@ it('excluirMaterial devolve o resultado da remoção', async () => {
 
 Cobrir listagem com filtros/ordenação, PATCH inválido 422 e 404.
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `cd frontend && npm test -- src/services/api/httpApiClient.materiais.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 Schemas, tipos, URLs:
 
@@ -728,12 +728,12 @@ Métodos no `NovaMenteApi`/`httpApiClient`.
 `estadoCatalogo` ganha materiais semeados a partir de `materiais.json` + pacotes das fixtures existentes; `excluirMaterialMock` remove vínculos; `atualizarMaterialMock` só aceita `titulo`/`visibilidade`.
 Handlers MSW cobrem 200, 404 e 422.
 
-- [ ] **Step 4: Rodar e confirmar**
+- [x] **Step 4: Rodar e confirmar**
 
 Run: `cd frontend && npm test -- src/services/api/httpApiClient.materiais.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/types frontend/src/services frontend/src/mocks
@@ -759,7 +759,7 @@ git commit -m "feat(frontend): adiciona contrato e mocks de materiais"
 - Consumes: `MaterialDetalhe`, `estadoCatalogo`.
 - Produces: `IdentificacaoAlunoItem`, `IdentificacaoAlunoResposta`, `ItemCatalogoAluno`, `PaginaCatalogoAluno`; métodos `listarIdentificacaoAluno`, `listarCatalogoAluno`, `obterMaterialAluno`.
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```ts
 it('lista catálogo com aluno_id e filtros', async () => {
@@ -773,12 +773,12 @@ it('lista catálogo com aluno_id e filtros', async () => {
 
 Cobrir 403/404 e `obterMaterialAluno`.
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `cd frontend && npm test -- src/services/api/httpApiClient.aluno.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 Schemas e métodos. URLs:
 
@@ -790,12 +790,12 @@ alunoMaterial: (materialId: string) => `${BASE}/aluno/materiais/${materialId}`,
 
 Handlers MSW filtram por aluno ativo + vínculo + publicado, exatamente como o backend. Semear 6 alunos e vínculos para o primeiro aluno ativo.
 
-- [ ] **Step 4: Rodar e confirmar**
+- [x] **Step 4: Rodar e confirmar**
 
 Run: `cd frontend && npm test -- src/services/api/httpApiClient.aluno.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/types frontend/src/services frontend/src/mocks
@@ -843,7 +843,7 @@ git commit -m "feat(frontend): adiciona contrato e mocks da área do aluno"
 - Consumes: `GerarView`, `HistoricoView`, `ResultadoView`.
 - Produces: `ROTAS` com `landing`, `empresaGerar`, `empresaHistorico`, `empresaResultado(id)`, `empresaMateriais`, `empresaAlunos`, `empresaAluno(id)`, `aluno`, `alunoMaterial(id)`; `LandingPage`, `LandingHeader`, `EmpresaShell`, `EmpresaHeader`, `AlunoShell`, `AlunoHeader`; redirects de `/historico` e `/resultado/:id`.
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```tsx
 // LandingPage.test.tsx
@@ -860,12 +860,12 @@ it('apresenta a proposta e os dois CTAs', () => {
 
 Atualizar `HistoricoView.test.tsx`: esperar `href="/empresa/resultado/id-1"` e `replace('/empresa/historico...')`.
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `cd frontend && npm test -- src/components/landing/LandingPage.test.tsx src/components/views/HistoricoView.test.tsx`
 Expected: FAIL (LandingPage inexistente e rotas antigas).
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 Criar `lib/rotas.ts`:
 
@@ -905,12 +905,12 @@ async redirects() {
 `/empresa/gerar` usa `GerarView`; `/empresa/historico` usa `HistoricoView`; `/empresa/resultado/[id]` usa `ResultadoView`.
 Adicionar `robots: { index: false }` nos layouts de empresa e aluno.
 
-- [ ] **Step 4: Rodar e confirmar**
+- [x] **Step 4: Rodar e confirmar**
 
 Run: `cd frontend && npm run typecheck && npm run lint && npm test -- src/components/landing/LandingPage.test.tsx src/components/views/HistoricoView.test.tsx && npm run build`
 Expected: PASS; build contém `/`, `/empresa/gerar`, `/empresa/historico`, `/empresa/resultado/[id]`, `/aluno`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src frontend/next.config.ts
@@ -940,7 +940,7 @@ git commit -m "feat(frontend): adiciona landing e separa as áreas da empresa e 
 - Consumes: `useApi`, `ROTAS`, `MaterialResumo`, `MaterialDetalhe`.
 - Produces: `useMateriais()` (filtros via URL: `q`, `formato`, `perfil`, `visibilidade`, `ordenar`, `pagina`); `useAtualizarMaterial()`; `useExcluirMaterial()`; `useMaterial(materialId)`; `MateriaisView`, `MaterialEditDialog`, `MaterialDeleteDialog`.
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```tsx
 it('publica um rascunho', async () => {
@@ -955,12 +955,12 @@ it('exclui com confirmação e mostra aviso de OCI', async () => { ... });
 
 `ResultadoView.test.tsx`: `obterMaterial` é chamado com o id; título editado aparece; 404 mostra link para `/empresa/materiais`.
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `cd frontend && npm test -- src/components/materiais/MateriaisView.test.tsx src/components/views/ResultadoView.test.tsx`
 Expected: FAIL.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 `useMateriais` espelha `useAdaptationHistory` (debounce 300 ms, URL validada, `LIMITES.paginaPadrao`, `staleTime` 30 s) e usa `PaginaMateriais` do tipo. Mutações invalidam `['materiais']`, `['material', id]`, `['aluno-catalogo']` e `['vinculos']`.
 
@@ -968,12 +968,12 @@ Expected: FAIL.
 
 `ResultadoView` passa a usar `useMaterial(id)` e a exibir `material.titulo`, badge de visibilidade e ações Editar/Publicar; o corpo continua com `pacote`, `ContentRenderer` e `OCIPanel`. O estado 404 aponta para `/empresa/materiais`.
 
-- [ ] **Step 4: Rodar e confirmar**
+- [x] **Step 4: Rodar e confirmar**
 
 Run: `cd frontend && npm test -- src/components/materiais/MateriaisView.test.tsx src/features/materiais/useMateriais.test.tsx src/components/views/ResultadoView.test.tsx`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src
@@ -999,7 +999,7 @@ git commit -m "feat(frontend): adiciona gestão de materiais e resultado por cat
 - Consumes: `AlunoCriacao`, `AlunoAtualizacao`, `PaginaAlunos`, `ROTAS`.
 - Produces: `useAlunos()` (filtros `q`, `status`, `ordenar`, `pagina`); `useAluno(alunoId)`; `useCriarAluno()`, `useAtualizarAluno()`, `useExcluirAluno()`; `AlunosView`, `AlunoFormDialog`, `AlunoDeleteDialog`.
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```tsx
 it('mapeia 409 de e-mail para o campo', async () => {
@@ -1015,22 +1015,22 @@ it('mapeia 409 de e-mail para o campo', async () => {
 it('exclui com confirmação e avisa sobre vínculos', async () => { ... });
 ```
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `cd frontend && npm test -- src/components/alunos/AlunosView.test.tsx src/features/alunos/useAlunos.test.tsx`
 Expected: FAIL.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 `useAlunos` espelha os filtros URL e pagina. Mutações invalidam `['alunos']`, `['aluno', id]` e `['vinculos', id]`.
 `AlunosView`: tabela desktop/cards mobile, filtros, estados, `data-tour="empresa-alunos-lista"`. `AlunoFormDialog` usa RHF + zod (`nome` 3..120, `email` válido, `status`), com `aria-invalid`/`aria-describedby`; erro 409 vai para `setError('email')`. `AlunoDeleteDialog` confirma e avisa que vínculos serão removidos. Card tem link "Materiais" → `ROTAS.empresaAluno(id)`.
 
-- [ ] **Step 4: Rodar e confirmar**
+- [x] **Step 4: Rodar e confirmar**
 
 Run: `cd frontend && npm test -- src/components/alunos/AlunosView.test.tsx src/features/alunos/useAlunos.test.tsx`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src
@@ -1054,7 +1054,7 @@ git commit -m "feat(frontend): adiciona CRUD de alunos"
 - Consumes: `useAluno`, `useMateriais`, `useVinculos`, `adicionarVinculo`, `removerVinculo`.
 - Produces: `useVinculos(alunoId)`; `useAplicarVinculos(alunoId)` com mutation `{ adicionar: string[]; remover: string[] }`; `VinculosPanel({ alunoId, aplicar? })`, onde `aplicar` permite injetar a mutation nos testes; `AlunoDetalheView`.
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```tsx
 it('não desvincula material escondido pelo filtro', async () => {
@@ -1073,22 +1073,22 @@ it('não desvincula material escondido pelo filtro', async () => {
 
 Segundo teste: marcar material não vinculado envia `adicionar`; falha parcial mostra aviso e refaz as consultas.
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `cd frontend && npm test -- src/components/alunos/VinculosPanel.test.tsx src/components/alunos/AlunoDetalheView.test.tsx`
 Expected: FAIL.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 `VinculosPanel` carrega `useMateriais` (página 12) e `useVinculos` (lista completa). Estado local guarda `adicionar`/`remover`; checkbox alterna apenas o material visível. Salvar chama `aplicar` com a diferença e depois invalida `['vinculos', alunoId]`, `['materiais']` e `['aluno', alunoId]`. Em erro, refetch e `role="alert"`.
 `AlunoDetalheView` mostra dados, editar/excluir, `VinculosPanel`, link de volta com query. `data-tour` não é necessário aqui.
 
-- [ ] **Step 4: Rodar e confirmar**
+- [x] **Step 4: Rodar e confirmar**
 
 Run: `cd frontend && npm test -- src/components/alunos/VinculosPanel.test.tsx src/components/alunos/AlunoDetalheView.test.tsx`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src
@@ -1119,7 +1119,7 @@ git commit -m "feat(frontend): adiciona detalhe do aluno e gestão de vínculos"
 - Consumes: `listarIdentificacaoAluno`, `listarCatalogoAluno`, `obterMaterialAluno`, `ContentRenderer`.
 - Produces: `useIdentidadeAluno()` `{ aluno, identificar, trocarAluno, limpar }`; `useCatalogoAluno()`; `useMaterialAluno(materialId)`; `IdentificacaoAluno`, `CatalogoAlunoView`, `AlunoMaterialView`.
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```tsx
 it('identifica, persiste e mostra o catálogo', async () => {
@@ -1137,12 +1137,12 @@ it('403 na sessão limpa a identidade e volta ao cartão', async () => { ... });
 it('não renderiza OCI nem exportação no material do aluno', async () => { ... });
 ```
 
-- [ ] **Step 2: Rodar para ver falhar**
+- [x] **Step 2: Rodar para ver falhar**
 
 Run: `cd frontend && npm test -- src/components/aluno src/features/aluno`
 Expected: FAIL.
 
-- [ ] **Step 3: Implementar**
+- [x] **Step 3: Implementar**
 
 `useIdentidadeAluno` lê/grava `novamente.aluno` (`{ aluno_id, nome }`), valida JSON e expõe `limpar` em 403/404.
 `IdentificacaoAluno`: busca por nome, lista de ativos, botão "Entrar", aviso "Identificação sem senha nesta versão", estado sem alunos com link para `/empresa/alunos`, `data-tour="aluno-identificacao"`.
@@ -1150,12 +1150,12 @@ Expected: FAIL.
 `AlunoMaterialView`: usa `ContentRenderer`, badges, tempo, voltar ao catálogo; não renderiza `OCIPanel`, `ExportMenu` nem download; 404 mostra "Este material não está disponível.".
 `AlunoHeader` passa a exibir o nome e "Trocar aluno" (limpa e volta a `/aluno`).
 
-- [ ] **Step 4: Rodar e confirmar**
+- [x] **Step 4: Rodar e confirmar**
 
 Run: `cd frontend && npm test -- src/components/aluno src/features/aluno`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src
