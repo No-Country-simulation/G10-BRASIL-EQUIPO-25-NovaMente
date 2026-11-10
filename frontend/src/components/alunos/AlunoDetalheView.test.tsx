@@ -1,11 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AlunoDetalheView } from './AlunoDetalheView';
 import { ApiProvider } from '@/services/api/ApiProvider';
 import { ErroApi } from '@/services/api/erros';
+import { M } from '@/lib/mensagens';
 import type { NovaMenteApi } from '@/services/api/NovaMenteApi';
 import type {
   AlunoResumo,
@@ -149,6 +150,70 @@ describe('AlunoDetalheView', () => {
 
     await waitFor(() => expect(excluir).toHaveBeenCalledWith('A1'));
     await waitFor(() => expect(mocks.push).toHaveBeenCalledWith('/empresa/alunos?pagina=3'));
+  });
+
+  it('confirma ao sair por link do cabeçalho com alterações pendentes', async () => {
+    const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    let defaultPrevented: boolean | null = null;
+    const aoClicar = (evento: React.MouseEvent<HTMLAnchorElement>) => {
+      defaultPrevented = evento.defaultPrevented;
+      // O jsdom não implementa navegação; impede o aviso depois da asserção.
+      evento.preventDefault();
+    };
+
+    renderComApi(
+      <>
+        <a href="/empresa/materiais" onClick={aoClicar}>
+          Materiais
+        </a>
+        <AlunoDetalheView alunoId="A1" />
+      </>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: /selecionar material m1/i }),
+    );
+    await screen.findByText(M.alunos.vinculosPendentes);
+
+    fireEvent.click(screen.getByRole('link', { name: 'Materiais' }));
+
+    expect(confirmar).toHaveBeenCalledWith(M.alunos.vinculosAoSair);
+    expect(defaultPrevented).toBe(true);
+    expect(
+      screen.getByRole('heading', { name: 'Ana Beatriz Silva' }),
+    ).toBeInTheDocument();
+
+    confirmar.mockReturnValue(true);
+    fireEvent.click(screen.getByRole('link', { name: 'Materiais' }));
+
+    expect(confirmar).toHaveBeenCalledTimes(2);
+    expect(defaultPrevented).toBe(false);
+
+    confirmar.mockRestore();
+  });
+
+  it('pede confirmação ao voltar no navegador com alterações pendentes', async () => {
+    const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const avancar = vi.spyOn(History.prototype, 'forward').mockImplementation(() => {});
+
+    renderComApi(<AlunoDetalheView alunoId="A1" />);
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: /selecionar material m1/i }),
+    );
+    await screen.findByText(M.alunos.vinculosPendentes);
+
+    window.dispatchEvent(new PopStateEvent('popstate'));
+
+    expect(confirmar).toHaveBeenCalledWith(M.alunos.vinculosAoSair);
+    expect(avancar).toHaveBeenCalledTimes(1);
+
+    // O popstate disparado pelo nosso forward não pede confirmação de novo.
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    expect(confirmar).toHaveBeenCalledTimes(1);
+
+    confirmar.mockRestore();
+    avancar.mockRestore();
   });
 
   it('mostra aluno não encontrado', async () => {

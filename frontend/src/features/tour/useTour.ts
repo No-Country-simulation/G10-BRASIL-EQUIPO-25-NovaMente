@@ -163,12 +163,12 @@ async function localizarPasso(
 export async function iniciarTour(
   origem: OrigemTour,
   navegar: (rota: string) => void,
-): Promise<void> {
-  if (typeof window === 'undefined') return;
+): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
 
   const passos = passosDoTour(origem, alunoIdentificadoNoNavegador());
   const primeiro = await localizarPasso(passos, 0, 1, navegar);
-  if (primeiro === null) return;
+  if (primeiro === null) return false;
 
   const { criarDriver } = await import('./driver');
   const driver = await criarDriver(passos, {
@@ -185,6 +185,7 @@ export async function iniciarTour(
   });
 
   driver.drive(primeiro);
+  return true;
 }
 
 /** Versão do tour que usa o router do Next para navegar entre as telas. */

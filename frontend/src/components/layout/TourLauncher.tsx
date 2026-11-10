@@ -14,8 +14,8 @@ import {
 
 export interface TourLauncherProps {
   origem: OrigemTour;
-  /** Injeta o início nos testes e no auto-start. */
-  iniciar?: (origem: OrigemTour) => Promise<void>;
+  /** Injeta o início nos testes e no auto-start. `false` = nenhum alvo iniciou. */
+  iniciar?: (origem: OrigemTour) => Promise<unknown>;
 }
 
 export function TourLauncher({ origem, iniciar }: TourLauncherProps) {
@@ -25,6 +25,21 @@ export function TourLauncher({ origem, iniciar }: TourLauncherProps) {
   const [iniciando, setIniciando] = useState(false);
   const jaIniciado = useRef(false);
 
+  // Só grava a conclusão depois que o tour realmente iniciou. Uma falha no
+  // import dinâmico (ou nenhum alvo disponível) não desabilita o tour para
+  // sempre; o `onDestroyed` do driver também grava ao concluir/pular.
+  const iniciarComSeguranca = useCallback(
+    async (pontoDeEntrada: OrigemTour) => {
+      try {
+        const iniciado = await executar(pontoDeEntrada);
+        if (iniciado !== false) marcarConcluido();
+      } catch (falha) {
+        console.error('[tour] Falha ao iniciar o tour.', falha);
+      }
+    },
+    [executar],
+  );
+
   useEffect(() => {
     if (jaIniciado.current) return;
 
@@ -33,8 +48,7 @@ export function TourLauncher({ origem, iniciar }: TourLauncherProps) {
       new URLSearchParams(window.location.search).get('tour') === '1';
     if (forcado) {
       jaIniciado.current = true;
-      marcarConcluido();
-      void executar('completo');
+      void iniciarComSeguranca('completo');
       return;
     }
 
@@ -48,25 +62,24 @@ export function TourLauncher({ origem, iniciar }: TourLauncherProps) {
     const timer = window.setTimeout(() => {
       if (cancelado) return;
       jaIniciado.current = true;
-      marcarConcluido();
-      void executar('empresa');
+      void iniciarComSeguranca('empresa');
     }, 600);
 
     return () => {
       cancelado = true;
       window.clearTimeout(timer);
     };
-  }, [executar, origem, pathname]);
+  }, [iniciarComSeguranca, origem, pathname]);
 
   const aoClicar = useCallback(async () => {
     if (iniciando) return;
     setIniciando(true);
     try {
-      await executar(origem);
+      await iniciarComSeguranca(origem);
     } finally {
       setIniciando(false);
     }
-  }, [executar, iniciando, origem]);
+  }, [iniciarComSeguranca, iniciando, origem]);
 
   return (
     <Button

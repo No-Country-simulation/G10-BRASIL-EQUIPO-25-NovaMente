@@ -40,7 +40,10 @@ export function AlunoMaterialView({ materialId }: AlunoMaterialViewProps) {
   const { aluno, limpar } = useIdentidadeAluno();
   const { data, isPending, error, refetch } = useMaterialAluno(materialId);
 
-  const erroSessao = error instanceof ErroApi && error.status === 403;
+  const erroSessao =
+    error instanceof ErroApi &&
+    (error.status === 403 ||
+      (error.status === 404 && error.problema.erro.codigo === 'ALUNO_NAO_ENCONTRADO'));
 
   useEffect(() => {
     if (erroSessao) {

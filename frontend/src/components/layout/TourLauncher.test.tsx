@@ -102,4 +102,29 @@ describe('TourLauncher', () => {
     await waitFor(() => expect(iniciar).toHaveBeenCalledWith('completo'));
     expect(window.localStorage.getItem(CHAVE_TOUR)).toContain('versao');
   });
+
+  it('não grava conclusão quando nenhum alvo do tour inicia', async () => {
+    window.history.replaceState({}, '', '/aluno?tour=1');
+    mocks.pathname = '/aluno';
+    const iniciar = vi.fn().mockResolvedValue(false);
+
+    render(<TourLauncher origem="aluno" iniciar={iniciar} />);
+
+    await waitFor(() => expect(iniciar).toHaveBeenCalledWith('completo'));
+    expect(window.localStorage.getItem(CHAVE_TOUR)).toBeNull();
+  });
+
+  it('registra a falha sem desabilitar o tour para sempre', async () => {
+    mocks.pathname = '/empresa/gerar';
+    const iniciar = vi.fn().mockRejectedValue(new Error('falha no import dinâmico'));
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    render(<TourLauncher origem="empresa" iniciar={iniciar} />);
+
+    await waitFor(() => expect(iniciar).toHaveBeenCalledWith('empresa'));
+    await waitFor(() => expect(consoleError).toHaveBeenCalled());
+    expect(window.localStorage.getItem(CHAVE_TOUR)).toBeNull();
+
+    consoleError.mockRestore();
+  });
 });

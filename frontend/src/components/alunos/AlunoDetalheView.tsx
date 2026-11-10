@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertTriangle } from 'lucide-react';
@@ -41,18 +41,68 @@ export function AlunoDetalheView({ alunoId }: AlunoDetalheViewProps) {
   const [excluindo, setExcluindo] = useState(false);
   const [pendentes, setPendentes] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+  const ignorarProximoPopState = useRef(false);
 
   const query = params.toString();
   const voltarHref = query ? `${ROTAS.empresaAlunos}?${query}` : ROTAS.empresaAlunos;
 
-  const confirmarSaida = (evento: React.MouseEvent<HTMLAnchorElement>) => {
-    if (pendentes && !window.confirm(M.alunos.vinculosAoSair)) evento.preventDefault();
-  };
+  // Guarda central de navegação: cobre qualquer link same-origin (logo, nav,
+  // "Área do aluno", voltar) e o botão Voltar do navegador, não só o link
+  // interno. `beforeunload` continua no painel como segunda camada.
+  useEffect(() => {
+    if (!pendentes) return;
+    ignorarProximoPopState.current = false;
+
+    const aoClicar = (evento: MouseEvent) => {
+      if (evento.defaultPrevented || evento.button !== 0) return;
+      if (evento.metaKey || evento.ctrlKey || evento.shiftKey || evento.altKey) return;
+
+      const alvo = evento.target;
+      if (!(alvo instanceof Element)) return;
+      const link = alvo.closest('a');
+      if (!(link instanceof HTMLAnchorElement)) return;
+      if (link.target && link.target !== '_self') return;
+      if (link.hasAttribute('download')) return;
+
+      const href = link.getAttribute('href');
+      if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) {
+        return;
+      }
+
+      let destino: URL;
+      try {
+        destino = new URL(link.href, window.location.href);
+      } catch {
+        return;
+      }
+      if (destino.origin !== window.location.origin) return;
+
+      if (!window.confirm(M.alunos.vinculosAoSair)) evento.preventDefault();
+    };
+
+    const aoVoltarNoNavegador = () => {
+      if (ignorarProximoPopState.current) {
+        ignorarProximoPopState.current = false;
+        return;
+      }
+      if (window.confirm(M.alunos.vinculosAoSair)) return;
+      // O popstate já mudou a URL; volta para a entrada de detalhe. O próximo
+      // popstate é o nosso próprio forward e não deve pedir confirmação de novo.
+      ignorarProximoPopState.current = true;
+      window.history.forward();
+    };
+
+    document.addEventListener('click', aoClicar, true);
+    window.addEventListener('popstate', aoVoltarNoNavegador);
+    return () => {
+      document.removeEventListener('click', aoClicar, true);
+      window.removeEventListener('popstate', aoVoltarNoNavegador);
+    };
+  }, [pendentes]);
 
   const voltar = (
     <Link
       href={voltarHref}
-      onClick={confirmarSaida}
       className="text-sm text-[var(--fg-muted)] underline-offset-4 hover:underline"
     >
       {M.alunos.voltarLista}

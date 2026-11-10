@@ -134,6 +134,22 @@ describe('AlunoMaterialView', () => {
     );
   });
 
+  it('limpa a identidade quando o aluno não existe mais no servidor', async () => {
+    identificar();
+    renderMaterial({
+      obterMaterialAluno: vi.fn().mockRejectedValue(
+        new ErroApi(
+          { erro: { codigo: 'ALUNO_NAO_ENCONTRADO', mensagem: 'Aluno não encontrado.' } },
+          404,
+        ),
+      ),
+    });
+
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/aluno'));
+    expect(window.localStorage.getItem(CHAVE_IDENTIDADE_ALUNO)).toBeNull();
+    expect(await screen.findByText(M.aluno.material.identifiqueSe)).toBeInTheDocument();
+  });
+
   it('limpa a identidade e volta ao catálogo quando o aluno está inativo', async () => {
     identificar();
     renderMaterial({
