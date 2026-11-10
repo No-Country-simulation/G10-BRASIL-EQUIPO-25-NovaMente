@@ -4,6 +4,10 @@ import { expect, test, type Page } from '@playwright/test';
 interface CasoAcessibilidade {
   rota: string;
   titulo: RegExp | string;
+  /** Skin aplicada antes da primeira pintura. */
+  skin?: 'violeta' | 'ciano';
+  /** Inclui violações `serious` (contraste AA) além das `critical`. */
+  incluirSerios?: boolean;
   preparar?: (page: Page) => Promise<void>;
   espera?: (page: Page) => Promise<void>;
 }
@@ -12,6 +16,16 @@ const ROTAS: CasoAcessibilidade[] = [
   {
     rota: '/',
     titulo: /material didático/i,
+    incluirSerios: true,
+    espera: async (page) => {
+      await expect(page.getByRole('link', { name: /área da empresa/i }).first()).toBeVisible();
+    },
+  },
+  {
+    rota: '/',
+    skin: 'ciano',
+    titulo: /material didático/i,
+    incluirSerios: true,
     espera: async (page) => {
       await expect(page.getByRole('link', { name: /área da empresa/i }).first()).toBeVisible();
     },
@@ -80,8 +94,10 @@ const ROTAS: CasoAcessibilidade[] = [
   },
 ];
 
-for (const { rota, titulo, preparar, espera } of ROTAS) {
-  test(`sem violação crítica de acessibilidade em ${rota}`, async ({ page }) => {
+for (const { rota, titulo, skin, incluirSerios, preparar, espera } of ROTAS) {
+  const sufixo = skin ? ` (skin ${skin})` : '';
+  const gravidade = incluirSerios ? 'crítica ou séria' : 'crítica';
+  test(`sem violação ${gravidade} de acessibilidade em ${rota}${sufixo}`, async ({ page }) => {
     // O tour auto-iniciado em /empresa/gerar cobriria a tela com o overlay.
     await page.addInitScript(() => {
       window.localStorage.setItem(
@@ -89,6 +105,14 @@ for (const { rota, titulo, preparar, espera } of ROTAS) {
         JSON.stringify({ versao: 1, concluido_em: new Date().toISOString() }),
       );
     });
+    if (skin) {
+      await page.addInitScript((valor) => {
+        window.localStorage.setItem(
+          'novamente.skin',
+          JSON.stringify({ state: { skin: valor }, version: 1 }),
+        );
+      }, skin);
+    }
     await preparar?.(page);
 
     await page.goto(rota);
@@ -97,7 +121,10 @@ for (const { rota, titulo, preparar, espera } of ROTAS) {
     await page.waitForLoadState('networkidle');
 
     const resultado = await new AxeBuilder({ page }).analyze();
-    const criticas = resultado.violations.filter((v) => v.impact === 'critical');
-    expect(criticas, JSON.stringify(criticas, null, 2)).toEqual([]);
+    const impactos = incluirSerios ? ['critical', 'serious'] : ['critical'];
+    const graves = resultado.violations.filter(
+      (v) => Boolean(v.impact) && impactos.includes(v.impact as string),
+    );
+    expect(graves, JSON.stringify(graves, null, 2)).toEqual([]);
   });
 }

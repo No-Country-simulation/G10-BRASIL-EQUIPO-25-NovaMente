@@ -95,4 +95,30 @@ test.describe('landing e área da empresa', () => {
     await expect(page.getByText('Material excluído.')).toBeVisible();
     await expect(page.getByText('Material E2E publicado')).toHaveCount(0);
   });
+
+  test('rotas antigas redirecionam permanentemente para a área da empresa', async ({
+    page,
+  }) => {
+    const historico = await page.request.get('/historico', { maxRedirects: 0 });
+    expect(historico.status()).toBe(308);
+    expect(historico.headers()['location']).toMatch(/\/empresa\/historico$/);
+
+    await page.goto('/historico');
+    await expect(page).toHaveURL(/\/empresa\/historico$/);
+    await expect(page.getByRole('heading', { name: 'Histórico' })).toBeVisible();
+
+    const resultado = await page.request.get('/resultado/01JAVCNFLCARD00000000001', {
+      maxRedirects: 0,
+    });
+    expect(resultado.status()).toBe(308);
+    expect(resultado.headers()['location']).toMatch(
+      /\/empresa\/resultado\/01JAVCNFLCARD00000000001$/,
+    );
+
+    await page.goto('/resultado/01JAVCNFLCARD00000000001');
+    await expect(page).toHaveURL(/\/empresa\/resultado\/01JAVCNFLCARD00000000001$/);
+    await expect(
+      page.getByRole('heading', { name: /dominando redes na nuvem/i }),
+    ).toBeVisible();
+  });
 });
