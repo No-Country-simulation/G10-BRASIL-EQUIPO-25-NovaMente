@@ -28,6 +28,14 @@ _jobs: dict[str, "JobResposta"] = {}
 _criado_em: dict[str, float] = {}   # job_id → timestamp UNIX
 
 
+class PacoteCorrompido(Exception):
+    """A linha existe, mas o ``pacote_json`` persistido não é um pacote válido."""
+
+    def __init__(self, adaptacao_id: str) -> None:
+        super().__init__(f"Pacote corrompido para a adaptação {adaptacao_id}.")
+        self.adaptacao_id = adaptacao_id
+
+
 def salvar_job(job: "JobResposta", ttl_segundos: int = 1800) -> None:
     with _lock:
         _jobs[job.job_id] = job
@@ -47,13 +55,19 @@ def salvar_pacote(pacote: AdaptacaoPacote) -> None:
 
 
 def obter_pacote(adaptacao_id: str) -> AdaptacaoPacote | None:
+    """Lê o pacote do detalhe, distinguindo linha ausente de JSON inválido.
+
+    Devolve ``None`` quando não existe linha com esse ``adaptacao_id`` e levanta
+    :class:`PacoteCorrompido` quando a linha existe mas o ``pacote_json`` não
+    desserializa. As listagens continuam tolerantes, pois não abrem o pacote.
+    """
     with SessionLocal() as session:
         row = session.scalar(
             select(MaterialDB).where(MaterialDB.adaptacao_id == adaptacao_id)
         )
         if row is None:
             return None
-        return _pacote_do_json(row.pacote_json)
+        return _pacote_do_json_estrito(row.pacote_json, adaptacao_id)
 
 
 def listar_pacotes() -> list[AdaptacaoPacote]:
@@ -76,6 +90,16 @@ def _pacote_do_json(pacote_json: str) -> AdaptacaoPacote | None:
         return AdaptacaoPacote.model_validate_json(pacote_json)
     except ValueError:
         return None
+
+
+def _pacote_do_json_estrito(
+    pacote_json: str, adaptacao_id: str
+) -> AdaptacaoPacote:
+    """Valida o JSON do detalhe e sinaliza corrupção em vez de devolver ``None``."""
+    try:
+        return AdaptacaoPacote.model_validate_json(pacote_json)
+    except ValueError as exc:
+        raise PacoteCorrompido(adaptacao_id) from exc
 
 
 def _purgar() -> None:

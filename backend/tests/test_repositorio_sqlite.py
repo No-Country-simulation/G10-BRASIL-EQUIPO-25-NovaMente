@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 
+import pytest
 from sqlalchemy import func, select, text
 
 from app.core.db import SessionLocal
@@ -134,3 +135,55 @@ def test_listar_adaptacoes_le_materiais_do_banco(cliente, semear_material):
     resp = cliente.get("/api/v1/adaptacoes")
     assert resp.status_code == 200
     assert resp.json()["total"] == 1
+
+
+def test_listar_adaptacoes_tolera_conceitos_chave_corrompidos(
+    cliente, semear_material
+):
+    semear_material(conceitos_chave_json="{")
+
+    resp = cliente.get("/api/v1/adaptacoes")
+
+    assert resp.status_code == 200
+    assert resp.json()["itens"][0]["conceitos_chave"] == []
+
+
+@pytest.mark.parametrize(
+    "rota",
+    [
+        "/api/v1/adaptacoes/{id}",
+        "/api/v1/adaptacoes/{id}/download",
+        "/api/v1/adaptacoes/{id}/exportacao?formato=md",
+    ],
+)
+def test_rotas_de_leitura_de_adaptacao_com_pacote_corrompido_retornam_500(
+    cliente, db_session, semear_material, rota
+):
+    adaptacao_id = semear_material()
+    db_session.execute(text("UPDATE materiais SET pacote_json = '{'"))
+    db_session.commit()
+
+    resp = cliente.get(rota.format(id=adaptacao_id))
+
+    assert resp.status_code == 500
+    erro = resp.json()["erro"]
+    assert erro["codigo"] == "INTERNO"
+    assert erro["request_id"]
+    assert "Pacote de adaptação corrompido." in erro["mensagem"]
+
+
+def test_obter_pacote_inexistente_continua_none(db_session):
+    assert repositorio.obter_pacote("NAO_EXISTE") is None
+
+
+def test_obter_pacote_corrompido_levanta_excecao_dedicada(
+    db_session, semear_material
+):
+    adaptacao_id = semear_material()
+    db_session.execute(text("UPDATE materiais SET pacote_json = '{'"))
+    db_session.commit()
+
+    with pytest.raises(repositorio.PacoteCorrompido) as excinfo:
+        repositorio.obter_pacote(adaptacao_id)
+
+    assert excinfo.value.adaptacao_id == adaptacao_id

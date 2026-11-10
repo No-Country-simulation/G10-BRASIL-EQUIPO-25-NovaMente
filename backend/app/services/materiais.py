@@ -21,6 +21,18 @@ if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
 _TITULO_MAX = 150
+_CONCEITOS_MAX = 6
+
+
+def _conceitos_chave(row: MaterialDB) -> list[str]:
+    """Lê ``conceitos_chave_json`` sem deixar um valor corrompido derrubar a lista."""
+    try:
+        dados = json.loads(row.conceitos_chave_json)
+    except (TypeError, ValueError):
+        return []
+    if not isinstance(dados, list):
+        return []
+    return [item for item in dados if isinstance(item, str)][:_CONCEITOS_MAX]
 
 
 def material_de_pacote(session: "Session", pacote: AdaptacaoPacote) -> MaterialDB:
@@ -89,7 +101,7 @@ def resumo_de_adaptacao(row: MaterialDB) -> AdaptacaoResumo:
         tempo_estimado_estudo_minutos=row.tempo_estimado_minutos,
         ancoragem_fonte_score=row.ancoragem_score,
         status_upload=row.status_upload,
-        conceitos_chave=json.loads(row.conceitos_chave_json)[:6],
+        conceitos_chave=_conceitos_chave(row),
     )
 
 
@@ -132,5 +144,5 @@ def item_catalogo_de_material(row: MaterialDB) -> ItemCatalogoAluno:
         nivel=row.nivel,
         tempo_estimado_estudo_minutos=row.tempo_estimado_minutos,
         criado_em=row.criado_em,
-        conceitos_chave=json.loads(row.conceitos_chave_json)[:6],
+        conceitos_chave=_conceitos_chave(row),
     )

@@ -122,6 +122,21 @@ def test_catalogo_devolve_campos_do_item_e_conceitos_limitados(
     ]
 
 
+def test_catalogo_tolera_conceitos_chave_corrompidos(
+    cliente, semear_aluno, semear_material, vincular
+):
+    aluno = semear_aluno()
+    material = semear_material(
+        visibilidade="publicado", conceitos_chave_json="{"
+    )
+    vincular(aluno, material)
+
+    resp = cliente.get(f"/api/v1/aluno/materiais?aluno_id={aluno}")
+
+    assert resp.status_code == 200
+    assert resp.json()["itens"][0]["conceitos_chave"] == []
+
+
 def test_catalogo_filtra_por_q_formato_e_perfil(
     cliente, semear_aluno, semear_material, vincular
 ):

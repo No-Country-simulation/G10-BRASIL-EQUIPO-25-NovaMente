@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import io
+import logging
+import uuid
 from datetime import datetime, timezone
 from typing import Annotated
 
@@ -33,6 +35,46 @@ from app.services.extracao import extrair_texto_markdown, extrair_texto_pdf
 from app.workers.job_worker import criar_job
 
 router = APIRouter(prefix="/adaptacoes", tags=["adaptacoes"])
+logger = logging.getLogger(__name__)
+
+
+def _pacote_ou_erro(adaptacao_id: str) -> AdaptacaoPacote:
+    """Carrega o pacote para as rotas de leitura, separando 404 de 500.
+
+    Linha ausente continua sendo ``404 ADAPTACAO_NAO_ENCONTRADA``. Linha
+    existente com ``pacote_json`` inválido vira ``500 INTERNO`` com um
+    ``request_id`` registrado no log, conforme a spec §5.1.
+    """
+    try:
+        pacote = repositorio.obter_pacote(adaptacao_id)
+    except repositorio.PacoteCorrompido as exc:
+        request_id = str(uuid.uuid4())
+        logger.exception(
+            "Pacote corrompido [%s]: adaptacao_id=%s", request_id, adaptacao_id
+        )
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "erro": {
+                    "codigo": "INTERNO",
+                    "mensagem": "Pacote de adaptação corrompido.",
+                    "request_id": request_id,
+                }
+            },
+        ) from exc
+
+    if pacote is None:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "erro": {
+                    "codigo": "ADAPTACAO_NAO_ENCONTRADA",
+                    "mensagem": "Adaptação não encontrada.",
+                }
+            },
+        )
+    return pacote
+
 
 # MIME types aceitos para upload
 _MIMES_ACEITOS = {
@@ -249,13 +291,7 @@ def listar_adaptacoes(
 
 @router.get("/{adaptacao_id}", response_model=AdaptacaoPacote)
 def obter_adaptacao(adaptacao_id: str) -> AdaptacaoPacote:
-    pacote = repositorio.obter_pacote(adaptacao_id)
-    if pacote is None:
-        raise HTTPException(
-            status_code=404,
-            detail={"erro": {"codigo": "ADAPTACAO_NAO_ENCONTRADA", "mensagem": "Adaptação não encontrada."}},
-        )
-    return pacote
+    return _pacote_ou_erro(adaptacao_id)
 
 
 # ── GET /adaptacoes/{id}/download ────────────────────────────────────────────
@@ -264,12 +300,7 @@ def obter_adaptacao(adaptacao_id: str) -> AdaptacaoPacote:
 @router.get("/{adaptacao_id}/download")
 def baixar_json(adaptacao_id: str) -> Response:
     """Serve o pacote como arquivo JSON para download."""
-    pacote = repositorio.obter_pacote(adaptacao_id)
-    if pacote is None:
-        raise HTTPException(
-            status_code=404,
-            detail={"erro": {"codigo": "ADAPTACAO_NAO_ENCONTRADA", "mensagem": "Adaptação não encontrada."}},
-        )
+    pacote = _pacote_ou_erro(adaptacao_id)
     nome_arquivo = pacote.armazenamento_oci.objeto_id
     return Response(
         content=pacote.model_dump_json(indent=2),
@@ -290,12 +321,7 @@ def exportar(adaptacao_id: str, formato: str) -> Response:
             detail={"erro": {"codigo": "FORMATO_DESCONHECIDO", "mensagem": f"Formato '{formato}' desconhecido."}},
         )
 
-    pacote = repositorio.obter_pacote(adaptacao_id)
-    if pacote is None:
-        raise HTTPException(
-            status_code=404,
-            detail={"erro": {"codigo": "ADAPTACAO_NAO_ENCONTRADA", "mensagem": "Adaptação não encontrada."}},
-        )
+    pacote = _pacote_ou_erro(adaptacao_id)
 
     conteudo = pacote.conteudo_adaptado
     nome_base = pacote.armazenamento_oci.objeto_id.rsplit(".", 1)[0]
