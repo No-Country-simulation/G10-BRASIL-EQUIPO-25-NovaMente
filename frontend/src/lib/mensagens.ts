@@ -125,11 +125,10 @@ export const M = {
     },
     equipe: {
       titulo: 'Equipe e realização',
-      subtitulo: 'Quatro integrantes, um produto construído durante o programa ONE.',
+      subtitulo: 'Três integrantes, um produto construído durante o programa ONE.',
       integrantes: [
         { nome: 'Alex Grellet', papel: 'Vibe Coder / Developer' },
         { nome: 'Luan Carvalho', papel: 'Vibe Coder / Developer' },
-        { nome: 'Mario Lucio Breder Junior', papel: 'Product Manager / Developer' },
         { nome: 'Renato Campos', papel: 'Tech Lead / Vibe Coder' },
       ],
       repositorioRotulo: 'Repositório no GitHub',

@@ -581,7 +581,7 @@ Seções, nesta ordem:
 6. **Dois públicos** — painel "Para empresas e educadores" (gerar, publicar, acompanhar) e painel "Para alunos" (entrar e estudar), com CTAs.
 7. **Tecnologia e confiança** — ancoragem estrita na fonte, score de ancoragem, ChromaDB, Gemini, persistência OCI. Não citar multi-agentes, deploy em OCI Compute, feedback em tempo real nem recursos fora do MVP.
 8. **Fundamentação pedagógica** — scaffolding, carga cognitiva e microlearning em três blocos curtos.
-9. **Equipe e realização** — os quatro integrantes com papéis, link do repositório e crédito ao programa ONE.
+9. **Equipe e realização** — os três integrantes com papéis, link do repositório e crédito ao programa ONE.
 10. **Footer** — navegação, créditos e aviso de projeto de hackathon.
 
 Regras:
