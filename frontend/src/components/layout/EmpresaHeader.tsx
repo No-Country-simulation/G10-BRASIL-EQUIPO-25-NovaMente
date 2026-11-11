@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import { Logo } from './Logo';
 import { SkinSwitcher } from './SkinSwitcher';
 import { TourLauncher } from './TourLauncher';
 import { M } from '@/lib/mensagens';
@@ -29,9 +30,7 @@ export function EmpresaHeader() {
     <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/90 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between px-2 sm:px-4">
         <div className="flex items-center gap-2 sm:gap-8">
-          <Link href={ROTAS.landing} className="font-semibold tracking-tight">
-            {M.app.nome}
-          </Link>
+          <Logo />
           <nav aria-label={M.app.navPrincipal} data-tour="empresa-nav" className="hidden gap-1 md:flex">
             {NAV.map((item) => (
               <Link

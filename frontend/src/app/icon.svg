@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="titulo">
+  <title id="titulo">Conceito 3 — símbolo compacto para favicon</title>
+  <defs>
+    <linearGradient id="grad" x1="120" y1="120" x2="400" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.44" r="0.58">
+      <stop offset="0" stop-color="#8B5CF6" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#0B0B12" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sparkGrad" x1="350" y1="88" x2="422" y2="172" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="#0B0B12"/>
+  <rect width="512" height="512" rx="112" fill="url(#halo)"/>
+
+  <g fill="url(#grad)">
+    <path d="M138 186h58v164h-58z"/>
+    <path d="M196 186h50l62 164h-56z"/>
+    <path d="M312 186h58v164h-58z"/>
+  </g>
+
+  <path d="M386 92l12 34 34 12-34 12-12 34-12-34-34-12 34-12z" fill="url(#sparkGrad)"/>
+  <path d="M386 108l7 20 20 7-20 7-7 20-7-20-20-7 20-7z" fill="#EDE9FE"/>
+</svg>

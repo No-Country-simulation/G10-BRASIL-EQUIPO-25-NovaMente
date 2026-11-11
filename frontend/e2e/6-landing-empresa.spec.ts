@@ -11,6 +11,25 @@ test.describe('landing e área da empresa', () => {
     });
   });
 
+  test('logo da marca aparece na landing e na empresa nas duas skins', async ({ page }) => {
+    await page.goto('/');
+    const logo = page.getByRole('img', { name: 'NovaMente' }).first();
+    await expect(logo).toBeVisible();
+    await expect(logo).toHaveAttribute('src', '/brand/logo-header.svg');
+
+    await page.evaluate(() => {
+      window.localStorage.setItem(
+        'novamente.skin',
+        JSON.stringify({ state: { skin: 'ciano' }, version: 0 }),
+      );
+    });
+    await page.reload();
+    await expect(page.getByRole('img', { name: 'NovaMente' }).first()).toBeVisible();
+
+    await page.goto('/empresa/gerar');
+    await expect(page.getByRole('img', { name: 'NovaMente' }).first()).toBeVisible();
+  });
+
   test('landing apresenta a proposta e leva à geração; empresa publica, vincula e exclui', async ({
     page,
   }) => {

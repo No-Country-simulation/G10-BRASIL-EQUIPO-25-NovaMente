@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Logo } from './Logo';
 import { SkinSwitcher } from './SkinSwitcher';
 import { TourLauncher } from './TourLauncher';
 import { M } from '@/lib/mensagens';
@@ -17,9 +18,7 @@ export function LandingHeader() {
     <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/90 backdrop-blur">
       <div className="mx-auto flex min-h-16 w-full max-w-[1120px] flex-wrap items-center justify-between gap-2 px-4 py-2 sm:px-6">
         <div className="flex items-center gap-8">
-          <Link href={ROTAS.landing} className="font-semibold tracking-tight">
-            {M.app.nome}
-          </Link>
+          <Logo />
           <nav aria-label={M.landing.header.navPrincipal} className="hidden items-center gap-5 text-sm lg:flex">
             {ANCORAS.map((ancora) => (
               <a key={ancora.href} href={ancora.href} className="text-[var(--fg-muted)] hover:text-[var(--fg)]">

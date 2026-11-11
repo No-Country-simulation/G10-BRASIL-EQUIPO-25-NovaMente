@@ -33,6 +33,10 @@ O **conceito 3 — página + faísca** foi escolhido para refinamento. O kit de 
 
 Decisão de cor: a faísca acompanha o gradiente violeta → ciano na versão principal e no compacto; no ícone de app ela fica branca para contraste.
 
+## Aplicação no produto
+
+O lockup `/brand/logo-header.svg` já está aplicado no header da landing, da empresa e da área do aluno. As capturas `header-violeta.png` e `header-ciano.png` mostram a marca nas duas skins.
+
 ## Próximos passos sugeridos
 
 1. Refinar o símbolo em grid e testar em 16, 24, 32, 64 e 512 px.
