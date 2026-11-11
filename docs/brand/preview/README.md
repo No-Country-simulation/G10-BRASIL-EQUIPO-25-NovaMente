@@ -29,7 +29,7 @@ Uma página que se dobra em N e libera uma faísca. É a direção mais humana e
 
 ## Direção escolhida
 
-O **conceito 3 — página + faísca** foi escolhido para refinamento. O kit de teste completo está em [`conceito-3/`](conceito-3/), com símbolo principal, compacto, monocromáticos, lockups e ícone de app.
+O **conceito 3 — página + faísca** foi escolhido para refinamento. O kit de teste completo está em [`conceito-3/`](conceito-3/), com símbolo principal, wordmark, lockups e ícone de app.
 
 Decisão de cor: a faísca acompanha o gradiente violeta → ciano na versão principal e no compacto; no ícone de app ela fica branca para contraste.
 

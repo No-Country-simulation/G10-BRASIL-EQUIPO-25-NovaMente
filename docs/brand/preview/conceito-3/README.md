@@ -6,8 +6,8 @@ Kit de teste do conceito escolhido para exploração. **Abra `index.html`** para
 
 | Arquivo | Uso |
 |---|---|
-| `simbolo-principal.svg` | Símbolo completo (página + N + faísca), para 48 px ou mais |
-| `simbolo-compacto.svg` | N + faísca, para favicon, avatar e 16–32 px |
+| `simbolo-principal.svg` | Símbolo completo (página + N + faísca), usado no header e no favicon |
+| `logo-header.svg` | Lockup do header: ícone principal + “ovaMente” |
 | `simbolo-mono-claro.svg` | Monocromático claro, para fundos escuros |
 | `simbolo-mono-escuro.svg` | Monocromático escuro, para fundos claros |
 | `wordmark.svg` | Wordmark “NovaMente” em contornos, com “Mente” em gradiente |
@@ -21,15 +21,16 @@ O wordmark foi convertido em **contornos reais** a partir da Inter variável já
 
 ## Decisão
 
-- **Linha oficial:** símbolo principal (página + N + faísca).
-- **Faísca:** acompanha o gradiente violeta → ciano no símbolo principal e no compacto.
+- **Linha oficial:** símbolo principal (página + N + faísca), sem versão compacta.
+- **Header:** o ícone principal ocupa o lugar do N e é seguido por “ovaMente”.
+- **Faísca:** acompanha o gradiente violeta → ciano.
 - **Ícone de app:** a faísca fica branca para manter contraste sobre o fundo em gradiente.
-- **Favicon:** usar o compacto, não o principal.
+- **Favicon:** usa o símbolo principal.
 
 ## O que o teste mostra
 
 - **Acima de 48 px:** o símbolo principal funciona bem; a página dá contexto e a faísca chama atenção.
-- **Entre 16 e 32 px:** o contorno da página e o N interno perdem definição. O compacto resolve.
+- **Entre 16 e 32 px:** o contorno da página e o N interno perdem definição, mas a decisão foi manter o principal para preservar a assinatura.
 - **Monocromático:** a silhueta se mantém; a faísca é o elemento que continua reconhecível.
 - **Header:** o lockup horizontal precisa de um wordmark desenhado em contornos para não depender da fonte do sistema.
 - **Ícone de app:** o fundo em gradiente funciona, mas a página interna pode ser simplificada para 128 px.
