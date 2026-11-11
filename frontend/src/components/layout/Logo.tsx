@@ -23,7 +23,15 @@ export function Logo({ href = ROTAS.landing, className }: LogoProps) {
         alt="NovaMente"
         width={425}
         height={130}
-        className="h-8 w-auto sm:h-10"
+        className="logo-para-modo-escuro h-8 w-auto sm:h-10"
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/brand/logo-header-light.svg"
+        alt="NovaMente"
+        width={425}
+        height={130}
+        className="logo-para-modo-claro h-8 w-auto sm:h-10"
       />
     </Link>
   );

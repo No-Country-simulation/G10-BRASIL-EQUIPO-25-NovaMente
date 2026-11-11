@@ -67,7 +67,7 @@ servidor) e o Chromium do Playwright instalado uma vez com `npx playwright insta
   - `/aluno`, `/aluno/materiais/[id]` — identificação, catálogo e leitura do aluno.
 - `src/components/ui` — átomos e primitivos (shadcn)
 - `src/components/landing` — seções da landing pública
-- `src/components/layout` — shells, headers, banner de saúde, troca de skin e `TourLauncher`
+- `src/components/layout` — shells, headers, logo, banner de saúde, troca de modo/skin e `TourLauncher`
 - `src/components/views` — visualizadores e páginas client
 - `src/components/forms` — formulário de ingestão e cenários
 - `src/components/materiais` — catálogo, edição e exclusão de materiais
@@ -77,8 +77,8 @@ servidor) e o Chromium do Playwright instalado uma vez com `npx playwright insta
 - `src/services/api` — `NovaMenteApi`, cliente HTTP e normalização de erros
 - `src/mocks` — handlers MSW, estado em memória e fixtures validadas por zod
 - `src/types` — schemas zod e tipos do contrato
-- `src/themes` — tokens e skins `violeta` e `ciano`
-- `e2e` — cenários de geração, histórico, landing/empresa, aluno, tour, responsividade e acessibilidade com axe
+- `src/themes` — tokens das quatro combinações de modo (`dark`/`light`) e acento (`violeta`/`ciano`)
+- `e2e` — cenários de geração, histórico, landing/empresa, aluno, tour, tema, responsividade e acessibilidade com axe
 
 ## Tour guiado
 
@@ -87,6 +87,14 @@ servidor) e o Chromium do Playwright instalado uma vez com `npx playwright insta
 - O tour auto-inicia **uma vez** em `/empresa/gerar`, após 600 ms, se `localStorage['novamente.tour']` não existir ou tiver versão antiga.
 - "Ver tour" sempre reinicia; `Esc`/fechar gravam a conclusão em `novamente.tour = { versao: 1, concluido_em }`.
 - Passos sem alvo no DOM são pulados após 2.500 ms.
+
+## Tema claro/escuro
+
+- Modo (`dark`/`light`) e acento (`violeta`/`ciano`) são independentes: quatro combinações.
+- O estado fica em `novamente.skin`, versão 2 (`{ skin, modo }`); a migração da versão 1 adiciona `modo: "dark"` sem perder a skin.
+- `<html>` recebe `data-skin` e `data-modo`. Um script inline aplica os dois antes do primeiro paint para evitar flash.
+- O logo tem `logo-header.svg` (escuro) e `logo-header-light.svg` (claro); o `Logo` renderiza os dois e o CSS mostra apenas o do modo atual.
+- `e2e/9-tema.spec.ts` cobre alternância, persistência, acento no claro e continuidade em empresa/aluno. O axe roda em `/` nas quatro combinações.
 
 ## Decisões que valem saber
 

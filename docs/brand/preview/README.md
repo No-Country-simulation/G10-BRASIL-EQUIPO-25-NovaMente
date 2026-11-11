@@ -35,7 +35,7 @@ Decisão de cor: a faísca acompanha o gradiente violeta → ciano na versão pr
 
 ## Aplicação no produto
 
-O lockup `/brand/logo-header.svg` já está aplicado no header da landing, da empresa e da área do aluno. As capturas `header-violeta.png` e `header-ciano.png` mostram a marca nas duas skins.
+O lockup `/brand/logo-header.svg` (escuro) e `/brand/logo-header-light.svg` (claro) já estão aplicados no header da landing, da empresa e da área do aluno. As capturas `header-violeta.png`, `header-ciano.png`, `header-violeta-claro.png` e `header-ciano-claro.png` mostram a marca nas quatro combinações.
 
 ## Próximos passos sugeridos
 

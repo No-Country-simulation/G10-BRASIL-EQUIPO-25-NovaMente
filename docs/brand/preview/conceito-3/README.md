@@ -7,7 +7,8 @@ Kit de teste do conceito escolhido para exploração. **Abra `index.html`** para
 | Arquivo | Uso |
 |---|---|
 | `simbolo-principal.svg` | Símbolo completo (página + N + faísca), usado no header e no favicon |
-| `logo-header.svg` | Lockup do header: ícone principal + “ovaMente” |
+| `logo-header.svg` | Lockup do header no modo escuro: ícone principal + “ovaMente” |
+| `logo-header-light.svg` | Lockup do header no modo claro |
 | `simbolo-mono-claro.svg` | Monocromático claro, para fundos escuros |
 | `simbolo-mono-escuro.svg` | Monocromático escuro, para fundos claros |
 | `wordmark.svg` | Wordmark “NovaMente” em contornos, com “Mente” em gradiente |

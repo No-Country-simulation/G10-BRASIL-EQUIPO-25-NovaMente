@@ -28,7 +28,7 @@ export function EmpresaHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/90 backdrop-blur">
-      <div className="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between px-2 sm:px-4">
+      <div className="mx-auto flex min-h-16 w-full max-w-[1280px] flex-wrap items-center justify-between gap-2 px-2 py-2 sm:px-4">
         <div className="flex items-center gap-2 sm:gap-8">
           <Logo />
           <nav aria-label={M.app.navPrincipal} data-tour="empresa-nav" className="hidden gap-1 md:flex">

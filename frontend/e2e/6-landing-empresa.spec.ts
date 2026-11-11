@@ -11,23 +11,26 @@ test.describe('landing e área da empresa', () => {
     });
   });
 
-  test('logo da marca aparece na landing e na empresa nas duas skins', async ({ page }) => {
+  test('logo da marca aparece na landing e na empresa nos dois modos', async ({ page }) => {
     await page.goto('/');
-    const logo = page.getByRole('img', { name: 'NovaMente' }).first();
-    await expect(logo).toBeVisible();
-    await expect(logo).toHaveAttribute('src', '/brand/logo-header.svg');
+    const escuro = page.locator('.logo-para-modo-escuro').first();
+    const claro = page.locator('.logo-para-modo-claro').first();
 
-    await page.evaluate(() => {
-      window.localStorage.setItem(
-        'novamente.skin',
-        JSON.stringify({ state: { skin: 'ciano' }, version: 0 }),
-      );
-    });
-    await page.reload();
-    await expect(page.getByRole('img', { name: 'NovaMente' }).first()).toBeVisible();
+    await expect(escuro).toBeVisible();
+    await expect(claro).toBeHidden();
+    await expect(escuro).toHaveAttribute('src', '/brand/logo-header.svg');
+
+    await page.getByRole('button', { name: /ciano/i }).click();
+    await expect(escuro).toBeVisible();
+
+    await page.getByRole('button', { name: /ativar modo claro/i }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-modo', 'light');
+    await expect(claro).toBeVisible();
+    await expect(escuro).toBeHidden();
+    await expect(claro).toHaveAttribute('src', '/brand/logo-header-light.svg');
 
     await page.goto('/empresa/gerar');
-    await expect(page.getByRole('img', { name: 'NovaMente' }).first()).toBeVisible();
+    await expect(page.locator('.logo-para-modo-claro').first()).toBeVisible();
   });
 
   test('landing apresenta a proposta e leva à geração; empresa publica, vincula e exclui', async ({

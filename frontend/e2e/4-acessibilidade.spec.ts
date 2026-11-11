@@ -6,6 +6,8 @@ interface CasoAcessibilidade {
   titulo: RegExp | string;
   /** Skin aplicada antes da primeira pintura. */
   skin?: 'violeta' | 'ciano';
+  /** Modo aplicado antes da primeira pintura. */
+  modo?: 'dark' | 'light';
   /** Inclui violações `serious` (contraste AA) além das `critical`. */
   incluirSerios?: boolean;
   preparar?: (page: Page) => Promise<void>;
@@ -24,6 +26,25 @@ const ROTAS: CasoAcessibilidade[] = [
   {
     rota: '/',
     skin: 'ciano',
+    titulo: /material didático/i,
+    incluirSerios: true,
+    espera: async (page) => {
+      await expect(page.getByRole('link', { name: /área da empresa/i }).first()).toBeVisible();
+    },
+  },
+  {
+    rota: '/',
+    modo: 'light',
+    titulo: /material didático/i,
+    incluirSerios: true,
+    espera: async (page) => {
+      await expect(page.getByRole('link', { name: /área da empresa/i }).first()).toBeVisible();
+    },
+  },
+  {
+    rota: '/',
+    skin: 'ciano',
+    modo: 'light',
     titulo: /material didático/i,
     incluirSerios: true,
     espera: async (page) => {
@@ -71,7 +92,16 @@ const ROTAS: CasoAcessibilidade[] = [
     },
   },
   {
+    rota: '/empresa/materiais',
+    modo: 'light',
+    titulo: 'Materiais',
+    espera: async (page) => {
+      await page.getByRole('link', { name: /dominando redes na nuvem/i }).first().waitFor();
+    },
+  },
+  {
     rota: '/aluno',
+    modo: 'light',
     titulo: /quem está estudando/i,
     espera: async (page) => {
       await page.getByRole('button', { name: /selecionar ana beatriz/i }).waitFor();
@@ -94,10 +124,10 @@ const ROTAS: CasoAcessibilidade[] = [
   },
 ];
 
-for (const { rota, titulo, skin, incluirSerios, preparar, espera } of ROTAS) {
-  const sufixo = skin ? ` (skin ${skin})` : '';
+for (const { rota, titulo, skin, modo, incluirSerios, preparar, espera } of ROTAS) {
+  const sufixo = [skin ? `skin ${skin}` : '', modo ? `modo ${modo}` : ''].filter(Boolean).join(', ');
   const gravidade = incluirSerios ? 'crítica ou séria' : 'crítica';
-  test(`sem violação ${gravidade} de acessibilidade em ${rota}${sufixo}`, async ({ page }) => {
+  test(`sem violação ${gravidade} de acessibilidade em ${rota}${sufixo ? ` (${sufixo})` : ''}`, async ({ page }) => {
     // O tour auto-iniciado em /empresa/gerar cobriria a tela com o overlay.
     await page.addInitScript(() => {
       window.localStorage.setItem(
@@ -105,13 +135,16 @@ for (const { rota, titulo, skin, incluirSerios, preparar, espera } of ROTAS) {
         JSON.stringify({ versao: 1, concluido_em: new Date().toISOString() }),
       );
     });
-    if (skin) {
-      await page.addInitScript((valor) => {
+    if (skin || modo) {
+      await page.addInitScript(({ skin: skinValor, modo: modoValor }) => {
         window.localStorage.setItem(
           'novamente.skin',
-          JSON.stringify({ state: { skin: valor }, version: 1 }),
+          JSON.stringify({
+            state: { skin: skinValor ?? 'violeta', modo: modoValor ?? 'dark' },
+            version: 2,
+          }),
         );
-      }, skin);
+      }, { skin, modo });
     }
     await preparar?.(page);
 
