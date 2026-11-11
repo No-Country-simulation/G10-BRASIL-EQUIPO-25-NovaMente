@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NovaMente — teste do conceito 3</title>
+  <style>
+    :root {
+      --bg: #07070b;
+      --surface: #0f0f18;
+      --surface-2: #151522;
+      --border: #24203a;
+      --text: #f5f3ff;
+      --muted: #a9a3c2;
+      --violet: #8b5cf6;
+      --cyan: #22d3ee;
+      --light: #f4f1ec;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 14% 0%, rgba(139,92,246,.14), transparent 34rem),
+        radial-gradient(circle at 92% 10%, rgba(34,211,238,.08), transparent 30rem),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.55;
+    }
+
+    .wrap { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 44px 0 72px; }
+
+    .topo {
+      display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap;
+      margin-bottom: 32px; color: var(--muted); font-size: .82rem;
+    }
+    .topo .marca { color: var(--text); font-weight: 700; letter-spacing: -.03em; font-size: 1rem; }
+    .topo .selo { letter-spacing: .14em; text-transform: uppercase; font-size: .72rem; }
+
+    h1 { font-size: clamp(1.9rem, 4vw, 3.3rem); line-height: 1.04; letter-spacing: -.055em; margin: 0 0 10px; }
+    .intro { max-width: 68ch; color: var(--muted); margin: 0 0 34px; }
+
+    .hero {
+      display: grid; grid-template-columns: 280px 1fr; gap: 36px; align-items: center;
+      border: 1px solid var(--border); border-radius: 28px; padding: 28px;
+      background: linear-gradient(180deg, rgba(255,255,255,.03), transparent 50%), var(--surface);
+      margin-bottom: 30px;
+    }
+    .hero img { width: 100%; display: block; }
+    .hero .wordmark { font-size: clamp(2.2rem, 5vw, 4rem); font-weight: 650; letter-spacing: -.06em; line-height: 1; }
+    .hero .grad, .grad {
+      background: linear-gradient(90deg, var(--violet), var(--cyan));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .hero .tagline { color: var(--muted); text-transform: uppercase; letter-spacing: .18em; font-size: .74rem; margin-top: 10px; }
+    .hero .nota { color: var(--muted); margin: 18px 0 0; max-width: 54ch; font-size: .92rem; }
+
+    @media (max-width: 760px) { .hero { grid-template-columns: 1fr; } }
+
+    section { margin-top: 34px; }
+    h2 { font-size: 1.05rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 16px; font-weight: 600; }
+
+    .escala {
+      border: 1px solid var(--border); border-radius: 22px; background: var(--surface); padding: 20px;
+      display: grid; gap: 18px;
+    }
+    .linha-escala { display: flex; align-items: flex-end; gap: 22px; flex-wrap: wrap; }
+    .item-escala { display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--muted); font-size: .7rem; }
+    .item-escala img { display: block; }
+
+    .aplicacoes { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px; }
+    @media (max-width: 900px) { .aplicacoes { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+    @media (max-width: 560px) { .aplicacoes { grid-template-columns: 1fr; } }
+
+    .app-card {
+      border: 1px solid var(--border); border-radius: 20px; background: var(--surface); padding: 18px;
+      display: flex; flex-direction: column; gap: 14px; min-height: 190px;
+    }
+    .app-card h3 { margin: 0; font-size: .86rem; font-weight: 600; color: var(--text); }
+    .app-card p { margin: 0; color: var(--muted); font-size: .78rem; }
+
+    .app-icon { width: 128px; border-radius: 28px; display: block; }
+    .avatar { width: 96px; height: 96px; border-radius: 50%; overflow: hidden; background: #0b0b12; border: 1px solid var(--border); display: grid; place-items: center; }
+    .avatar img { width: 82%; height: 82%; }
+
+    .browser { background: #0b0b12; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .browser .barra { display: flex; align-items: center; gap: 7px; padding: 8px 10px; background: #141421; border-bottom: 1px solid var(--border); }
+    .browser .bolinha { width: 7px; height: 7px; border-radius: 50%; background: #3b3654; }
+    .browser .aba { display: flex; align-items: center; gap: 6px; background: #0b0b12; border-radius: 7px; padding: 4px 8px; color: var(--muted); font-size: .68rem; }
+    .browser .aba img { width: 16px; height: 16px; }
+    .browser .pagina { padding: 18px; color: var(--muted); font-size: .74rem; }
+
+    .header-mock {
+      background: #0b0b12; border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .header-mock img { width: 190px; display: block; }
+    .header-mock .nav { display: flex; gap: 10px; color: var(--muted); font-size: .66rem; }
+    @media (max-width: 420px) { .header-mock .nav { display: none; } }
+
+    .variacoes { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; }
+    @media (max-width: 980px) { .variacoes { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+    @media (max-width: 620px) { .variacoes { grid-template-columns: 1fr; } }
+
+    .variacao { border: 1px solid var(--border); border-radius: 20px; background: var(--surface); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+    .variacao img { width: 100%; display: block; }
+    .variacao.claro { background: var(--light); border-color: #d8d2c8; color: #1a1720; }
+    .variacao.claro p { color: #5a5364; }
+    .variacao h3 { margin: 0; font-size: .82rem; }
+    .variacao p { margin: 0; color: var(--muted); font-size: .76rem; }
+    .variacao .fundo-escuro { background: #0b0b12; border-radius: 14px; padding: 12px; }
+
+    .leitura { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px; }
+    @media (max-width: 760px) { .leitura { grid-template-columns: 1fr; } }
+    .leitura div { border: 1px solid var(--border); border-radius: 16px; background: var(--surface); padding: 16px; color: var(--muted); font-size: .86rem; }
+    .leitura b { color: var(--text); display: block; margin-bottom: 4px; }
+
+    footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--muted); font-size: .8rem; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+    code { background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 6px; color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="topo">
+      <div class="marca">NovaMente / conceito 3</div>
+      <div class="selo">Teste de escala e aplicação · 11 nov 2026</div>
+    </header>
+
+    <h1>Página + faísca, em teste.</h1>
+    <p class="intro">
+      O conceito 3 tem a narrativa mais pedagógica: a página que se dobra em N e libera a faísca
+      do entendimento. Esta folha testa o símbolo em escala pequena, monocromático, lockups e
+      aplicações reais para descobrir o que sobrevive e o que precisa simplificar.
+    </p>
+
+    <div class="hero">
+      <img src="simbolo-principal.svg" alt="Símbolo principal do conceito 3" />
+      <div>
+        <div class="wordmark"><span>Nova</span><span class="grad">Mente</span></div>
+        <div class="tagline">Da página à descoberta</div>
+        <p class="nota">
+          O símbolo principal funciona como assinatura em tamanhos médios e grandes. A faísca é o
+          elemento mais proprietário; a página dá o contexto de documentação.
+        </p>
+      </div>
+    </div>
+
+    <section>
+      <h2>Teste de escala</h2>
+      <div class="escala">
+        <div class="linha-escala">
+          <div class="item-escala"><img src="simbolo-principal.svg" style="width:16px;height:16px" alt="16 px" /><span>16 px</span></div>
+          <div class="item-escala"><img src="simbolo-principal.svg" style="width:24px;height:24px" alt="24 px" /><span>24 px</span></div>
+          <div class="item-escala"><img src="simbolo-principal.svg" style="width:32px;height:32px" alt="32 px" /><span>32 px</span></div>
+          <div class="item-escala"><img src="simbolo-principal.svg" style="width:48px;height:48px" alt="48 px" /><span>48 px</span></div>
+          <div class="item-escala"><img src="simbolo-principal.svg" style="width:64px;height:64px" alt="64 px" /><span>64 px</span></div>
+          <div class="item-escala"><img src="simbolo-principal.svg" style="width:96px;height:96px" alt="96 px" /><span>96 px</span></div>
+          <div class="item-escala"><img src="simbolo-principal.svg" style="width:128px;height:128px" alt="128 px" /><span>128 px</span></div>
+        </div>
+        <div class="linha-escala">
+          <div class="item-escala"><img src="simbolo-compacto.svg" style="width:16px;height:16px" alt="Compacto 16 px" /><span>16 px</span></div>
+          <div class="item-escala"><img src="simbolo-compacto.svg" style="width:24px;height:24px" alt="Compacto 24 px" /><span>24 px</span></div>
+          <div class="item-escala"><img src="simbolo-compacto.svg" style="width:32px;height:32px" alt="Compacto 32 px" /><span>32 px</span></div>
+          <div class="item-escala"><img src="simbolo-compacto.svg" style="width:48px;height:48px" alt="Compacto 48 px" /><span>48 px</span></div>
+          <div class="item-escala"><img src="simbolo-compacto.svg" style="width:64px;height:64px" alt="Compacto 64 px" /><span>64 px</span></div>
+          <div class="item-escala"><img src="simbolo-compacto.svg" style="width:96px;height:96px" alt="Compacto 96 px" /><span>96 px</span></div>
+          <div class="item-escala"><img src="simbolo-compacto.svg" style="width:128px;height:128px" alt="Compacto 128 px" /><span>128 px</span></div>
+        </div>
+        <p style="color:var(--muted);font-size:.78rem;margin:0">
+          Linha 1: símbolo principal. Linha 2: versão compacta (N + faísca) para favicon.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Aplicações</h2>
+      <div class="aplicacoes">
+        <div class="app-card">
+          <h3>Ícone de app</h3>
+          <img class="app-icon" src="icone-app.svg" alt="Ícone de aplicativo do NovaMente" />
+          <p>Versão com fundo em gradiente para launcher e loja.</p>
+        </div>
+        <div class="app-card">
+          <h3>Favicon / aba</h3>
+          <div class="browser">
+            <div class="barra"><span class="bolinha"></span><span class="bolinha"></span><span class="bolinha"></span><span class="aba"><img src="simbolo-compacto.svg" alt="" /> NovaMente</span></div>
+            <div class="pagina">Aba do navegador em 16 px.</div>
+          </div>
+          <p>A versão compacta evita que a página desapareça no tamanho mínimo.</p>
+        </div>
+        <div class="app-card">
+          <h3>Header do produto</h3>
+          <div class="header-mock">
+            <img src="lockup-horizontal.svg" alt="Lockup horizontal do NovaMente" />
+            <div class="nav"><span>Gerar</span><span>Materiais</span><span>Alunos</span></div>
+          </div>
+          <p>Lockup horizontal para a área da empresa e landing.</p>
+        </div>
+        <div class="app-card">
+          <h3>Avatar / social</h3>
+          <div class="avatar"><img src="simbolo-compacto.svg" alt="Avatar do NovaMente" /></div>
+          <p>O N + faísca funciona bem recortado em círculo.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Variações</h2>
+      <div class="variacoes">
+        <div class="variacao">
+          <img src="simbolo-principal.svg" alt="Símbolo principal" />
+          <h3>Principal</h3>
+          <p>Página + N + faísca. Usar a partir de 48 px.</p>
+        </div>
+        <div class="variacao">
+          <img src="simbolo-compacto.svg" alt="Símbolo compacto" />
+          <h3>Compacto</h3>
+          <p>N + faísca. Favicon, avatar e tamanhos de 16–32 px.</p>
+        </div>
+        <div class="variacao">
+          <div class="fundo-escuro"><img src="simbolo-mono-claro.svg" alt="Monocromático claro" /></div>
+          <h3>Monocromático claro</h3>
+          <p>Para fundos escuros, impressão em uma cor e carimbos.</p>
+        </div>
+        <div class="variacao claro">
+          <img src="simbolo-mono-escuro.svg" alt="Monocromático escuro" />
+          <h3>Monocromático escuro</h3>
+          <p>Para fundos claros, documentos e papelaria.</p>
+        </div>
+        <div class="variacao">
+          <img src="lockup-horizontal.svg" alt="Lockup horizontal" />
+          <h3>Horizontal</h3>
+          <p>Header, assinatura de e-mail e apresentações.</p>
+        </div>
+        <div class="variacao">
+          <img src="lockup-vertical.svg" alt="Lockup vertical" />
+          <h3>Vertical</h3>
+          <p>Capas, materiais didáticos e posts quadrados.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Leitura do teste</h2>
+      <div class="leitura">
+        <div><b>O que funciona</b>A faísca continua legível no compacto e dá personalidade. O N em gradiente mantém a marca reconhecível mesmo sem a página.</div>
+        <div><b>O que quebra</b>A página com contorno e o N interno perdem definição abaixo de 32 px. Por isso o favicon deve usar o compacto, não o principal.</div>
+        <div><b>Próximo refinamento</b>Simplificar o contorno da página no principal, desenhar o wordmark em contornos e testar a marca nas skins violeta e ciano do app.</div>
+        <div><b>Decisão</b>A faísca acompanha o gradiente violeta → ciano na versão principal e no compacto. No ícone de app ela fica branca para manter contraste sobre o fundo em gradiente.</div>
+      </div>
+    </section>
+
+    <footer>
+      <span>Arquivos: <code>simbolo-principal.svg</code> · <code>simbolo-compacto.svg</code> · <code>lockup-horizontal.svg</code> · <code>lockup-vertical.svg</code> · <code>icone-app.svg</code></span>
+      <span>Direção escolhida. Refino do símbolo e do wordmark em andamento.</span>
+    </footer>
+  </div>
+</body>
+</html>

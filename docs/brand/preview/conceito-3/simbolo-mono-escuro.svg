@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="titulo">
+  <title id="titulo">Conceito 3 — monocromático escuro</title>
+  <g fill="none" stroke="#0B0B12" stroke-width="14" stroke-linejoin="round">
+    <path d="M158 156h150l46 46v164H158z"/>
+    <path d="M308 156l46 46h-46z"/>
+  </g>
+  <g fill="#0B0B12">
+    <path d="M196 224h34v118h-34z"/>
+    <path d="M286 224h34v118h-34z"/>
+    <path d="M230 224h32l54 118h-34z"/>
+    <path d="M374 100l10 28 28 10-28 10-10 28-10-28-28-10 28-10z"/>
+  </g>
+</svg>

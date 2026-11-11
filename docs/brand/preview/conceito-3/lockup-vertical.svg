@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-labelledby="titulo">
+  <title id="titulo">Conceito 3 — lockup vertical</title>
+  <defs>
+    <linearGradient id="grad" x1="220" y1="70" x2="420" y2="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <linearGradient id="gradText" x1="220" y1="0" x2="430" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <linearGradient id="page" x1="220" y1="80" x2="420" y2="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#171329"/>
+      <stop offset="1" stop-color="#0F0F18"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="204" y="64" width="232" height="232" rx="48" fill="#0B0B12"/>
+  <g transform="translate(204 64) scale(0.4531)">
+    <path d="M158 156h150l46 46v164H158z" fill="url(#page)" stroke="url(#grad)" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M308 156l46 46h-46z" fill="#1E1B4B" stroke="url(#grad)" stroke-width="10" stroke-linejoin="round"/>
+    <g fill="url(#grad)">
+      <path d="M196 224h34v118h-34z"/>
+      <path d="M286 224h34v118h-34z"/>
+      <path d="M230 224h32l54 118h-34z"/>
+    </g>
+    <path d="M374 100l10 28 28 10-28 10-10 28-10-28-28-10 28-10z" fill="url(#grad)"/>
+    <path d="M374 114l6 16 16 6-16 6-6 16-6-16-16-6 16-6z" fill="#EDE9FE"/>
+  </g>
+
+  <text x="320" y="430" text-anchor="middle" font-family="Inter, 'Segoe UI', system-ui, sans-serif" font-size="82" font-weight="400" letter-spacing="-3.5" fill="#F5F3FF">Nova<tspan font-weight="700" fill="url(#gradText)">Mente</tspan></text>
+  <text x="320" y="476" text-anchor="middle" font-family="Inter, 'Segoe UI', system-ui, sans-serif" font-size="16" font-weight="600" letter-spacing="4.6" fill="#A9A3C2">CONHECIMENTO QUE SE ADAPTA</text>
+</svg>
