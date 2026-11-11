@@ -36,8 +36,8 @@ Decisão de cor: a faísca acompanha o gradiente violeta → ciano na versão pr
 ## Próximos passos sugeridos
 
 1. Refinar o símbolo em grid e testar em 16, 24, 32, 64 e 512 px.
-2. Criar o wordmark definitivo e as versões horizontal/vertical.
-3. Definir favicon, versão monocromática e aplicação nas skins violeta e ciano.
+2. Validar o espaçamento/kerning do wordmark em contornos.
+3. Testar a marca nas skins violeta e ciano do app.
 4. Documentar margem de respiro, tamanho mínimo e usos proibidos.
 
-> A direção está escolhida; os arquivos seguem em refinamento até o fechamento do wordmark.
+> O wordmark em contornos já está no kit; falta a validação de espaçamento e a aplicação nas telas.

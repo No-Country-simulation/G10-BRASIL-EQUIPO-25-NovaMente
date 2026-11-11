@@ -49,6 +49,7 @@
     }
     .hero img { width: 100%; display: block; }
     .hero .wordmark { font-size: clamp(2.2rem, 5vw, 4rem); font-weight: 650; letter-spacing: -.06em; line-height: 1; }
+    .hero .wordmark-img { width: min(100%, 520px); height: auto; display: block; }
     .hero .grad, .grad {
       background: linear-gradient(90deg, var(--violet), var(--cyan));
       -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -137,7 +138,7 @@
     <div class="hero">
       <img src="simbolo-principal.svg" alt="Símbolo principal do conceito 3" />
       <div>
-        <div class="wordmark"><span>Nova</span><span class="grad">Mente</span></div>
+        <img class="wordmark-img" src="wordmark.svg" alt="Wordmark NovaMente" />
         <div class="tagline">Da página à descoberta</div>
         <p class="nota">
           O símbolo principal funciona como assinatura em tamanhos médios e grandes. A faísca é o
@@ -237,6 +238,16 @@
           <img src="lockup-vertical.svg" alt="Lockup vertical" />
           <h3>Vertical</h3>
           <p>Capas, materiais didáticos e posts quadrados.</p>
+        </div>
+        <div class="variacao">
+          <div class="fundo-escuro"><img src="wordmark.svg" alt="Wordmark NovaMente" /></div>
+          <h3>Wordmark</h3>
+          <p>Contornos reais da Inter: “Nova” regular e “Mente” bold em gradiente.</p>
+        </div>
+        <div class="variacao claro">
+          <img src="wordmark-mono-escuro.svg" alt="Wordmark monocromático escuro" />
+          <h3>Wordmark mono</h3>
+          <p>Versão de uma cor para papelaria e documentos.</p>
         </div>
       </div>
     </section>

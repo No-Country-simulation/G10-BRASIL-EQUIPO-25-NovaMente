@@ -10,9 +10,14 @@ Kit de teste do conceito escolhido para exploração. **Abra `index.html`** para
 | `simbolo-compacto.svg` | N + faísca, para favicon, avatar e 16–32 px |
 | `simbolo-mono-claro.svg` | Monocromático claro, para fundos escuros |
 | `simbolo-mono-escuro.svg` | Monocromático escuro, para fundos claros |
+| `wordmark.svg` | Wordmark “NovaMente” em contornos, com “Mente” em gradiente |
+| `wordmark-mono-claro.svg` | Wordmark monocromático claro |
+| `wordmark-mono-escuro.svg` | Wordmark monocromático escuro |
 | `lockup-horizontal.svg` | Símbolo + wordmark horizontal |
 | `lockup-vertical.svg` | Símbolo + wordmark vertical |
 | `icone-app.svg` | Ícone de aplicativo com fundo em gradiente |
+
+O wordmark foi convertido em **contornos reais** a partir da Inter variável já usada no app (SIL Open Font License), sem depender de fonte instalada.
 
 ## Decisão
 
@@ -32,7 +37,7 @@ Kit de teste do conceito escolhido para exploração. **Abra `index.html`** para
 ## Próximos passos
 
 1. Refinar a geometria da página e do N no símbolo principal.
-2. Desenhar o wordmark definitivo em contornos (não texto SVG).
+2. Validar o espaçamento/kerning do wordmark e a relação símbolo + texto.
 3. Testar a marca nas skins violeta e ciano do app.
 4. Fechar as regras de uso: margem de respiro, tamanho mínimo, fundos permitidos e versões proibidas.
 5. Produzir favicon `.ico`/PNG e os tamanhos de app icon.
