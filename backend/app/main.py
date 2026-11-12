@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -14,11 +15,21 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1.routers import adaptacoes, health, jobs, oci
 from app.core.config import settings
+from app.services import repositorio
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Prepara o SQLite e marca como failed os jobs que o processo anterior deixou em andamento.
+    repositorio.iniciar()
+    yield
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title=settings.app_nome,
     version=settings.app_versao,
     docs_url="/docs",
