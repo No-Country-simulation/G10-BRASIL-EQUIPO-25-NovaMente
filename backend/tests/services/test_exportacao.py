@@ -251,6 +251,7 @@ def test_pdf_nao_busca_urls_de_conteudo_malicioso(gerar, monkeypatch):
 
 @pytest.fixture
 def salvar():
+    # Não há o que limpar: o banco_temporario (tests/conftest.py) dá a cada teste um SQLite novo.
     def _salvar(pacote):
         repositorio.salvar_pacote(pacote)
         return pacote

@@ -36,7 +36,8 @@ class Settings(BaseSettings):
     oci_bucket: str = "novamente-conteudos-educativos"
     oci_regiao: str = ""
 
-    # ── Jobs em memória ──────────────────────────────────────────────────────
+    # ── Jobs e histórico (SQLite) ────────────────────────────────────────────
+    db_path: str = "./data/novamente.db"  # mesmo arquivo do catálogo; em produção, use um volume
     job_ttl_segundos: int = 1800  # 30 minutos
     job_timeout_segundos: int = 300  # 5 minutos (igual ao frontend)
     llm_timeout_segundos: int = 120  # por chamada ao Gemini

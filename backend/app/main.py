@@ -25,6 +25,7 @@ from app.api.v1.routers import (
 )
 from app.core.config import settings
 from app.core.db import Base, engine
+from app.services import repositorio
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,15 +34,17 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    # Prepara o SQLite e marca como failed os jobs que o processo anterior deixou em andamento.
+    repositorio.iniciar()
     yield
 
 
 app = FastAPI(
+    lifespan=lifespan,
     title=settings.app_nome,
     version=settings.app_versao,
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan,
     description=(
         "API do NovaMente — Sistema Inteligente de Adaptação e Geração "
         "de Conteúdo Educacional via RAG + Google Gemini."
