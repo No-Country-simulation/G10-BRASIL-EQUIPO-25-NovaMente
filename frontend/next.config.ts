@@ -13,6 +13,12 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  async redirects() {
+    return [
+      { source: '/historico', destination: '/empresa/historico', permanent: true },
+      { source: '/resultado/:id', destination: '/empresa/resultado/:id', permanent: true },
+    ];
+  },
   async rewrites() {
     return [
       {

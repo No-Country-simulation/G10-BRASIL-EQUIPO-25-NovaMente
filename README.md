@@ -34,6 +34,10 @@
 ## Principais Funcionalidades
 ### Funcionalidades Planejadas / Previstas para o MVP:
 - Formulário de ingestão multiorigem (upload de arquivos `.pdf`, `.md`, `.txt` ou inserção de texto copiado).
+- Landing pública com apresentação do produto, formatos e tour guiado pelas telas reais.
+- Separação entre **área da empresa** (`/empresa/*`) e **área do aluno** (`/aluno/*`).
+- Catálogo durável de materiais em SQLite, com rascunho, publicação, edição e exclusão.
+- CRUD de alunos e vínculos aluno ↔ material, com identificação leve do aluno (sem senha).
 - Parametrização por perfil de destinatário, formato de saída, nicho/setor e nível de detalhe.
 - Execução assíncrona com monitoramento de etapas e progresso via polling de jobs.
 - Renderizadores visuais dedicados para Flashcards, Quiz Interativo e Documentos Markdown.
@@ -61,13 +65,12 @@ O desenvolvimento do projeto segue uma metodologia ágil adaptada para entregas 
 | :--- | :--- |
 | **Alex Grellet** | Vibe Coder / Developer |
 | **Luan Carvalho** | Vibe Coder / Developer |
-| **Mario Lucio Breder Junior** | Product Manager / Developer  |
 | **Renato Campos** | Tech Lead / Vibe Coder |
 
 ---
 
 ## Stack Tecnológica
-- **Backend:** Python 3.11+, FastAPI, Pydantic v2, Uvicorn, LangChain, ChromaDB (Vector Store), Google Gemini API (LLM).
+- **Backend:** Python 3.11+, FastAPI, Pydantic v2, Uvicorn, SQLAlchemy 2 + SQLite (catálogo de materiais, alunos e vínculos), LangChain, ChromaDB (Vector Store), Google Gemini API (LLM).
 - **Frontend:** Next.js (App Router), TypeScript, Tailwind CSS, shadcn/ui, TanStack Query, Zustand, React Hook Form + Zod, Framer Motion, React Markdown.
 - **Armazenamento e Nuvem:** OCI Object Storage (Oracle Cloud Infrastructure - camada *Always Free*).
 - **Testes e Qualidade:** Pytest, Vitest, Testing Library, Playwright e MSW (*Mock Service Worker*) para contratos de rede.
@@ -79,29 +82,54 @@ O repositório está organizado como um monorepo contendo os módulos de backend
 
 ```text
 .
+├── Makefile                # Atalhos de desenvolvimento (venv, backend, frontend)
 ├── backend/
 │   ├── app/
 │   │   ├── api/v1/         # Rotas e endpoints REST da API
-│   │   ├── core/           # Configurações globais e tratamento de erros
-│   │   ├── models/         # Schemas Pydantic v2
+│   │   ├── core/           # Configurações globais, erros e engine SQLite
+│   │   ├── models/         # Schemas Pydantic v2 e modelos ORM
 │   │   ├── rag/            # Lógica de pipeline RAG, embeddings e ChromaDB
-│   │   ├── services/       # Serviços de OCI, extração, jobs e repositório
+│   │   ├── services/       # OCI, extração, jobs, repositório, catálogo e alunos
 │   │   └── main.py         # Ponto de entrada da aplicação FastAPI
 │   ├── data/exemplos/      # Fixtures e textos de demonstração
+│   │   └── novamente.db    # Banco SQLite local (gitignored, criado em runtime)
 │   ├── tests/              # Testes unitários e de integração (pytest)
 │   └── requirements.txt    # Dependências Python do backend
 ├── frontend/
 │   ├── src/
-│   │   ├── app/            # Rotas do Next.js (Gerar, Resultado, Histórico)
-│   │   ├── components/     # Componentes de UI, formulários e visualizadores
+│   │   ├── app/            # Rotas: landing, /empresa/* e /aluno/*
+│   │   ├── components/     # UI, landing, empresa, aluno e visualizadores
 │   │   ├── features/       # Hooks e regras de negócio encapsuladas
 │   │   ├── services/       # Cliente de API e adaptadores de transporte
 │   │   ├── types/          # Schemas Zod e tipos globais
 │   │   └── mocks/          # Handlers e fixtures do MSW
+│   ├── e2e/                # Playwright: fluxos, tour, responsivo e axe
 │   └── package.json        # Dependências Node.js do frontend
 └── docs/                   # Documentação técnica e especificações do projeto
 
 ```
+
+## Áreas da aplicação
+
+```text
+/                     landing pública + tour
+/empresa/gerar        geração de material
+/empresa/historico    histórico de pacotes gerados
+/empresa/resultado/:id  detalhe, OCI e exportação
+/empresa/materiais    catálogo: rascunho, publicado, editar e excluir
+/empresa/alunos       CRUD de alunos
+/empresa/alunos/:id   detalhe do aluno + vínculos com materiais
+/aluno                identificação por nome + catálogo liberado
+/aluno/materiais/:id  leitura do material pelo aluno
+```
+
+Fluxo empresa × aluno:
+
+1. A empresa gera o material em `/empresa/gerar`; ele nasce como **rascunho**.
+2. Em `/empresa/materiais`, a empresa revisa, publica e pode excluir.
+3. Em `/empresa/alunos/:id`, vincula materiais publicados (ou ainda em rascunho) ao aluno.
+4. O aluno se identifica sem senha em `/aluno` e vê somente materiais **publicados e vinculados** ao seu `aluno_id`.
+5. Acesso direto a material não liberado responde `404 MATERIAL_NAO_DISPONIVEL`, sem revelar sua existência.
 
 
 
@@ -116,6 +144,8 @@ O repositório está organizado como um monorepo contendo os módulos de backend
 
 - Git para controle de versão.
 
+- GNU Make (opcional, recomendado para os atalhos `make`; no Windows: `choco install make` ou `winget install ezwinports.make`).
+
 - Chaves de API configuradas para acesso ao modelo de IA (Google Gemini) e opcionais credenciais da OCI Object Storage (caso deseje testar a persistência em nuvem).
 
 ## Como Executar
@@ -127,6 +157,38 @@ git clone https://github.com/No-Country-simulation/G10-BRASIL-EQUIPO-25-NovaMent
 cd G10-BRASIL-EQUIPO-25-NovaMente
 ```
 
+### Atalhos com Make (recomendado)
+
+Com o [GNU Make](https://www.gnu.org/software/make/) instalado, os comandos abaixo funcionam em Linux/macOS e Windows (PowerShell, CMD ou Git Bash), sempre a partir da raiz do repositório:
+
+| Comando | O que faz |
+|---|---|
+| `make venv` | Cria `backend/.venv` e instala `backend/requirements.txt` |
+| `make install-backend-dev` | Cria o venv e instala também `requirements-dev.txt` (pytest) |
+| `make install` | Cria o venv com deps de dev e instala as dependências do frontend |
+| `make dev-backend` | Sobe a API FastAPI em `http://localhost:8000` |
+| `make dev-frontend` | Sobe o Next.js em `http://localhost:3000` |
+| `make test` | Roda `pytest` e `vitest` |
+| `make test-backend` | Roda somente `pytest` |
+| `make test-frontend` | Roda somente `vitest` |
+| `make typecheck` | Roda `tsc --noEmit` |
+| `make lint` | Roda o ESLint |
+| `make build` | Build de produção do Next.js |
+| `make e2e` | Roda o Playwright |
+| `make audit` | Roda `npm audit` no `frontend/` |
+| `make verificar` | DoD completo: pytest + `npm run verificar` |
+| `make help` | Lista todos os comandos disponíveis |
+
+```bash
+make install        # primeira execução (deps de dev + frontend)
+make dev-backend    # terminal 1
+make dev-frontend   # terminal 2
+```
+
+> **Windows:** instale o Make com `choco install make` ou `winget install ezwinports.make`. Não é necessário ativar o venv manualmente — os comandos usam o interpretador de `backend/.venv` diretamente.
+
+As seções abaixo descrevem a execução manual, sem o Make.
+
 ### Configuração e Execução do Backend
 
 ##### Navegue até a pasta do backend:
@@ -135,13 +197,14 @@ cd G10-BRASIL-EQUIPO-25-NovaMente
 cd backend
 ```
 
-##### Crie e ative um ambiente virtual Python (utilizando Python 3.11):
+##### Crie e ative um ambiente virtual Python (utilizando Python 3.11+):
 
 ```bash
-python3.11 -m venv venv
+python3 -m venv .venv
 ```
 ```bash
-source venv/bin/activate
+source .venv/bin/activate          # Linux/macOS
+.venv\Scripts\Activate.ps1         # Windows (PowerShell)
 ```
 
 ##### Instale as dependências do projeto:
@@ -162,6 +225,7 @@ Edite o `.env` e preencha:
 - `GOOGLE_API_KEY`: chave da API Google Gemini (obrigatória; nunca a envie para o repositório).
 - `MODELO_LLM`: modelo Gemini usado na geração (padrão: `gemini-3.5-flash-lite`).
 - `CHROMA_DIR`: pasta do ChromaDB, relativa a `backend/` (ex.: `./data/chroma`).
+- `DATABASE_URL`: banco do catálogo (padrão: `sqlite:///./data/novamente.db`, relativo a `backend/`). O schema é criado no start da API; não há migrations nesta fase.
 
 ##### (Opcional) Liste os modelos disponíveis para a sua chave:
 ```bash

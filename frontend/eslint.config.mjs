@@ -12,12 +12,16 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    "**/.next/**",
     "out/**",
     "build/**",
     "coverage/**",
     "next-env.d.ts",
     // Build do Storybook não é código-fonte.
     "storybook-static/**",
+    // Artefatos do Playwright.
+    "test-results/**",
+    "playwright-report/**",
     // Gerado pelo `msw init`; não é código nosso.
     "public/mockServiceWorker.js",
   ]),

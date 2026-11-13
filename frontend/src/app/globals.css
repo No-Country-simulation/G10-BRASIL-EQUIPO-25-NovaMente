@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import "../styles/shadcn-tailwind.css";
 @import "../themes/tokens.css";
 
 @plugin '@tailwindcss/typography';
@@ -148,6 +148,14 @@
 }
 
 @layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  html[data-modo='light'] {
+    color-scheme: light;
+  }
+
   body {
     background: var(--bg);
     color: var(--fg);
@@ -158,4 +166,13 @@
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
+}
+
+/* O logo troca por CSS para o primeiro paint já sair correto, sem hydration mismatch. */
+[data-modo='light'] .logo-para-modo-escuro {
+  display: none;
+}
+
+[data-modo='dark'] .logo-para-modo-claro {
+  display: none;
 }

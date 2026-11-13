@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="titulo">
+  <title id="titulo">Conceito 3 — ícone de aplicativo</title>
+  <defs>
+    <linearGradient id="bg" x1="40" y1="40" x2="472" y2="472" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="0.3" cy="0.2" r="0.7">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#shine)"/>
+
+  <path d="M158 156h150l46 46v164H158z" fill="#0B0B12" fill-opacity="0.16" stroke="#FFFFFF" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M308 156l46 46h-46z" fill="#FFFFFF" fill-opacity="0.2" stroke="#FFFFFF" stroke-width="10" stroke-linejoin="round"/>
+
+  <g fill="#FFFFFF">
+    <path d="M196 224h34v118h-34z"/>
+    <path d="M286 224h34v118h-34z"/>
+    <path d="M230 224h32l54 118h-34z"/>
+  </g>
+
+  <path d="M374 100l10 28 28 10-28 10-10 28-10-28-28-10 28-10z" fill="#FFFFFF"/>
+  <path d="M374 114l6 16 16 6-16 6-6 16-6-16-16-6 16-6z" fill="#0B0B12" fill-opacity="0.3"/>
+</svg>

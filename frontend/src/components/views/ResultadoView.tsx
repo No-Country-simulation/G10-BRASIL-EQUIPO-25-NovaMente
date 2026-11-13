@@ -1,23 +1,47 @@
 'use client';
 
+import Link from 'next/link';
+import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ContentRenderer } from './ContentRenderer';
 import { OCIPanel } from './OCIPanel';
 import { ResultadoHeader } from './ResultadoHeader';
-import { useAdaptation } from '@/features/adaptations/useAdaptation';
+import { MaterialEditDialog } from '@/components/materiais/MaterialEditDialog';
 import { useExport } from '@/features/adaptations/useExport';
+import { useAtualizarMaterial } from '@/features/materiais/useMateriais';
+import { useMaterial } from '@/features/materiais/useMaterial';
 import { useOciStatus } from '@/features/oci/useOciStatus';
 import { M } from '@/lib/mensagens';
+import { ROTAS } from '@/lib/rotas';
 import { ErroApi, mensagemDoErro } from '@/services/api/erros';
+import type { MaterialAtualizacao, VisibilidadeMaterial } from '@/types/novamente';
 
-export function ResultadoView({ adaptacaoId }: { adaptacaoId: string }) {
-  const { data: pacote, isPending, error, refetch } = useAdaptation(adaptacaoId);
+interface Aviso {
+  tipo: 'sucesso' | 'erro';
+  texto: string;
+}
+
+export function ResultadoView({
+  materialId,
+  adaptacaoId,
+}: {
+  materialId?: string;
+  adaptacaoId?: string;
+}) {
+  const id = materialId ?? adaptacaoId ?? '';
+  const { data: detalhe, isPending, error, refetch } = useMaterial(id);
   const { data: oci } = useOciStatus();
+  const atualizarMaterial = useAtualizarMaterial();
+  const [editando, setEditando] = useState(false);
+  const [alternando, setAlternando] = useState(false);
+  const [aviso, setAviso] = useState<Aviso | null>(null);
   // Uma única instância para header e menu; o hook aceita null para poder ser
   // chamado antes dos early returns sem quebrar a ordem dos hooks.
-  const exportacao = useExport(pacote ?? null);
+  const pacote = detalhe?.pacote ?? null;
+  const material = detalhe?.material ?? null;
+  const exportacao = useExport(pacote);
 
   if (isPending) {
     // Espelha tags, classes e alturas do conteúdo final para o React reutilizar
@@ -32,8 +56,8 @@ export function ResultadoView({ adaptacaoId }: { adaptacaoId: string }) {
               <Skeleton className="h-8 w-2/3" />
               <Skeleton className="mt-1 h-5 w-1/3" />
             </div>
-            {/* Exportar / JSON / Nova geração: no mobile os três botões quebram
-                em duas linhas (72 px); daí para cima cabem em uma (32 px). */}
+            {/* Exportar / JSON / Editar / Publicar / Nova geração: no mobile os
+                botões quebram em duas linhas; daí para cima cabem em uma (32 px). */}
             <div className="flex flex-col items-end gap-2">
               <div className="flex flex-wrap items-center justify-end gap-2">
                 <Skeleton className="h-8 w-40" />
@@ -72,25 +96,88 @@ export function ResultadoView({ adaptacaoId }: { adaptacaoId: string }) {
         <div className="mt-4 flex gap-3">
           {!naoEncontrado && <Button onClick={() => refetch()}>{M.comum.tentarNovamente}</Button>}
           <Button asChild variant="outline">
-            <a href="/historico">{M.resultado.irParaHistorico}</a>
+            <Link href={naoEncontrado ? ROTAS.empresaMateriais : ROTAS.empresaHistorico}>
+              {naoEncontrado ? M.materiais.irParaMateriais : M.resultado.irParaHistorico}
+            </Link>
           </Button>
         </div>
       </div>
     );
   }
 
-  if (!pacote) return null;
+  if (!pacote || !material) return null;
+
+  const alternarVisibilidade = async () => {
+    const proxima: VisibilidadeMaterial =
+      material.visibilidade === 'publicado' ? 'rascunho' : 'publicado';
+    setAviso(null);
+    setAlternando(true);
+    try {
+      await atualizarMaterial.mutateAsync({
+        materialId: material.material_id,
+        dados: { visibilidade: proxima },
+      });
+      setAviso({
+        tipo: 'sucesso',
+        texto:
+          proxima === 'publicado' ? M.materiais.toastPublicado : M.materiais.toastDespublicado,
+      });
+    } catch (falha) {
+      setAviso({ tipo: 'erro', texto: mensagemDoErro(falha) });
+    } finally {
+      setAlternando(false);
+    }
+  };
+
+  const salvarEdicao = async (dados: MaterialAtualizacao) => {
+    await atualizarMaterial.mutateAsync({ materialId: material.material_id, dados });
+    setAviso({ tipo: 'sucesso', texto: M.materiais.toastEditado });
+    setEditando(false);
+  };
 
   return (
     <div>
-      <ResultadoHeader pacote={pacote} exportacao={exportacao} />
+      <ResultadoHeader
+        material={material}
+        pacote={pacote}
+        exportacao={exportacao}
+        alternando={alternando}
+        onEditar={() => setEditando(true)}
+        onAlternarVisibilidade={alternarVisibilidade}
+      />
+
+      {aviso && (
+        <div
+          role={aviso.tipo === 'sucesso' ? 'status' : 'alert'}
+          aria-live="polite"
+          className={
+            aviso.tipo === 'sucesso'
+              ? 'mb-6 rounded-lg border border-[var(--accent)] px-4 py-3 text-sm'
+              : 'mb-6 rounded-lg border border-[var(--danger)] px-4 py-3 text-sm text-[var(--danger)]'
+          }
+        >
+          {aviso.texto}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0">
-          <p className="mb-6 text-[var(--fg-muted)]">{pacote.conteudo_adaptado.introducao_contextualizada}</p>
+          <p className="mb-6 text-[var(--fg-muted)]">
+            {pacote.conteudo_adaptado.introducao_contextualizada}
+          </p>
           <ContentRenderer conteudo={pacote.conteudo_adaptado} />
         </div>
         <OCIPanel armazenamento={pacote.armazenamento_oci} avaliacao={pacote.avaliacao_qualidade} oci={oci} />
       </div>
+
+      {editando && (
+        <MaterialEditDialog
+          material={material}
+          open
+          onOpenChange={setEditando}
+          salvar={salvarEdicao}
+        />
+      )}
     </div>
   );
 }

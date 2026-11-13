@@ -1,7 +1,13 @@
 import { expect, test } from '@playwright/test';
 
 test('histórico reabre pacote, baixa JSON e desabilita CSV para não-Flashcards', async ({ page }) => {
-  await page.goto('/');
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      'novamente.tour',
+      JSON.stringify({ versao: 1, concluido_em: new Date().toISOString() }),
+    );
+  });
+  await page.goto('/empresa/gerar');
   await page.getByLabel(/título do documento/i).fill('Manual de operações VCN');
   await page.getByLabel(/conteúdo técnico/i).fill('A Virtual Cloud Network é uma rede privada. '.repeat(8));
   // Os inputs de rádio são sr-only dentro do label; o alvo real de clique é o rótulo visível.
@@ -17,17 +23,17 @@ test('histórico reabre pacote, baixa JSON e desabilita CSV para não-Flashcards
   await expect(page.getByRole('radio', { name: /^tutorial/i })).toBeChecked();
   await page.getByRole('button', { name: /gerar material/i }).click();
 
-  await expect(page).toHaveURL(/\/resultado\/01J/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/empresa\/resultado\/01J/, { timeout: 30_000 });
 
   await page.getByRole('link', { name: 'Histórico' }).click();
-  await expect(page).toHaveURL(/\/historico/);
+  await expect(page).toHaveURL(/\/empresa\/historico/);
   // Escopo no link do card: o título do documento também aparece no header de
   // /resultado e seria encontrado antes da navegação terminar.
   const card = page.getByRole('link', { name: /manual de operações vcn/i });
   await expect(card).toBeVisible();
   await card.click();
 
-  await expect(page).toHaveURL(/\/resultado\/01J/);
+  await expect(page).toHaveURL(/\/empresa\/resultado\/01J/);
   await expect(
     page.getByRole('heading', { name: 'Desenhando uma VCN pronta para produção' }),
   ).toBeVisible();

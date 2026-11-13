@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { cancelarJob, obterJob } from '../estadoJobs';
+import { registrarPacoteNoCatalogoMock } from '../estadoCatalogo';
 
 function jobNaoEncontrado() {
   return HttpResponse.json(
@@ -12,6 +13,10 @@ export const handlersJobs = [
   http.get('*/api/v1/jobs/:id', ({ params }) => {
     const job = obterJob(String(params.id));
     if (!job) return jobNaoEncontrado();
+    // O material nasce junto com o pacote persistido, como no backend.
+    if (job.status === 'succeeded' && job.resultado) {
+      registrarPacoteNoCatalogoMock(job.resultado);
+    }
     return HttpResponse.json(job);
   }),
 

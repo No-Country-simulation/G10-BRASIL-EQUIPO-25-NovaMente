@@ -9,6 +9,17 @@ export const urls = {
   exportacao: (id: string) => `${BASE}/adaptacoes/${encodeURIComponent(id)}/exportacao`,
   ociStatus: `${BASE}/oci/status`,
   health: `${BASE}/health`,
+  alunos: `${BASE}/alunos`,
+  aluno: (id: string) => `${BASE}/alunos/${encodeURIComponent(id)}`,
+  alunoMateriais: (id: string) => `${BASE}/alunos/${encodeURIComponent(id)}/materiais`,
+  alunoVinculo: (id: string, materialId: string) =>
+    `${BASE}/alunos/${encodeURIComponent(id)}/materiais/${encodeURIComponent(materialId)}`,
+  alunoIdentificacao: `${BASE}/aluno/identificacao`,
+  alunoCatalogo: `${BASE}/aluno/materiais`,
+  alunoMaterial: (materialId: string) =>
+    `${BASE}/aluno/materiais/${encodeURIComponent(materialId)}`,
+  materiais: `${BASE}/materiais`,
+  material: (id: string) => `${BASE}/materiais/${encodeURIComponent(id)}`,
 };
 
 export function montarQuery(params: Record<string, string | number | undefined>): string {

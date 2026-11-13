@@ -118,7 +118,7 @@ describe('GerarView', () => {
 
     await preencherEEnviar();
 
-    await waitFor(() => expect(push).toHaveBeenCalledWith('/resultado/a1'), { timeout: 3000 });
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/empresa/resultado/a1'), { timeout: 3000 });
     await new Promise((r) => setTimeout(r, 80));
     expect(push).toHaveBeenCalledTimes(1);
   });

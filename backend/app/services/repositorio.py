@@ -1,13 +1,12 @@
-"""Repositório de jobs e pacotes de adaptação, persistido em SQLite.
+"""Repositório de jobs, pacotes e catálogo em SQLite.
 
-O arquivo fica em ``DB_PATH`` (padrão ``/data/novamente.sqlite3``), lido a
-cada operação. Jobs expiram ``JOB_TTL_SEGUNDOS`` depois da última gravação;
-pacotes não expiram. Na subida, ``iniciar()`` marca como ``failed`` os jobs
-que estavam em andamento quando o processo parou.
+Jobs e pacotes usam uma conexão ``sqlite3`` própria (``DB_PATH``), enquanto o
+catálogo de materiais/alunos/vínculos usa SQLAlchemy (``DATABASE_URL``). Por
+padrão os dois apontam para o mesmo arquivo; ambos usam WAL.
 
-Cada operação abre e fecha a própria conexão (nada é compartilhado entre as
-threads dos jobs); as escritas passam por um lock de processo e o banco usa
-o modo WAL, para leituras não esperarem escritas.
+Jobs expiram ``JOB_TTL_SEGUNDOS`` depois da última gravação. Pacotes não
+expiram. Na subida, ``iniciar()`` marca como ``failed`` os jobs que estavam em
+andamento quando o processo parou.
 """
 
 from __future__ import annotations
@@ -21,12 +20,25 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-from app.models import AdaptacaoPacote, ErroJob, JobResposta
+from sqlalchemy import select
+
+from app.core.db import SessionLocal
+from app.models import AdaptacaoPacote, AdaptacaoResumo, ErroJob, JobResposta
+from app.models.db import MaterialDB
+from app.services.materiais import material_de_pacote, resumo_de_adaptacao
 
 MENSAGEM_INTERROMPIDO = "A geração foi interrompida porque o servidor reiniciou. Tente novamente."
 
 _lock = threading.Lock()
 _esquema_pronto: set[str] = set()  # caminhos de arquivo cujo esquema já foi conferido
+
+
+class PacoteCorrompido(Exception):
+    """A linha existe, mas o ``pacote_json`` persistido não é um pacote válido."""
+
+    def __init__(self, adaptacao_id: str) -> None:
+        super().__init__(f"Pacote corrompido para a adaptação {adaptacao_id}.")
+        self.adaptacao_id = adaptacao_id
 
 
 # ── Esquema e migrações ───────────────────────────────────────────────────────
@@ -152,10 +164,16 @@ def _purgar() -> None:
         conexao.execute("DELETE FROM jobs WHERE expira_em < ?", (time.time(),))
 
 
-# ── Pacotes ───────────────────────────────────────────────────────────────────
+# ── Pacotes e catálogo ────────────────────────────────────────────────────────
 
 
 def salvar_pacote(pacote: AdaptacaoPacote) -> None:
+    """Grava na tabela legada de pacotes e no catálogo de materiais.
+
+    A tabela ``pacotes`` mantém compatibilidade com a persistência de jobs e
+    histórico da develop; o catálogo é a fonte usada pelas rotas de materiais,
+    alunos e catálogo do aluno.
+    """
     with _conectar() as conexao, _lock, conexao:
         conexao.execute(
             """
@@ -167,20 +185,61 @@ def salvar_pacote(pacote: AdaptacaoPacote) -> None:
             (pacote.adaptacao_id, pacote.criado_em, pacote.model_dump_json()),
         )
 
+    with SessionLocal() as session:
+        material_de_pacote(session, pacote)
+        session.commit()
+
 
 def obter_pacote(adaptacao_id: str) -> AdaptacaoPacote | None:
-    with _conectar() as conexao:
-        linha = conexao.execute(
-            "SELECT dados FROM pacotes WHERE adaptacao_id = ?", (adaptacao_id,)
-        ).fetchone()
-    return AdaptacaoPacote.model_validate_json(linha[0]) if linha else None
+    """Lê o pacote do catálogo, distinguindo linha ausente de JSON inválido.
+
+    Devolve ``None`` quando não existe linha com esse ``adaptacao_id`` e levanta
+    :class:`PacoteCorrompido` quando a linha existe mas o ``pacote_json`` não
+    desserializa. As listagens continuam tolerantes, pois não abrem o pacote.
+    """
+    with SessionLocal() as session:
+        row = session.scalar(
+            select(MaterialDB).where(MaterialDB.adaptacao_id == adaptacao_id)
+        )
+        if row is None:
+            return None
+        return _pacote_do_json_estrito(row.pacote_json, adaptacao_id)
 
 
 def listar_pacotes() -> list[AdaptacaoPacote]:
-    # ORDER BY rowid mantém a ordem de criação (o upsert preserva o rowid).
-    with _conectar() as conexao:
-        linhas = conexao.execute("SELECT dados FROM pacotes ORDER BY rowid").fetchall()
-    return [AdaptacaoPacote.model_validate_json(dados) for (dados,) in linhas]
+    with SessionLocal() as session:
+        linhas = session.scalars(
+            select(MaterialDB).order_by(MaterialDB.criado_em, MaterialDB.material_id)
+        ).all()
+        pacotes = (_pacote_do_json(row.pacote_json) for row in linhas)
+        return [pacote for pacote in pacotes if pacote is not None]
+
+
+def listar_resumos() -> list[AdaptacaoResumo]:
+    """Lista resumos usando só colunas desnormalizadas (sem abrir ``pacote_json``)."""
+    with SessionLocal() as session:
+        linhas = session.scalars(
+            select(MaterialDB).order_by(MaterialDB.criado_em, MaterialDB.material_id)
+        ).all()
+        return [resumo_de_adaptacao(row) for row in linhas]
+
+
+def _pacote_do_json(pacote_json: str) -> AdaptacaoPacote | None:
+    """Valida o JSON; linhas corrompidas são ignoradas em vez de derrubar a API."""
+    try:
+        return AdaptacaoPacote.model_validate_json(pacote_json)
+    except ValueError:
+        return None
+
+
+def _pacote_do_json_estrito(
+    pacote_json: str, adaptacao_id: str
+) -> AdaptacaoPacote:
+    """Valida o JSON do detalhe e sinaliza corrupção em vez de devolver ``None``."""
+    try:
+        return AdaptacaoPacote.model_validate_json(pacote_json)
+    except ValueError as exc:
+        raise PacoteCorrompido(adaptacao_id) from exc
 
 
 # ── Subida ────────────────────────────────────────────────────────────────────
