@@ -21,6 +21,7 @@ class Settings(BaseSettings):
 
     # ── Google Gemini ────────────────────────────────────────────────────────
     google_api_key: str = ""
+    llm_provider: str = "gemini"  # provedor de LLM registrado em app/llm/fabrica.py
     modelo_llm: str = "gemini-3.5-flash-lite"
 
     # ── RAG / Chroma ─────────────────────────────────────────────────────────
