@@ -15,6 +15,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1.routers import adaptacoes, health, jobs, oci
 from app.core.config import settings
+from app.llm import validar_provedor_configurado
 from app.services import repositorio
 
 logging.basicConfig(level=logging.INFO)
@@ -23,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    # LLM_PROVIDER desconhecido impede a subida; a chave só é exigida na geração.
+    validar_provedor_configurado()
     # Prepara o SQLite e marca como failed os jobs que o processo anterior deixou em andamento.
     repositorio.iniciar()
     yield
