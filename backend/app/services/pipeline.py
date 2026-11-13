@@ -5,8 +5,10 @@ Este módulo orquestra:
   2. Indexação RAG (chunking + embeddings) — reutiliza app.rag
   3. Recuperação dos trechos mais relevantes
   4. Chamada ao provedor de LLM configurado (``app.llm``) para gerar o conteúdo
+     e os conceitos-chave, no mesmo JSON
   5. Avaliação de qualidade (ancoragem + clareza)
-  6. Montagem do ``AdaptacaoPacote`` completo
+  6. Montagem do ``AdaptacaoPacote`` completo, com os conceitos-chave
+     validados contra o texto de origem (``app.services.conceitos``)
 
 O progresso é reportado via callback ``on_progresso`` para que o worker
 atualize o job em memória a cada etapa.
@@ -36,6 +38,7 @@ from app.llm import (
     ProvedorLLM,
     obter_provedor,
 )
+from app.services.conceitos import MAX_CARACTERES, escolher_conceitos
 from app.models import (
     AdaptacaoPacote,
     AvaliacaoQualidade,
@@ -80,7 +83,8 @@ _INSTRUCOES_FORMATO: dict[FormatoSaida, str] = {
     "Flashcards": (
         "Gere entre 5 e 20 flashcards no formato JSON:\n"
         '{"tipo":"flashcards","titulo":"...","introducao_contextualizada":"...",'
-        '"itens":[{"frente":"...","verso":"...","dica_didatica":"..."}]}\n'
+        '"itens":[{"frente":"...","verso":"...","dica_didatica":"..."}],'
+        '"conceitos_chave":["..."]}\n'
         "dica_didatica é opcional; use null se não se aplicar. "
         "Retorne APENAS o JSON, sem markdown."
     ),
@@ -88,20 +92,20 @@ _INSTRUCOES_FORMATO: dict[FormatoSaida, str] = {
         "Gere entre 4 e 10 perguntas de quiz no formato JSON:\n"
         '{"tipo":"quiz","titulo":"...","introducao_contextualizada":"...",'
         '"itens":[{"pergunta":"...","opcoes":["a","b","c","d"],'
-        '"resposta_correta":0,"explicacao":"..."}]}\n'
+        '"resposta_correta":0,"explicacao":"..."}],"conceitos_chave":["..."]}\n'
         "resposta_correta é o índice em opcoes (0-based). "
         "Retorne APENAS o JSON, sem markdown."
     ),
     "Tutorial": (
         "Gere um tutorial passo a passo em Markdown dentro do JSON:\n"
         '{"tipo":"markdown","titulo":"...","introducao_contextualizada":"...",'
-        '"itens":"## Passo 1\\n...\\n## Passo 2\\n..."}\n'
+        '"itens":"## Passo 1\\n...\\n## Passo 2\\n...","conceitos_chave":["..."]}\n'
         "Retorne APENAS o JSON, sem bloco de código markdown externo."
     ),
     "ResumoExecutivo": (
         "Gere um resumo executivo (TL;DR) em Markdown dentro do JSON:\n"
         '{"tipo":"markdown","titulo":"...","introducao_contextualizada":"...",'
-        '"itens":"## Pontos-chave\\n- ...\\n## Conclusão\\n..."}\n'
+        '"itens":"## Pontos-chave\\n- ...\\n## Conclusão\\n...","conceitos_chave":["..."]}\n'
         "Retorne APENAS o JSON, sem bloco de código markdown externo."
     ),
 }
@@ -118,6 +122,17 @@ _NIVEL_DESC: dict[NivelDetalhe, str] = {
     "Tecnico": "técnico e preciso, com terminologia correta",
     "Executivo": "conciso e orientado a impacto de negócio",
 }
+
+
+# Vale para todos os formatos. O campo é opcional na leitura: se vier ausente
+# ou inaproveitável, os conceitos saem do fallback (app/services/conceitos.py).
+_INSTRUCAO_CONCEITOS = (
+    'Em "conceitos_chave", liste de 5 a 8 termos ou expressões curtas '
+    f"(1 a 4 palavras, até {MAX_CARACTERES} caracteres cada) que o aluno deve "
+    "dominar, escritos exatamente como aparecem no documento. Não use títulos de "
+    "seção, o título do documento nem palavras genéricas como "
+    '"Introdução", "Resumo", "Texto" ou "Exemplo".'
+)
 
 
 def _montar_prompt(
@@ -137,7 +152,7 @@ def _montar_prompt(
         f"Tom: {_NIVEL_DESC[nivel]}.\n\n"
         f"DOCUMENTO: {titulo}\n\n"
         f"TRECHOS RELEVANTES DO DOCUMENTO:\n{contexto}\n\n"
-        f"TAREFA:\n{instrucoes}"
+        f"TAREFA:\n{instrucoes}\n{_INSTRUCAO_CONCEITOS}"
     )
 
 
@@ -243,8 +258,12 @@ def _gerar_conteudo(
     prompt: str,
     formato: FormatoSaida,
     avisar_revisao: Callable[[], None],
-) -> tuple[str, ConteudoAdaptado]:
+) -> tuple[str, ConteudoAdaptado, object]:
     """Gera e valida o conteúdo, com uma retentativa para resposta inválida.
+
+    Devolve o texto da resposta, o conteúdo validado e o valor cru do campo
+    ``conceitos_chave`` (``None`` se ausente). Esse campo não é validado aqui:
+    um valor ruim nunca torna a resposta inválida nem consome a retentativa.
 
     Timeout e indisponibilidade não são retentados. ``avisar_revisao`` é
     chamado uma única vez, quando chega a primeira resposta com texto.
@@ -257,7 +276,8 @@ def _gerar_conteudo(
                 avisar_revisao()
                 revisao_avisada = True
             raw = _extrair_json(resposta_texto)
-            return resposta_texto, _parsear_conteudo(raw, formato)
+            conteudo = _parsear_conteudo(raw, formato)
+            return resposta_texto, conteudo, raw.get("conceitos_chave")
         except (_RespostaInvalida, ValueError, KeyError, TypeError, ValidationError) as exc:
             logger.warning(
                 "Resposta inválida do LLM (tentativa %d de %d): %s",
@@ -348,7 +368,7 @@ def executar_pipeline(
         logger.error("Provedor de LLM não configurado: %r", exc)
         raise RuntimeError(_MSG_CONFIGURACAO) from exc
     prompt = _montar_prompt(titulo, textos_trechos, perfil, formato, nicho, nivel)
-    resposta_texto, conteudo = _gerar_conteudo(
+    resposta_texto, conteudo, conceitos_do_llm = _gerar_conteudo(
         provedor,
         prompt,
         formato,
@@ -366,9 +386,11 @@ def executar_pipeline(
     _tempo_por_formato = {"Flashcards": 5, "Quiz": 8, "Tutorial": 12, "ResumoExecutivo": 4}
     tempo_estudo = _tempo_por_formato.get(formato, 5)
 
-    # Conceitos-chave: primeiras palavras únicas do título + trechos (heurística)
-    palavras = re.findall(r"\b[A-ZÀ-Ú][a-zA-ZÀ-ú]+\b", titulo + " " + " ".join(textos_trechos[:2]))
-    conceitos = list(dict.fromkeys(palavras))[:8] or ["Conceito"]
+    # Conceitos-chave: os do LLM que aparecem no texto de origem e não são
+    # genéricos; se nenhum servir, termos mais frequentes dos trechos recuperados.
+    conceitos = escolher_conceitos(
+        conceitos_do_llm, titulo=titulo, texto_origem=texto, trechos=textos_trechos
+    )
 
     from app.services import oci as oci_service
     from app.models import ArmazenamentoOci
