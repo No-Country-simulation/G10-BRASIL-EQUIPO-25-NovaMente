@@ -28,3 +28,13 @@ def fabrica_llm_isolada(monkeypatch):
     fabrica.redefinir_provedor()
     yield
     fabrica.redefinir_provedor()
+
+
+@pytest.fixture(autouse=True)
+def espera_da_retentativa_falsa(monkeypatch):
+    """A retentativa do LLM não dorme de verdade nos testes; as esperas ficam em lista."""
+    from app.llm import retentativa
+
+    esperas: list[float] = []
+    monkeypatch.setattr(retentativa, "_dormir", esperas.append)
+    return esperas

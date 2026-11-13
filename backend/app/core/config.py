@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Busca .env em backend/.env ou na pasta atual
@@ -39,6 +40,10 @@ class Settings(BaseSettings):
     job_ttl_segundos: int = 1800  # 30 minutos
     job_timeout_segundos: int = 300  # 5 minutos (igual ao frontend)
     llm_timeout_segundos: int = 120  # por chamada ao Gemini
+    # Retentativa de falhas transitórias do LLM (app/llm/retentativa.py). Valores
+    # fora do intervalo impedem a subida.
+    llm_tentativas: int = Field(3, ge=1)  # chamadas por geração, contando a primeira
+    llm_espera_inicial_segundos: float = Field(2.0, ge=0)  # dobra a cada retentativa
 
     # ── Limites de entrada ───────────────────────────────────────────────────
     texto_min_caracteres: int = 200

@@ -112,12 +112,16 @@ def _executar(
         )
         repositorio.salvar_job(novo, settings.job_ttl_segundos)
 
-    inicio = time.monotonic()
+    # Instante monotônico em que o job expira; também limita as retentativas do LLM.
+    prazo = time.monotonic() + settings.job_timeout_segundos
 
-    def on_progresso(etapa: EtapaJob, pct: int, msg: str = "") -> None:
+    def verificar_cancelamento() -> None:
         if _cancelado(job_id):
             raise InterruptedError("Cancelado pelo usuário.")
-        if time.monotonic() - inicio > settings.job_timeout_segundos:
+
+    def on_progresso(etapa: EtapaJob, pct: int, msg: str = "") -> None:
+        verificar_cancelamento()
+        if time.monotonic() > prazo:
             raise PrazoExcedido("Prazo total do job excedido.")
         _atualizar(status="running", etapa=etapa, pct=pct, msg=msg)
 
@@ -142,6 +146,8 @@ def _executar(
             nicho=nicho,
             nivel=nivel,
             on_progresso=on_progresso,
+            prazo=prazo,
+            verificar_interrupcao=verificar_cancelamento,
         )
 
         # Persiste o pacote

@@ -11,6 +11,7 @@ from app.llm.erros import (
     ErroTransitorio,
     ProvedorDesconhecido,
 )
+from app.llm.retentativa import ProvedorComRetentativa, limites_da_geracao
 from app.llm.fabrica import (
     obter_provedor,
     provedores_disponiveis,
@@ -29,8 +30,10 @@ __all__ = [
     "ErroTransitorio",
     "Mensagem",
     "PapelMensagem",
+    "ProvedorComRetentativa",
     "ProvedorDesconhecido",
     "ProvedorLLM",
+    "limites_da_geracao",
     "obter_provedor",
     "provedores_disponiveis",
     "redefinir_provedor",
