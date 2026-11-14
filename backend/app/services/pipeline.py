@@ -268,23 +268,23 @@ def _gerar_conteudo(
     raise RuntimeError(_MSG_RESPOSTA_INVALIDA)
 
 
-# ── Avaliação de qualidade simples ────────────────────────────────────────────
+# ── Avaliação de qualidade (app/services/ancoragem.py) ───────────────────────
 
 
 def _avaliar_qualidade(
-    relevancia_media: float, conteudo_texto: str
+    relevancia_media: float, conteudo: ConteudoAdaptado, texto_fonte: str
 ) -> AvaliacaoQualidade:
-    """Heurística básica; pode ser substituída por LLM-as-a-judge."""
-    score = min(1.0, relevancia_media)
-    if score >= 0.85:
-        clareza = "Alta"
-    elif score >= 0.65:
-        clareza = "Media"
-    else:
-        clareza = "Baixa"
+    """Ancoragem do conteúdo gerado no texto completo da fonte e clareza estrutural.
+
+    Sem nova chamada ao LLM nem aos embeddings. ``relevancia_media`` (dos
+    trechos recuperados) só é usada se o conteúdo não tiver nenhum termo
+    mensurável.
+    """
+    from app.services.ancoragem import calcular_ancoragem, calcular_clareza
+
     return AvaliacaoQualidade(
-        ancoragem_fonte_score=round(score, 4),
-        clareza_pedagogica=clareza,
+        ancoragem_fonte_score=calcular_ancoragem(conteudo, texto_fonte, relevancia_media),
+        clareza_pedagogica=calcular_clareza(conteudo),
     )
 
 
@@ -356,7 +356,7 @@ def executar_pipeline(
     )
 
     # 5. Avaliação de qualidade ──────────────────────────────────────────────
-    avaliacao = _avaliar_qualidade(relevancia_media, resposta_texto)
+    avaliacao = _avaliar_qualidade(relevancia_media, conteudo, texto)
 
     # 6. Montar pacote ───────────────────────────────────────────────────────
     adaptacao_id = str(ULID())

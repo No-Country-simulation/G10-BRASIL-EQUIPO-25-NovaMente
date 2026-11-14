@@ -1,0 +1,85 @@
+{
+  "adaptacao_id": "01M7BMZVPVJSP77FSHS56DYRW5",
+  "status": "sucesso",
+  "criado_em": "2026-11-13T23:48:22.363053+00:00",
+  "documento": {
+    "titulo": "Controle de versão com Git",
+    "origem": "texto",
+    "nome_arquivo": null,
+    "tamanho_bytes": null
+  },
+  "metadados": {
+    "perfil_aplicado": "Desenvolvedor",
+    "formato_gerado": "Flashcards",
+    "nivel_detalhe_aplicado": "Tecnico",
+    "nicho_setor_aplicado": "Geral",
+    "tempo_estimado_estudo_minutos": 5,
+    "conceitos_chave": [
+      "Controle",
+      "Git",
+      "Texto",
+      "NovaMente",
+      "Por",
+      "Com",
+      "Commits",
+      "Um"
+    ]
+  },
+  "conteudo_adaptado": {
+    "tipo": "flashcards",
+    "titulo": "Controle de versão com Git para Desenvolvedores Júnior e Pleno",
+    "introducao_contextualizada": "Estes flashcards cobrem conceitos fundamentais de Git, incluindo arquitetura distribuída, gerenciamento de commits, estratégia de branches, resolução de conflitos e fluxos de integração via pull requests.",
+    "itens": [
+      {
+        "frente": "Qual é a principal característica arquitetural do Git em relação ao histórico do projeto por ser um sistema distribuído?",
+        "verso": "Cada desenvolvedor possui uma cópia completa do histórico do repositório em seu próprio computador.",
+        "dica_didatica": null
+      },
+      {
+        "frente": "Qual é a função do comando git add no fluxo de trabalho do Git?",
+        "verso": "Mover as alterações realizadas no diretório de trabalho para a área de preparação (staging area), permitindo selecionar especificamente o que fará parte do próximo commit.",
+        "dica_didatica": "Lembre-se da separação entre o working directory e o staging area."
+      },
+      {
+        "frente": "Quais são as duas principais características que uma boa mensagem de commit deve possuir?",
+        "verso": "Ser curta e explicar claramente o que mudou e por quê.",
+        "dica_didatica": "Commits pequenos e focados facilitam code reviews e revertem alterações com menor impacto."
+      },
+      {
+        "frente": "Qual é a definição técnica de uma branch no Git?",
+        "verso": "Uma linha de desenvolvimento independente que isola alterações de funcionalidades ou correções, impedindo que código incompleto afete a branch principal.",
+        "dica_didatica": null
+      },
+      {
+        "frente": "Qual é a diferença fundamental entre as estratégias de merge e rebase ao integrar duas branches?",
+        "verso": "O merge junta o histórico de duas branches preservando o contexto temporal e podendo criar um commit de junção. O rebase reaplica os commits de uma branch sobre a ponta de outra, reescrevendo o histórico para torná-lo linear.",
+        "dica_didatica": "Avalie o impacto no histórico compartilhado antes de usar o rebase."
+      },
+      {
+        "frente": "O que ocorre no Git quando duas pessoas alteram exatamente as mesmas linhas de um arquivo e tenta-se integrá-las?",
+        "verso": "Surge um conflito. O Git marca os trechos conflitantes diretamente no arquivo, exigindo intervenção manual para selecionar a versão correta antes de concluir a operação.",
+        "dica_didatica": null
+      },
+      {
+        "frente": "Qual é a utilidade do comando git push e do comando git pull em relação a um repositório remoto?",
+        "verso": "O git push envia os commits locais para o repositório remoto, enquanto o git pull traz as atualizações do remoto para o ambiente local.",
+        "dica_didatica": null
+      },
+      {
+        "frente": "O que é um pull request e por que ele é utilizado antes de integrar código à branch principal?",
+        "verso": "É um mecanismo onde o código de uma branch é submetido para revisão, comentários e aprovação por outros membros da equipe antes de ser integrado ao repositório principal.",
+        "dica_didatica": null
+      }
+    ]
+  },
+  "avaliacao_qualidade": {
+    "ancoragem_fonte_score": 0.516,
+    "clareza_pedagogica": "Alta",
+    "observacoes": null
+  },
+  "armazenamento_oci": {
+    "bucket": "novamente-conteudos-educativos",
+    "objeto_id": "novamente-controle-de-versao-com-git-desenvolvedor-flashcards-01M7BMZV.json",
+    "status_upload": "falha"
+  }
+}

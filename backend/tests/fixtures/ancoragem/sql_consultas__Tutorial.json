@@ -1,0 +1,44 @@
+{
+  "adaptacao_id": "01M7BN0XCR6A6SXJVSSD4GJ6V6",
+  "status": "sucesso",
+  "criado_em": "2026-11-13T23:48:56.856569+00:00",
+  "documento": {
+    "titulo": "Consultas em bancos de dados relacionais com SQL",
+    "origem": "texto",
+    "nome_arquivo": null,
+    "tamanho_bytes": null
+  },
+  "metadados": {
+    "perfil_aplicado": "Desenvolvedor",
+    "formato_gerado": "Tutorial",
+    "nivel_detalhe_aplicado": "Tecnico",
+    "nicho_setor_aplicado": "Geral",
+    "tempo_estimado_estudo_minutos": 12,
+    "conceitos_chave": [
+      "Consultas",
+      "SQL",
+      "Texto",
+      "NovaMente",
+      "Tabelas",
+      "Um",
+      "Cada",
+      "SELECT"
+    ]
+  },
+  "conteudo_adaptado": {
+    "tipo": "markdown",
+    "titulo": "Guia Prático: Otimização e Extração de Dados com SQL em Bancos de Dados Relacionais",
+    "introducao_contextualizada": "Como desenvolvedor júnior ou pleno, dominar a manipulação e recuperação eficiente de dados relacionais é fundamental para a performance das aplicações. Este tutorial aborda conceitos essenciais de modelagem lógica (chaves primárias e estrangeiras), filtragem, projeção, junções relacionais, funções de agregação e indexação, fornecendo uma base técnica sólida para a escrita de queries otimizadas em produção.",
+    "itens": "## Passo 1: Compreensão do Modelo Relacional e Chaves\nAntes de estruturar qualquer query, é imprescindível entender a arquitetura relacional. Os dados são persistidos em tabelas compostas por linhas (registros) e colunas (atributos).\n- **Chave Primária (Primary Key):** Restrição de unicidade que identifica inequivocamente cada registro na tabela.\n- **Chave Estrangeira (Foreign Key):** Coluna ou conjunto de colunas que faz referência à chave primária de outra tabela, garantindo a integridade referencial (por exemplo, a tabela de `pedidos` contendo o `cliente_id`).\n\n## Passo 2: Projeção, Filtragem e Ordenação Básica\nPara extrair dados específicos, utilizamos a cláusula `SELECT` em conjunto com operadores de filtragem e ordenação:\n- **`SELECT` e `FROM`:** Definem, respectivamente, as colunas projetadas e a tabela de origem.\n- **`WHERE`:** Aplica predicados de linha antes de qualquer agregação, filtrando o conjunto de resultados (ex: `WHERE preco > 100`).\n- **`ORDER BY` e `LIMIT`:** Ordenam o result set utilizando `ASC` (crescente) ou `DESC` (decrescente), enquanto o `LIMIT` restringe a volumetria de linhas retornadas, essencial para paginação.\n\n## Passo 3: Relacionando Tabelas com Junções (JOINs)\nQuando a normalização do banco de dados distribui os dados em múltiplos contextos, utilizamos operações de junção:\n- **`INNER JOIN`:** Retorna estritamente o *inner set* de interseção, ou seja, apenas os registros que possuem correspondência exata em ambas as tabelas.\n- **`LEFT JOIN`:** Retorna todo o conjunto da tabela à esquerda da operação, realizando o *matching* com a tabela da direita. Caso não haja correspondência relacional, as colunas da direita são preenchidas com valores `NULL`. É o padrão ideal para identificar lacunas relacionais (ex: identificar clientes que não possuem registros na tabela de pedidos).\n\n## Passo 4: Agrupamento e Funções de Agregação\nPara computar métricas consolidadas a partir de múltiplos registros:\n- **Funções de Agregação:** `COUNT` (contagem de linhas), `SUM` (somatório), `AVG` (média aritmética), `MIN` e `MAX` (extremos).\n- **`GROUP BY`:** Agrega o conjunto de resultados por uma ou mais colunas (ex: faturamento total agrupado por mês).\n- **`HAVING` vs `WHERE`:** O `WHERE` filtra o conjunto de dados base *antes* da fase de agrupamento. O `HAVING`, por sua vez, atua filtrando o result set *após* a aplicação das funções de agregação e do `GROUP BY`.\n\n## Passo 5: Otimização de Performance com Índices\nPara mitigar degradações de performance em operações de leitura massiva (`SELECT`, `WHERE`, `JOIN`):\n- **Estrutura de Índice:** Funciona como uma árvore de busca auxiliar (ex: B-Tree) que mapeia os valores de uma coluna específica para os ponteiros físicos das linhas correspondentes.\n- **Trade-offs:** Embora acelerem drasticamente a complexidade de tempo das consultas de busca, os índices introduzem *overhead* de espaço em disco e penalizam operações de escrita (`INSERT`, `UPDATE`, `DELETE`), visto que a árvore precisa ser balanceada a cada mutação. Portanto, aplique índices estrategicamente nas colunas de alta cardinalidade mais frequentemente utilizadas em predicados de filtro e junção."
+  },
+  "avaliacao_qualidade": {
+    "ancoragem_fonte_score": 0.4358,
+    "clareza_pedagogica": "Alta",
+    "observacoes": null
+  },
+  "armazenamento_oci": {
+    "bucket": "novamente-conteudos-educativos",
+    "objeto_id": "novamente-consultas-em-bancos-de-dados-relacionais-com-sql-desenvolvedor-tutorial-01M7BN0X.json",
+    "status_upload": "falha"
+  }
+}
