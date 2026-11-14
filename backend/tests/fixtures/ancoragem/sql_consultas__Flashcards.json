@@ -1,0 +1,80 @@
+{
+  "adaptacao_id": "01M7BN0GZBWKDF5V7HSSBTC5CC",
+  "status": "sucesso",
+  "criado_em": "2026-11-13T23:48:44.139217+00:00",
+  "documento": {
+    "titulo": "Consultas em bancos de dados relacionais com SQL",
+    "origem": "texto",
+    "nome_arquivo": null,
+    "tamanho_bytes": null
+  },
+  "metadados": {
+    "perfil_aplicado": "Desenvolvedor",
+    "formato_gerado": "Flashcards",
+    "nivel_detalhe_aplicado": "Tecnico",
+    "nicho_setor_aplicado": "Geral",
+    "tempo_estimado_estudo_minutos": 5,
+    "conceitos_chave": [
+      "Consultas",
+      "SQL",
+      "Texto",
+      "NovaMente",
+      "Tabelas",
+      "Um",
+      "Cada",
+      "SELECT"
+    ]
+  },
+  "conteudo_adaptado": {
+    "tipo": "flashcards",
+    "titulo": "Consultas em Bancos de Dados Relacionais com SQL",
+    "introducao_contextualizada": "Conjunto de flashcards focado em consolidar conceitos fundamentais de SQL para desenvolvedores juniores e plenos, abrangendo desde a modelagem básica relacional até otimização de consultas e agregações.",
+    "itens": [
+      {
+        "frente": "Qual é a função da chave primária (Primary Key) em uma tabela relacional?",
+        "verso": "Identificar de forma única cada linha (registro) dentro de uma tabela.",
+        "dica_didatica": "Pense nela como o identificador imutável do registro, como um ID ou CPF."
+      },
+      {
+        "frente": "O que define uma chave estrangeira (Foreign Key)?",
+        "verso": "É uma coluna que aponta para a chave primária de outra tabela, estabelecendo a integridade referencial e o relacionamento entre elas.",
+        "dica_didatica": "Exemplo prático: a tabela de pedidos armazena o id_cliente, que referencia a tabela de clientes."
+      },
+      {
+        "frente": "Qual a diferença de escopo entre as cláusulas WHERE e HAVING?",
+        "verso": "O WHERE filtra as linhas antes de qualquer agrupamento ser feito, enquanto o HAVING é utilizado estritamente para filtrar os resultados após a aplicação de funções de agregação (GROUP BY).",
+        "dica_didatica": "Lembre-se da ordem de execução lógica do SQL: o WHERE atua nos dados crus, o GROUP BY agrupa, e o HAVING filtra o agregado."
+      },
+      {
+        "frente": "Explique o comportamento do LEFT JOIN quando não há correspondência na tabela da direita.",
+        "verso": "Ele retorna todas as linhas da tabela da esquerda e preenche com valores nulos (NULL) as colunas provenientes da tabela da direita.",
+        "dica_didatica": "Muito útil para cenários do tipo 'encontrar todos os clientes que NUNCA fizeram pedidos'."
+      },
+      {
+        "frente": "Quais são os impactos de performance na criação de um índice em uma tabela?",
+        "verso": "Eles aceleram drasticamente as operações de leitura (buscas com WHERE e JOIN), porém incorrem em custo de armazenamento em disco e tornam operações de escrita (INSERT, UPDATE e DELETE) mais lentas devido à necessidade de manutenção da estrutura do índice.",
+        "dica_didatica": "Não indexe todas as colunas; foque apenas naquelas com alta cardinalidade e frequentemente utilizadas em predicados de busca."
+      },
+      {
+        "frente": "Qual é a diferença funcional entre INNER JOIN e LEFT JOIN?",
+        "verso": "O INNER JOIN retorna apenas os registros que possuem correspondência exata em ambas as tabelas envolvidas. O LEFT JOIN preserva todos os registros da tabela à esquerda, mesmo que não haja correspondência na tabela à direita.",
+        "dica_didatica": "Use INNER JOIN para intersecção de dados e LEFT JOIN quando a tabela base (esquerda) deve ser mantida integralmente."
+      },
+      {
+        "frente": "Como limitar a quantidade de linhas retornadas e ordenar o resultado em SQL?",
+        "verso": "Utiliza-se a cláusula ORDER BY (seguida de ASC para crescente ou DESC para decrescente) em conjunto com a cláusula LIMIT para restringir o número de registros devolvidos.",
+        "dica_didatica": "A clásula LIMIT é tipicamente executada no final do ciclo de processamento da query."
+      }
+    ]
+  },
+  "avaliacao_qualidade": {
+    "ancoragem_fonte_score": 0.5034,
+    "clareza_pedagogica": "Media",
+    "observacoes": null
+  },
+  "armazenamento_oci": {
+    "bucket": "novamente-conteudos-educativos",
+    "objeto_id": "novamente-consultas-em-bancos-de-dados-relacionais-com-sql-desenvolvedor-flashcards-01M7BN0G.json",
+    "status_upload": "falha"
+  }
+}

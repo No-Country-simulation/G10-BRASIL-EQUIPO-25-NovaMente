@@ -1,0 +1,44 @@
+{
+  "adaptacao_id": "01M7BMZR4EH6C7XC6F0XXQCEKT",
+  "status": "sucesso",
+  "criado_em": "2026-11-13T23:48:18.702308+00:00",
+  "documento": {
+    "titulo": "Introdução a APIs REST com HTTP",
+    "origem": "texto",
+    "nome_arquivo": null,
+    "tamanho_bytes": null
+  },
+  "metadados": {
+    "perfil_aplicado": "Desenvolvedor",
+    "formato_gerado": "ResumoExecutivo",
+    "nivel_detalhe_aplicado": "Tecnico",
+    "nicho_setor_aplicado": "Geral",
+    "tempo_estimado_estudo_minutos": 4,
+    "conceitos_chave": [
+      "Introdução",
+      "APIs",
+      "REST",
+      "HTTP",
+      "Texto",
+      "NovaMente",
+      "Cada",
+      "Métodos"
+    ]
+  },
+  "conteudo_adaptado": {
+    "tipo": "markdown",
+    "titulo": "Resumo Executivo: Introdução a APIs REST com HTTP",
+    "introducao_contextualizada": "Guia técnico fundamental para desenvolvedores juniores e plenos sobre os fundamentos de comunicação via protocolo HTTP, modelagem de recursos RESTful e tratamento de status codes para construção de APIs robustas.",
+    "itens": "## Pontos-chave\n- **Protocolo HTTP:** Protocolo stateless baseado no modelo de requisição-resposta entre cliente e servidor, exigindo que cada payload contenha os metadados necessários (como autenticação).\n- **Métodos e Idempotência:** Uso semântico dos verbos HTTP (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`), destacando a propriedade de idempotência em `GET`, `PUT` e `DELETE` em contraponto ao `POST`.\n- **Códigos de Status:** Classificação padronizada em famílias (`2xx` de sucesso, `3xx` de redirecionamento, `4xx` de erro do cliente e `5xx` de erro do servidor).\n- **Boas Práticas de Arquitetura REST:** Modelagem de endpoints baseada em substantivos no plural (`/usuarios`), versionamento de contrato (`/v1`), paginação de datasets e padronização de respostas em JSON.\n## Conclusão\nDominar os conceitos fundamentais de REST e HTTP assegura a previsibilidade, manutenibilidade e escalabilidade de contratos de API, reduzindo o acoplamento entre clientes e servidores."
+  },
+  "avaliacao_qualidade": {
+    "ancoragem_fonte_score": 0.5054,
+    "clareza_pedagogica": "Media",
+    "observacoes": null
+  },
+  "armazenamento_oci": {
+    "bucket": "novamente-conteudos-educativos",
+    "objeto_id": "novamente-introducao-a-apis-rest-com-http-desenvolvedor-resumoexecutivo-01M7BMZR.json",
+    "status_upload": "falha"
+  }
+}

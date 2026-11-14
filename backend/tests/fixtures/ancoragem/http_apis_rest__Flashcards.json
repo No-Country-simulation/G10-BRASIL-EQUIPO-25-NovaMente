@@ -1,0 +1,80 @@
+{
+  "adaptacao_id": "01M7BMZ7BZ2AD5GF0S9QFMQB52",
+  "status": "sucesso",
+  "criado_em": "2026-11-13T23:48:01.535893+00:00",
+  "documento": {
+    "titulo": "Introdução a APIs REST com HTTP",
+    "origem": "texto",
+    "nome_arquivo": null,
+    "tamanho_bytes": null
+  },
+  "metadados": {
+    "perfil_aplicado": "Desenvolvedor",
+    "formato_gerado": "Flashcards",
+    "nivel_detalhe_aplicado": "Tecnico",
+    "nicho_setor_aplicado": "Geral",
+    "tempo_estimado_estudo_minutos": 5,
+    "conceitos_chave": [
+      "Introdução",
+      "APIs",
+      "REST",
+      "HTTP",
+      "Texto",
+      "NovaMente",
+      "Cada",
+      "Métodos"
+    ]
+  },
+  "conteudo_adaptado": {
+    "tipo": "flashcards",
+    "titulo": "Introdução a APIs REST com HTTP",
+    "introducao_contextualizada": "Flashcards técnicos para consolidação de conceitos fundamentais de arquitetura REST e protocolo HTTP voltados para desenvolvedores backend e frontend.",
+    "itens": [
+      {
+        "frente": "Qual é a principal característica do protocolo HTTP em relação ao estado das requisições?",
+        "verso": "O HTTP é um protocolo sem estado (stateless). Isso significa que cada requisição deve ser autossuficiente, carregando todo o contexto necessário para o servidor processá-la, incluindo credenciais e cabeçalhos de autenticação.",
+        "dica_didatica": null
+      },
+      {
+        "frente": "Quais métodos HTTP são considerados idempotentes segundo a especificação?",
+        "verso": "GET, PUT e DELETE são idempotentes (repetir a mesma requisição múltiplas vezes produz o mesmo efeito colateral no servidor). O método POST não é idempotente.",
+        "dica_didatica": "Lembre-se que idempotência significa que o estado final do sistema é o mesmo após uma ou várias execuções idênticas."
+      },
+      {
+        "frente": "Qual a diferença funcional entre os métodos PUT e PATCH em uma API REST?",
+        "verso": "O PUT substitui o recurso inteiro (atualização completa), enquanto o PATCH aplica modificações parciais, alterando apenas os campos enviados no corpo da requisição.",
+        "dica_didatica": null
+      },
+      {
+        "frente": "Como devem ser estruturadas as URIs em uma API REST para representar recursos?",
+        "verso": "Devem utilizar substantivos no plural para representar os recursos (ex: /usuarios ou /pedidos/42), deixando a semântica da ação estritamente a cargo do método HTTP.",
+        "dica_didatica": null
+      },
+      {
+        "frente": "O que significam os códigos de status HTTP das famílias 2xx, 4xx e 5xx?",
+        "verso": "2xx indica sucesso (ex: 200 OK, 201 Created); 4xx indica erro originado no cliente (ex: 400, 401, 403, 404); 5xx indica falha interna ou indisponibilidade no servidor (ex: 500, 503).",
+        "dica_didatica": null
+      },
+      {
+        "frente": "Qual é a utilidade do versionamento de APIs (ex: /v1/ no caminho da URL)?",
+        "verso": "Garante a retrocompatibilidade do contrato da API, permitindo que clientes legados continuem funcionando enquanto alterações estruturais são introduzidas em novas versões.",
+        "dica_didatica": null
+      },
+      {
+        "frente": "Como lidar com listagens grandes de recursos de forma eficiente em uma API REST?",
+        "verso": "Utilizando paginação através de parâmetros na query string, como pagina e limite, para evitar sobrecarga de rede e de processamento no banco de dados.",
+        "dica_didatica": null
+      }
+    ]
+  },
+  "avaliacao_qualidade": {
+    "ancoragem_fonte_score": 0.5139,
+    "clareza_pedagogica": "Alta",
+    "observacoes": null
+  },
+  "armazenamento_oci": {
+    "bucket": "novamente-conteudos-educativos",
+    "objeto_id": "novamente-introducao-a-apis-rest-com-http-desenvolvedor-flashcards-01M7BMZ7.json",
+    "status_upload": "falha"
+  }
+}

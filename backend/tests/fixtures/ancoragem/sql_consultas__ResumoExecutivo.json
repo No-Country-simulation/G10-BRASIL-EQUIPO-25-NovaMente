@@ -1,0 +1,44 @@
+{
+  "adaptacao_id": "01M7BN11N0Z2YQYZYEXW4DCJM3",
+  "status": "sucesso",
+  "criado_em": "2026-11-13T23:49:01.216625+00:00",
+  "documento": {
+    "titulo": "Consultas em bancos de dados relacionais com SQL",
+    "origem": "texto",
+    "nome_arquivo": null,
+    "tamanho_bytes": null
+  },
+  "metadados": {
+    "perfil_aplicado": "Desenvolvedor",
+    "formato_gerado": "ResumoExecutivo",
+    "nivel_detalhe_aplicado": "Tecnico",
+    "nicho_setor_aplicado": "Geral",
+    "tempo_estimado_estudo_minutos": 4,
+    "conceitos_chave": [
+      "Consultas",
+      "SQL",
+      "Texto",
+      "NovaMente",
+      "Tabelas",
+      "Um",
+      "Cada",
+      "SELECT"
+    ]
+  },
+  "conteudo_adaptado": {
+    "tipo": "markdown",
+    "titulo": "Resumo Técnico: Consultas e Otimização em SQL",
+    "introducao_contextualizada": "Para desenvolvedores júnior e pleno que trabalham com persistência de dados, dominar a estruturação relacional, consultas otimizadas e indexação é fundamental para garantir a escalabilidade e a integridade das aplicações.",
+    "itens": "## Pontos-chave\n- **Modelagem Relacional:** Utilização de chaves primárias (PK) para unicidade de registros e chaves estrangeiras (FK) para manutenção da integridade referencial entre entidades.\n- **Manipulação e Filtragem de Dados:** Emprego de `SELECT`, `WHERE` e ordenação (`ORDER BY` com `ASC`/`DESC`), limitando o volume de dados retornados via `LIMIT`.\n- **Operações de Junção (Joins):** Resolução de dependências relacionais utilizando `INNER JOIN` (correspondência estrita) e `LEFT JOIN` (preservação da tabela base).\n- **Agrupamentos e Filtros Pós-Agregação:** Aplicação de funções agregadas (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`) combinadas com `GROUP BY`, aplicando restrições em nível de grupo estritamente através da cláusula `HAVING`.\n- **Otimização de Performance:** Implementação estratégica de índices para acelerar predicados de busca (`WHERE`) e junções (`JOIN`), ponderando o custo de armazenamento e a sobrecarga em operações de escrita (`INSERT`/`UPDATE`).\n## Conclusão\nO uso correto de comandos relacionais, junções eficientes e indexação adequada minimiza o consumo de recursos do SGBD e garante alta performance em consultas complexas."
+  },
+  "avaliacao_qualidade": {
+    "ancoragem_fonte_score": 0.3591,
+    "clareza_pedagogica": "Media",
+    "observacoes": null
+  },
+  "armazenamento_oci": {
+    "bucket": "novamente-conteudos-educativos",
+    "objeto_id": "novamente-consultas-em-bancos-de-dados-relacionais-com-sql-desenvolvedor-resumoexecutivo-01M7BN11.json",
+    "status_upload": "falha"
+  }
+}

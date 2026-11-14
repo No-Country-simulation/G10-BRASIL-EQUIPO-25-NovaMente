@@ -1,0 +1,100 @@
+{
+  "adaptacao_id": "01M7BN034RTEW4M48139X15TA8",
+  "status": "sucesso",
+  "criado_em": "2026-11-13T23:48:29.976457+00:00",
+  "documento": {
+    "titulo": "Controle de versão com Git",
+    "origem": "texto",
+    "nome_arquivo": null,
+    "tamanho_bytes": null
+  },
+  "metadados": {
+    "perfil_aplicado": "Desenvolvedor",
+    "formato_gerado": "Quiz",
+    "nivel_detalhe_aplicado": "Tecnico",
+    "nicho_setor_aplicado": "Geral",
+    "tempo_estimado_estudo_minutos": 8,
+    "conceitos_chave": [
+      "Controle",
+      "Git",
+      "Texto",
+      "NovaMente",
+      "Por",
+      "Com",
+      "Commits",
+      "Um"
+    ]
+  },
+  "conteudo_adaptado": {
+    "tipo": "quiz",
+    "titulo": "Avaliação de Conhecimento em Git para Desenvolvedores",
+    "introducao_contextualizada": "Este quiz técnico avalia conceitos fundamentais de controle de versão utilizando Git, essenciais para o fluxo de trabalho diário de desenvolvedores juniores e plenos em ambientes colaborativos.",
+    "itens": [
+      {
+        "pergunta": "Qual é a principal característica arquitetural do Git mencionada no texto em relação ao histórico do projeto?",
+        "opcoes": [
+          "É um sistema centralizado onde apenas o servidor principal armazena o histórico completo.",
+          "É um sistema distribuído onde cada desenvolvedor possui uma cópia completa do histórico no próprio computador.",
+          "É um sistema baseado em nuvem que exige conexão permanente para registrar alterações locais.",
+          "É um banco de dados relacional que versiona apenas o estado atual do código-fonte."
+        ],
+        "resposta_correta": 1,
+        "explicacao": "O Git é um sistema distribuído, o que significa que cada colaborador possui uma cópia integral do repositório e de todo o seu histórico localmente."
+      },
+      {
+        "pergunta": "Qual é a função da área de preparação (staging area) ao utilizar o comando git add?",
+        "opcoes": [
+          "Enviar imediatamente as alterações para o repositório remoto na nuvem.",
+          "Desfazer todas as modificações não salvas no diretório de trabalho.",
+          "Permitir escolher exatamente quais alterações farão parte da próxima fotografia (commit).",
+          "Mesclar o histórico de duas branches diferentes de forma linear."
+        ],
+        "resposta_correta": 2,
+        "explicacao": "O comando git add move as alterações para a área de preparação, permitindo ao desenvolvedor selecionar de forma granular o que entrará no próximo commit."
+      },
+      {
+        "pergunta": "Qual é o comportamento do comando rebase ao integrar alterações entre branches?",
+        "opcoes": [
+          "Reaplica os commits de uma branch sobre a ponta de outra, resultando em um histórico linear.",
+          "Junta o histórico de duas branches criando obrigatoriamente um commit de junção (merge commit).",
+          "Substitui completamente a branch principal pela branch de desenvolvimento.",
+          "Remove os conflitos de código automaticamente sem a necessidade de intervenção manual."
+        ],
+        "resposta_correta": 0,
+        "explicacao": "O rebase pega os commits da branch atual e os reaplica na ponta da branch de destino, reescrevendo o histórico para mantê-lo linear."
+      },
+      {
+        "pergunta": "O que ocorre quando duas pessoas alteram exatamente as mesmas linhas de código em arquivos diferentes, gerando um conflito?",
+        "opcoes": [
+          "O Git descarta ambas as alterações para evitar perda de dados.",
+          "O Git marca os trechos conflitantes no arquivo e exige que alguém escolha a versão correta manualmente.",
+          "O sistema cria automaticamente um backup e mescla o código usando inteligência artificial.",
+          "A operação de push é cancelada permanentemente e o repositório remoto é bloqueado."
+        ],
+        "resposta_correta": 1,
+        "explicacao": "Em caso de conflito por alteração simultânea das mesmas linhas, o Git sinaliza os trechos no arquivo, exigindo intervenção humana para resolver a divergência antes da conclusão."
+      },
+      {
+        "pergunta": "Qual é o propósito de abrir um pull request antes de integrar o código à branch principal em um repositório remoto?",
+        "opcoes": [
+          "Garantir que o código seja executado diretamente em produção sem testes locais.",
+          "Permitir que outros membros da equipe revisem, comentem e aprovem o código antes da integração.",
+          "Atualizar o ambiente de desenvolvimento local com o comando git pull.",
+          "Gerar automaticamente a documentação técnica da aplicação."
+        ],
+        "resposta_correta": 1,
+        "explicacao": "O pull request atua como um ponto de revisão de código, onde a equipe pode analisar, sugerir melhorias e aprovar as alterações antes que elas entrem na branch principal."
+      }
+    ]
+  },
+  "avaliacao_qualidade": {
+    "ancoragem_fonte_score": 0.3693,
+    "clareza_pedagogica": "Media",
+    "observacoes": null
+  },
+  "armazenamento_oci": {
+    "bucket": "novamente-conteudos-educativos",
+    "objeto_id": "novamente-controle-de-versao-com-git-desenvolvedor-quiz-01M7BN03.json",
+    "status_upload": "falha"
+  }
+}
