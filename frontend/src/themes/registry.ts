@@ -7,3 +7,12 @@ export const SKINS = {
 export type SkinId = keyof typeof SKINS;
 
 export const SKIN_PADRAO: SkinId = 'violeta';
+
+export const MODOS = {
+  dark: { id: 'dark', nome: 'Escuro' },
+  light: { id: 'light', nome: 'Claro' },
+} as const;
+
+export type Modo = keyof typeof MODOS;
+
+export const MODO_PADRAO: Modo = 'dark';

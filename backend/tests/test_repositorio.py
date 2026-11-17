@@ -236,8 +236,9 @@ def _arquivo_que_nao_e_banco(caminho):
 )
 def test_falha_no_primeiro_comando_vira_mensagem_clara(tmp_path, monkeypatch, preparar, precisa_nao_root):
     # O connect passa nesses casos; o erro só aparece ao criar o esquema.
-    if precisa_nao_root and os.geteuid() == 0:
-        pytest.skip("root ignora as permissões de arquivo")
+    # `geteuid` não existe no Windows e as permissões POSIX não se aplicam lá.
+    if precisa_nao_root and (not hasattr(os, "geteuid") or os.geteuid() == 0):
+        pytest.skip("permissões de arquivo POSIX não são testáveis neste SO")
     caminho = tmp_path / "banco" / "novamente.sqlite3"
     preparar(caminho)
     monkeypatch.setattr(settings, "db_path", str(caminho))

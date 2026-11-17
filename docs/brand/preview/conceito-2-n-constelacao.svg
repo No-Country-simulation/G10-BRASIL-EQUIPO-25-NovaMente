@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="titulo">
+  <title id="titulo">Conceito 2 — N constelação</title>
+  <defs>
+    <linearGradient id="grad2" x1="140" y1="140" x2="380" y2="380" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="0.55" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <radialGradient id="halo2" cx="0.52" cy="0.42" r="0.58">
+      <stop offset="0" stop-color="#22D3EE" stop-opacity="0.14"/>
+      <stop offset="0.6" stop-color="#8B5CF6" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#0B0B12" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow2" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softGlow2" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="96" fill="#0B0B12"/>
+  <rect width="512" height="512" rx="96" fill="url(#halo2)"/>
+
+  <!-- conexões do N -->
+  <g fill="none" stroke="url(#grad2)" stroke-linecap="round" filter="url(#glow2)">
+    <path d="M160 160v192" stroke-width="9"/>
+    <path d="M160 352 352 160" stroke-width="9"/>
+    <path d="M352 160v192" stroke-width="9"/>
+    <path d="M160 160 352 352" stroke-width="3" opacity="0.32"/>
+  </g>
+
+  <!-- nós -->
+  <g fill="#EDE9FE">
+    <circle cx="160" cy="160" r="13"/>
+    <circle cx="160" cy="352" r="13"/>
+    <circle cx="352" cy="160" r="13"/>
+    <circle cx="352" cy="352" r="13"/>
+  </g>
+  <g fill="url(#grad2)">
+    <circle cx="160" cy="160" r="7"/>
+    <circle cx="160" cy="352" r="7"/>
+    <circle cx="352" cy="160" r="7"/>
+    <circle cx="352" cy="352" r="7"/>
+  </g>
+
+  <!-- estrela nova -->
+  <circle cx="381" cy="122" r="34" fill="#22D3EE" opacity="0.18" filter="url(#softGlow2)"/>
+  <path d="M381 86l9 24 24 9-24 9-9 24-9-24-24-9 24-9z" fill="#EDE9FE"/>
+  <path d="M381 98l5 14 14 5-14 5-5 14-5-14-14-5 14-5z" fill="#22D3EE"/>
+
+  <!-- poeira de fundo -->
+  <g fill="#A78BFA" opacity="0.45">
+    <circle cx="116" cy="238" r="3"/>
+    <circle cx="398" cy="222" r="2.5"/>
+    <circle cx="118" cy="398" r="2"/>
+    <circle cx="414" cy="402" r="3"/>
+  </g>
+</svg>
