@@ -66,7 +66,7 @@ describe('HistoricoView', () => {
   it('mostra estado vazio com CTA', async () => {
     renderizar(vi.fn().mockResolvedValue({ itens: [], pagina: 1, tamanho_pagina: 12, total: 0, total_paginas: 0 }));
     expect(await screen.findByText(/nenhum material gerado ainda/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /gerar o primeiro material/i })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: /gerar o primeiro material/i })).toHaveAttribute('href', '/empresa/gerar');
   });
 
   it('pagina pela URL', async () => {
@@ -81,7 +81,7 @@ describe('HistoricoView', () => {
     );
     await screen.findByText('Documento 0');
     await userEvent.click(screen.getByRole('button', { name: /próxima/i }));
-    expect(mocks.replace).toHaveBeenCalledWith('/historico?pagina=2');
+    expect(mocks.replace).toHaveBeenCalledWith('/empresa/historico?pagina=2');
   });
 
   it('filtra por formato na URL', async () => {
@@ -90,7 +90,7 @@ describe('HistoricoView', () => {
     );
     await screen.findByText('Documento 1');
     await userEvent.selectOptions(screen.getByLabelText(/todos os formatos/i), 'Quiz');
-    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/historico?formato=Quiz'));
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/empresa/historico?formato=Quiz'));
   });
 
   it('mostra erro com retry', async () => {
@@ -104,7 +104,7 @@ describe('HistoricoView', () => {
       vi.fn().mockResolvedValue({ itens: [resumo(1)], pagina: 1, tamanho_pagina: 12, total: 1, total_paginas: 1 }),
     );
     const link = await screen.findByRole('link', { name: /documento 1/i });
-    expect(link).toHaveAttribute('href', '/resultado/id-1');
+    expect(link).toHaveAttribute('href', '/empresa/resultado/id-1');
   });
 
   it('não mostra paginação quando total_paginas é 0', async () => {
@@ -126,7 +126,7 @@ describe('HistoricoView', () => {
     });
 
     expect(mocks.replace).not.toHaveBeenCalled();
-    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/historico?q=vcn'), { timeout: 1_500 });
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/empresa/historico?q=vcn'), { timeout: 1_500 });
   });
 
   it('descarta a busca pendente quando a URL muda por navegação', async () => {
@@ -196,6 +196,6 @@ describe('HistoricoView', () => {
     expect(screen.queryByText(/nenhum material gerado ainda/i)).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: /limpar filtros/i }));
-    expect(mocks.replace).toHaveBeenCalledWith('/historico');
+    expect(mocks.replace).toHaveBeenCalledWith('/empresa/historico');
   });
 });

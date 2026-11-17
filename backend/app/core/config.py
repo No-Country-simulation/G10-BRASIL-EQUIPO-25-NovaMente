@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     llm_provider: str = "gemini"  # provedor de LLM registrado em app/llm/fabrica.py
     modelo_llm: str = "gemini-3.5-flash-lite"
 
+    # ── Banco de dados ───────────────────────────────────────────────────────
+    database_url: str = "sqlite:///./data/novamente.db"
+
     # ── RAG / Chroma ─────────────────────────────────────────────────────────
     chroma_dir: str = "/data/chroma"
 
@@ -35,7 +38,7 @@ class Settings(BaseSettings):
     oci_regiao: str = ""
 
     # ── Jobs e histórico (SQLite) ────────────────────────────────────────────
-    db_path: str = "/data/novamente.sqlite3"  # em produção, num volume persistente
+    db_path: str = "./data/novamente.db"  # mesmo arquivo do catálogo; em produção, use um volume
     job_ttl_segundos: int = 1800  # 30 minutos
     job_timeout_segundos: int = 300  # 5 minutos (igual ao frontend)
     llm_timeout_segundos: int = 120  # por chamada ao Gemini
