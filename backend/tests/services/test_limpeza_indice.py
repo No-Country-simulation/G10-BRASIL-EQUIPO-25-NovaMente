@@ -8,6 +8,7 @@ o teste mede o worker, sem depender do LLM.
 from __future__ import annotations
 
 import logging
+import time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -92,7 +93,9 @@ def pipeline_falso(monkeypatch):
         if cenario == "cancelado":
             job_worker.solicitar_cancelamento(documento_id.removeprefix("doc_"))
         if cenario == "prazo":
-            monkeypatch.setattr(settings, "job_timeout_segundos", -1)
+            # O prazo é calculado quando o job começa: para estourá-lo, o relógio avança.
+            relogio = time.monotonic
+            monkeypatch.setattr(time, "monotonic", lambda: relogio() + settings.job_timeout_segundos + 1)
         avisar("gerando", 65, "Redigindo material didático...")
         estado["pacote"] = _pacote()
         avisar("armazenando", 100, "Salvo no OCI.")
