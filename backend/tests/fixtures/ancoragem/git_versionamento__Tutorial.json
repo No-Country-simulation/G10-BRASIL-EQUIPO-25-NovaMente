@@ -1,0 +1,44 @@
+{
+  "adaptacao_id": "01M7BN0866XHY659P9Y1EFEY7Z",
+  "status": "sucesso",
+  "criado_em": "2026-11-13T23:48:35.142500+00:00",
+  "documento": {
+    "titulo": "Controle de versão com Git",
+    "origem": "texto",
+    "nome_arquivo": null,
+    "tamanho_bytes": null
+  },
+  "metadados": {
+    "perfil_aplicado": "Desenvolvedor",
+    "formato_gerado": "Tutorial",
+    "nivel_detalhe_aplicado": "Tecnico",
+    "nicho_setor_aplicado": "Geral",
+    "tempo_estimado_estudo_minutos": 12,
+    "conceitos_chave": [
+      "Controle",
+      "Git",
+      "Texto",
+      "NovaMente",
+      "Por",
+      "Com",
+      "Commits",
+      "Um"
+    ]
+  },
+  "conteudo_adaptado": {
+    "tipo": "markdown",
+    "titulo": "Tutorial Técnico: Fluxo de Trabalho Essencial com Git",
+    "introducao_contextualizada": "Como desenvolvedor júnior ou pleno, dominar o controle de versão distribuído com Git é fundamental para garantir a integridade do código, facilitar code reviews e colaborar eficientemente em equipe sem sobrescrever o trabalho alheio. A seguir, apresentamos o passo a passo técnico para realizar o ciclo completo de desenvolvimento utilizando branches, commits atômicos, resolução de conflitos e integração via repositórios remotos.",
+    "itens": "## Passo 1: Preparação e Criação de Branch\n\nAntes de iniciar o desenvolvimento de uma nova funcionalidade ou correção, garanta que sua árvore de trabalho esteja limpa e crie uma branch isolada para evitar impactos na branch principal:\n\n1. Atualize sua branch atual com o repositório remoto:\n   `git pull`\n2. Crie e mude para uma nova branch independente:\n   `git checkout -b feature/nome-da-funcionalidade`\n\n## Passo 2: Encapsulamento de Alterações (Commits)\n\nDurante o desenvolvimento, adicione e registre suas alterações de forma atômica (commits pequenos e focados facilitam o rastreamento de bugs e o processo de code review):\n\n1. Adicione os arquivos modificados à área de preparação (staging area):\n   `git add <arquivos>`\n2. Registre a fotografia do projeto com uma mensagem descritiva do que mudou e o porquê:\n   `git commit -m \"feat: descreve a alteração realizada\"`\n\n## Passo 3: Sincronização e Gestão de Conflitos\n\nAo finalizar a funcionalidade, envie seu trabalho para o repositório remoto e prepare a integração:\n\n1. Envie a branch remota:\n   `git push origin feature/nome-da-funcionalidade`\n2. Caso ocorram divergências de código onde duas pessoas alteraram as mesmas linhas, o Git sinalizará um conflito nos arquivos afetados. Resolva manualmente os conflitos marcados pelo Git no editor de código, escolha a versão correta, adicione os arquivos resolvidos com `git add` e conclua a operação de merge ou rebase.\n\n## Passo 4: Pull Request e Integração Contínua\n\nPara garantir a qualidade do software antes de alterar o código estável da branch principal:\n\n1. Acesse a interface do repositório remoto (como GitHub ou GitLab).\n2. Abra um Pull Request (PR) a partir da sua `feature/nome-da-funcionalidade` em direção à branch principal.\n3. Aguarde a revisão, comentários e aprovação de outro desenvolvedor da equipe.\n4. Após a aprovação, realize o merge para integrar definitivamente o seu código ao histórico do projeto."
+  },
+  "avaliacao_qualidade": {
+    "ancoragem_fonte_score": 0.5039,
+    "clareza_pedagogica": "Alta",
+    "observacoes": null
+  },
+  "armazenamento_oci": {
+    "bucket": "novamente-conteudos-educativos",
+    "objeto_id": "novamente-controle-de-versao-com-git-desenvolvedor-tutorial-01M7BN08.json",
+    "status_upload": "falha"
+  }
+}

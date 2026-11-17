@@ -6,9 +6,10 @@ from pydantic import BaseModel, Field
 class Trecho(BaseModel):
     """Trecho recuperado do documento.
 
-    `relevancia` é 1 - distância cosseno, limitada a [0, 1]. Quem integra
-    combina esse valor com o LLM-as-a-judge para calcular o
-    `ancoragem_fonte_score` final (fora deste módulo).
+    `relevancia` é 1 - distância cosseno, limitada a [0, 1]. O
+    `ancoragem_fonte_score` é calculado fora deste módulo, sobre o conteúdo
+    gerado (app/services/ancoragem.py); a relevância só entra como último
+    recurso, quando o conteúdo não tem termos mensuráveis.
     """
 
     texto: str

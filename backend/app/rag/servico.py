@@ -11,9 +11,9 @@ o endpoint:
 - Erros: `ValueError` (texto ou parâmetro inválido) vira HTTP 422;
   `LookupError` (documento não indexado) vira HTTP 404.
 - `ancoragem_fonte_score`: o cálculo final NÃO é feito aqui. `recuperar`
-  devolve trechos com `relevancia` (1 - distância cosseno, de 0 a 1); quem
-  gera o conteúdo combina esse valor com o LLM-as-a-judge sobre o texto
-  gerado e pede reescrita quando o score ficar abaixo de 0,85.
+  devolve trechos com `relevancia` (1 - distância cosseno, de 0 a 1). A nota
+  é calculada sobre o conteúdo gerado em app/services/ancoragem.py, e a
+  relevância só entra como último recurso.
 """
 
 from collections.abc import Callable
