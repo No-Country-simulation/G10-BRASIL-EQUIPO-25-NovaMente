@@ -34,3 +34,14 @@ def chroma_isolado(tmp_path, monkeypatch):
     armazenamento.definir_cliente(None)
     yield tmp_path / "chroma-padrao"
     armazenamento.definir_cliente(None)
+
+
+@pytest.fixture(autouse=True)
+def fabrica_llm_isolada(monkeypatch):
+    """Provedores registrados num teste não vazam para o próximo."""
+    from app.llm import fabrica
+
+    monkeypatch.setattr(fabrica, "_construtores", dict(fabrica._construtores))
+    fabrica.redefinir_provedor()
+    yield
+    fabrica.redefinir_provedor()

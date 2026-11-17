@@ -1,7 +1,8 @@
 """Testes da chamada ao LLM (timeout, indisponibilidade, retentativa) e do worker.
 
-Nada acessa a rede: o Gemini, o RAG e o OCI são substituídos por falsos
-definidos neste arquivo.
+Nada acessa a rede: o provedor de LLM, o RAG e o OCI são substituídos por
+falsos definidos neste arquivo. O mapeamento das exceções do SDK do Gemini
+para os erros normalizados é testado em tests/llm/test_gemini.py.
 """
 
 from __future__ import annotations
@@ -10,9 +11,17 @@ import json
 from datetime import datetime, timezone
 
 import pytest
-from google.api_core import exceptions as google_exc
 
 from app.core.config import settings
+from app.llm import (
+    ErroConfiguracao,
+    ErroIndisponivel,
+    ErroLimiteTaxa,
+    ErroRespostaInvalida,
+    ErroTimeout,
+    Mensagem,
+    registrar_provedor,
+)
 from app.models import ArmazenamentoOci, JobResposta
 from app.rag.modelos import Trecho
 from app.services import pipeline, repositorio
@@ -45,43 +54,33 @@ SEM_TITULO = json.dumps(
 # ── Falsos ────────────────────────────────────────────────────────────────────
 
 
-class _RespostaFalsa:
-    def __init__(self, texto: str | None):
-        self._texto = texto
-
-    @property
-    def text(self) -> str:
-        if self._texto is None:
-            # Mesmo comportamento do SDK quando não há candidatos (ex.: bloqueio).
-            raise ValueError(f"sem candidatos {TEXTO_CRU}")
-        return self._texto
-
-
 class _ModeloFalso:
-    """Devolve, em ordem, os itens de ``roteiro``: texto, None (bloqueio) ou exceção."""
+    """Provedor falso: devolve, em ordem, os itens de ``roteiro``.
 
+    Cada item é um texto, None (resposta vazia ou bloqueada) ou uma exceção.
+    """
+
+    nome = "falso"
     roteiro: list = []
     chamadas: list[dict] = []
 
-    def __init__(self, nome_modelo: str):
-        self.nome_modelo = nome_modelo
-
-    def generate_content(self, prompt, request_options=None):
-        _ModeloFalso.chamadas.append({"prompt": prompt, "request_options": request_options})
+    def gerar(self, mensagens: list[Mensagem], *, timeout_segundos: float) -> str:
+        _ModeloFalso.chamadas.append({"mensagens": mensagens, "timeout_segundos": timeout_segundos})
         item = _ModeloFalso.roteiro[min(len(_ModeloFalso.chamadas), len(_ModeloFalso.roteiro)) - 1]
         if isinstance(item, BaseException):
             raise item
-        return _RespostaFalsa(item)
+        if item is None:
+            # Mesmo papel do ValueError do SDK quando não há candidatos (ex.: bloqueio).
+            raise ErroRespostaInvalida(f"sem candidatos {TEXTO_CRU}")
+        return item
 
 
 @pytest.fixture
 def modelo(monkeypatch):
-    import google.generativeai as genai
-
     _ModeloFalso.roteiro = [RESPOSTA_VALIDA]
     _ModeloFalso.chamadas = []
-    monkeypatch.setattr(genai, "configure", lambda **_kw: None)
-    monkeypatch.setattr(genai, "GenerativeModel", _ModeloFalso)
+    registrar_provedor("falso", _ModeloFalso)
+    monkeypatch.setattr(settings, "llm_provider", "falso")
     return _ModeloFalso
 
 
@@ -136,14 +135,17 @@ def test_caminho_feliz_uma_chamada_com_timeout(modelo, monkeypatch):
     etapas = []
     pacote = _executar(etapas)
     assert len(modelo.chamadas) == 1
-    assert modelo.chamadas[0]["request_options"] == {"timeout": 45}
+    assert modelo.chamadas[0]["timeout_segundos"] == 45
+    mensagens = modelo.chamadas[0]["mensagens"]
+    assert [m.papel for m in mensagens] == ["user"]
+    assert "APIs REST" in mensagens[0].conteudo  # o prompt de hoje vai inteiro como mensagem de usuário
     assert pacote.conteudo_adaptado.titulo == "APIs REST"
     assert etapas == ["chunking", "embeddings", "gerando", "gerando", "revisando", "armazenando"]
 
 
 def test_timeout_vira_runtime_error_sem_texto_cru(modelo, monkeypatch):
     monkeypatch.setattr(settings, "llm_timeout_segundos", 30)
-    modelo.roteiro = [google_exc.DeadlineExceeded(TEXTO_CRU)]
+    modelo.roteiro = [ErroTimeout(TEXTO_CRU)]
     with pytest.raises(RuntimeError) as erro:
         _executar()
     mensagem = str(erro.value)
@@ -164,13 +166,13 @@ MSG_INDISPONIVEL = "O serviço de IA está indisponível no momento. Tente novam
 @pytest.mark.parametrize(
     "excecao,mensagem",
     [
-        (google_exc.ResourceExhausted(TEXTO_CRU), MSG_LIMITE),
-        (google_exc.NotFound(TEXTO_CRU), MSG_CONFIGURACAO),
-        (google_exc.InvalidArgument(TEXTO_CRU), MSG_CONFIGURACAO),
-        (google_exc.PermissionDenied(TEXTO_CRU), MSG_CONFIGURACAO),
-        (google_exc.Unauthenticated(TEXTO_CRU), MSG_CONFIGURACAO),
-        (google_exc.ServiceUnavailable(TEXTO_CRU), MSG_INDISPONIVEL),
-        (google_exc.InternalServerError(TEXTO_CRU), MSG_INDISPONIVEL),
+        (ErroLimiteTaxa(TEXTO_CRU), MSG_LIMITE),
+        (ErroConfiguracao(f"404 {TEXTO_CRU}"), MSG_CONFIGURACAO),
+        (ErroConfiguracao(f"400 {TEXTO_CRU}"), MSG_CONFIGURACAO),
+        (ErroConfiguracao(f"403 {TEXTO_CRU}"), MSG_CONFIGURACAO),
+        (ErroConfiguracao(f"401 {TEXTO_CRU}"), MSG_CONFIGURACAO),
+        (ErroIndisponivel(f"503 {TEXTO_CRU}"), MSG_INDISPONIVEL),
+        (ErroIndisponivel(f"500 {TEXTO_CRU}"), MSG_INDISPONIVEL),
     ],
     ids=[
         "limite-429",
@@ -347,7 +349,7 @@ def test_worker_timeout_de_outra_origem_nao_vira_prazo(monkeypatch):
 
 
 def test_worker_mantem_mensagem_de_runtime_error(modelo):
-    modelo.roteiro = [google_exc.ServiceUnavailable(TEXTO_CRU)]
+    modelo.roteiro = [ErroIndisponivel(TEXTO_CRU)]
     job_id = "JOB_RUNTIME_ERROR"
     _criar_job(job_id)
     job = _rodar_worker(job_id)
