@@ -17,3 +17,14 @@ def banco_temporario(tmp_path, monkeypatch):
     caminho = tmp_path / "novamente.sqlite3"
     monkeypatch.setattr(settings, "db_path", str(caminho))
     return caminho
+
+
+@pytest.fixture(autouse=True)
+def fabrica_llm_isolada(monkeypatch):
+    """Provedores registrados num teste não vazam para o próximo."""
+    from app.llm import fabrica
+
+    monkeypatch.setattr(fabrica, "_construtores", dict(fabrica._construtores))
+    fabrica.redefinir_provedor()
+    yield
+    fabrica.redefinir_provedor()

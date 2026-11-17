@@ -27,7 +27,50 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `LLM_TIMEOUT_SEGUNDOS` | — | Tempo limite de cada chamada ao Gemini, em segundos (default: `120`) |
 | `CHROMA_DIR` | — | Diretório do ChromaDB (default: `/data/chroma`) |
 | `MODELO_LLM` | — | Modelo Gemini (default: `gemini-3.5-flash-lite`) |
+| `LLM_PROVIDER` | — | Provedor de LLM usado na geração (default: `gemini`; valores válidos: os provedores registrados) |
 | `DB_PATH` | — | Arquivo SQLite dos jobs e do histórico (default: `/data/novamente.sqlite3`) |
+
+## Provedor de LLM
+
+A geração de conteúdo chama o modelo por uma interface, `ProvedorLLM`
+(`app/llm/`), e não por um SDK. O provedor é escolhido por `LLM_PROVIDER`;
+o padrão `gemini` usa o SDK `google-genai`, o mesmo dos embeddings, com
+`MODELO_LLM`, `LLM_TIMEOUT_SEGUNDOS` e a chave de `GOOGLE_API_KEY`.
+
+Contrato:
+
+```python
+class ProvedorLLM(Protocol):
+    nome: str
+
+    def gerar(self, mensagens: list[Mensagem], *, timeout_segundos: float) -> str: ...
+```
+
+`Mensagem(papel, conteudo)` tem papel `"system"`, `"user"` ou `"assistant"`.
+O provedor devolve só o texto da resposta e, em caso de falha, levanta
+apenas os erros de `app/llm/erros.py` (nenhum erro de SDK pode escapar):
+
+| Erro | Quando |
+|---|---|
+| `ErroTransitorio` (`ErroLimiteTaxa`, `ErroIndisponivel`) | limite de uso (429), serviço fora do ar (5xx, exceto 504) ou falha de conexão |
+| `ErroTimeout` | o modelo não respondeu dentro de `timeout_segundos` (inclui 408 e 504) |
+| `ErroRespostaInvalida` | resposta vazia, bloqueada ou sem texto |
+| `ErroConfiguracao` | chave ausente ou inválida, modelo inexistente, argumento recusado |
+
+O pipeline converte cada categoria na mensagem que o usuário vê; outros
+erros (`ErroLLM`) viram "Erro interno ao gerar o material.".
+
+Para acrescentar um provedor, implemente o contrato e registre um construtor
+sem argumentos em `app/llm/fabrica.py`:
+
+```python
+registrar_provedor("meu-provedor", lambda: MeuProvedor(modelo=settings.modelo_llm))
+```
+
+e use `LLM_PROVIDER=meu-provedor`. Um `LLM_PROVIDER` desconhecido impede a
+subida do backend, com uma mensagem que lista os valores válidos. A falta de
+`GOOGLE_API_KEY` não impede a subida: a geração é que falha. O cliente do
+Gemini é criado na primeira geração e reaproveitado pelos jobs seguintes.
 
 ## Jobs e histórico
 
