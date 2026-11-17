@@ -12,6 +12,7 @@ linhas de um documento numa collection única cresce cerca de 10 vezes menos.
 """
 
 import threading
+from collections.abc import Callable
 
 import chromadb
 
@@ -58,6 +59,23 @@ def _colecao():
             configuration={"hnsw": {"space": config.METRICA}},
             embedding_function=None,
         )
+
+
+def recriar_colecao_se_vazia(pode_recriar: Callable[[str], bool]) -> bool:
+    """Apaga e recria a collection compartilhada, para o índice HNSW começar vazio.
+
+    Só recria se ela não tiver nenhuma linha e ``pode_recriar(id_da_collection)``
+    (avaliado sob o mesmo lock da criação) devolver True. Se algo falhar entre
+    apagar e recriar, a próxima chamada a ``_colecao`` a recria com
+    ``get_or_create``. Devolve se recriou.
+    """
+    with _trava:
+        colecao = _colecao()
+        if colecao.count() > 0 or not pode_recriar(str(colecao.id)):
+            return False
+        obter_cliente().delete_collection(config.NOME_COLLECTION)
+        _colecao()
+        return True
 
 
 def _filtro(documento_id: str) -> dict:
