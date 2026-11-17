@@ -1,10 +1,16 @@
 import { expect, test } from '@playwright/test';
 
 test('cenário Iniciante + Flashcards gera, vira o cartão e exporta Markdown', async ({ page }) => {
-  await page.goto('/');
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      'novamente.tour',
+      JSON.stringify({ versao: 1, concluido_em: new Date().toISOString() }),
+    );
+  });
+  await page.goto('/empresa/gerar');
   await page.getByRole('button', { name: /iniciante \+ flashcards/i }).click();
 
-  await expect(page).toHaveURL(/\/resultado\/01J/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/empresa\/resultado\/01J/, { timeout: 30_000 });
   await expect(page.getByRole('heading', { name: /dominando redes na nuvem/i })).toBeVisible();
   await expect(page.getByText('O que é uma VCN na Oracle Cloud?')).toBeVisible();
 

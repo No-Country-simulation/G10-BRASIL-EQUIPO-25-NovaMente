@@ -11,6 +11,10 @@ python-multipart==0.0.12      # upload multipart/form-data
 
 # ── Validação & serialização ──────────────────────────────────────────────────
 pydantic-settings==2.6.1
+email-validator>=2.2,<3
+
+# ── Banco de dados ────────────────────────────────────────────────────────────
+sqlalchemy>=2.0,<3
 
 # ── LLM / Google Gemini ───────────────────────────────────────────────────────
 # O SDK google-genai (geração e embeddings) está em requirements-rag.txt.
