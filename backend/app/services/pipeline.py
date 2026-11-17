@@ -36,6 +36,7 @@ from app.llm import (
     ErroTransitorio,
     Mensagem,
     ProvedorLLM,
+    limites_da_geracao,
     obter_provedor,
 )
 from app.services.conceitos import MAX_CARACTERES, escolher_conceitos
@@ -265,7 +266,9 @@ def _gerar_conteudo(
     ``conceitos_chave`` (``None`` se ausente). Esse campo não é validado aqui:
     um valor ruim nunca torna a resposta inválida nem consome a retentativa.
 
-    Timeout e indisponibilidade não são retentados. ``avisar_revisao`` é
+    Timeout, limite de uso e indisponibilidade não são retentados aqui: quem os
+    retenta é o provedor devolvido pela fábrica (app/llm/retentativa.py).
+    ``avisar_revisao`` é
     chamado uma única vez, quando chega a primeira resposta com texto.
     """
     revisao_avisada = False
@@ -323,12 +326,17 @@ def executar_pipeline(
     nicho: NichoSetor,
     nivel: NivelDetalhe,
     on_progresso: OnProgresso | None = None,
+    prazo: float | None = None,
+    verificar_interrupcao: Callable[[], None] | None = None,
 ) -> AdaptacaoPacote:
     """Executa o pipeline completo e devolve o ``AdaptacaoPacote``.
 
     ``on_progresso(etapa, percentual, mensagem)`` é chamado a cada transição
-    para que o worker atualize o job. Lança ``ValueError`` em erros de
-    validação e ``RuntimeError`` em falhas de LLM.
+    para que o worker atualize o job. ``prazo`` (instante de
+    ``time.monotonic()``) e ``verificar_interrupcao`` limitam as retentativas
+    do LLM ao prazo do job e permitem cancelar durante a espera entre elas.
+    Lança ``ValueError`` em erros de validação e ``RuntimeError`` em falhas
+    de LLM.
     """
 
     def _prog(etapa: EtapaJob, pct: int, msg: str = "") -> None:
@@ -368,12 +376,13 @@ def executar_pipeline(
         logger.error("Provedor de LLM não configurado: %r", exc)
         raise RuntimeError(_MSG_CONFIGURACAO) from exc
     prompt = _montar_prompt(titulo, textos_trechos, perfil, formato, nicho, nivel)
-    resposta_texto, conteudo, conceitos_do_llm = _gerar_conteudo(
-        provedor,
-        prompt,
-        formato,
-        avisar_revisao=lambda: _prog("revisando", 82, "Revisando fidelidade..."),
-    )
+    with limites_da_geracao(prazo, verificar_interrupcao):
+        resposta_texto, conteudo, conceitos_do_llm = _gerar_conteudo(
+            provedor,
+            prompt,
+            formato,
+            avisar_revisao=lambda: _prog("revisando", 82, "Revisando fidelidade..."),
+        )
 
     # 5. Avaliação de qualidade ──────────────────────────────────────────────
     avaliacao = _avaliar_qualidade(relevancia_media, resposta_texto)
