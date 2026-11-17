@@ -1,10 +1,10 @@
-"""Pipeline de geração de conteúdo didático via RAG + Gemini.
+"""Pipeline de geração de conteúdo didático via RAG + LLM.
 
 Este módulo orquestra:
   1. Extração de texto (PDF / MD / TXT já vem extraído pelo router)
   2. Indexação RAG (chunking + embeddings) — reutiliza app.rag
   3. Recuperação dos trechos mais relevantes
-  4. Chamada ao LLM Gemini para gerar o conteúdo
+  4. Chamada ao provedor de LLM configurado (``app.llm``) para gerar o conteúdo
   5. Avaliação de qualidade (ancoragem + clareza)
   6. Montagem do ``AdaptacaoPacote`` completo
 
@@ -26,6 +26,16 @@ from pydantic import ValidationError
 from ulid import ULID  # type: ignore
 
 from app.core.config import settings
+from app.llm import (
+    ErroConfiguracao,
+    ErroLimiteTaxa,
+    ErroRespostaInvalida,
+    ErroTimeout,
+    ErroTransitorio,
+    Mensagem,
+    ProvedorLLM,
+    obter_provedor,
+)
 from app.models import (
     AdaptacaoPacote,
     AvaliacaoQualidade,
@@ -197,49 +207,39 @@ class _RespostaInvalida(Exception):
     """Resposta vazia, bloqueada ou fora do formato esperado (pode ser retentada)."""
 
 
-def _chamar_llm(model, prompt: str) -> str:
-    """Chama o modelo com timeout e devolve o texto da resposta.
+def _chamar_llm(provedor: ProvedorLLM, prompt: str) -> str:
+    """Envia o prompt ao provedor como mensagem de usuário e devolve o texto.
 
     Timeout, limite de uso (429), erro de configuração (modelo ou chave) e
     indisponibilidade viram ``RuntimeError`` com mensagem em português (sem
     o texto da exceção original, que vai só para o log). Resposta
-    vazia ou bloqueada vira ``_RespostaInvalida``.
+    vazia ou bloqueada vira ``_RespostaInvalida``. Outros ``ErroLLM`` sobem
+    como estão e o worker os trata como erro interno.
     """
-    from google.api_core import exceptions as google_exc  # type: ignore
-
     limite = settings.llm_timeout_segundos
     try:
-        response = model.generate_content(prompt, request_options={"timeout": limite})
-    except (google_exc.DeadlineExceeded, TimeoutError) as exc:
+        return provedor.gerar([Mensagem("user", prompt)], timeout_segundos=limite)
+    except ErroTimeout as exc:
         logger.error("Tempo limite de %ss excedido na chamada ao LLM: %r", limite, exc)
         raise RuntimeError(
             f"A IA demorou demais para responder (limite de {limite} segundos). "
             "Tente novamente."
         ) from exc
-    except google_exc.ResourceExhausted as exc:
+    except ErroLimiteTaxa as exc:
         logger.error("Limite de uso atingido na chamada ao LLM: %r", exc)
         raise RuntimeError(_MSG_LIMITE_USO) from exc
-    except (
-        google_exc.NotFound,
-        google_exc.InvalidArgument,
-        google_exc.PermissionDenied,
-        google_exc.Unauthenticated,
-    ) as exc:
+    except ErroConfiguracao as exc:
         logger.error("Erro de configuração na chamada ao LLM: %r", exc)
         raise RuntimeError(_MSG_CONFIGURACAO) from exc
-    except google_exc.GoogleAPIError as exc:
+    except ErroTransitorio as exc:
         logger.error("Erro de API na chamada ao LLM: %r", exc)
         raise RuntimeError(_MSG_INDISPONIVEL) from exc
-
-    try:
-        return response.text
-    except (ValueError, IndexError) as exc:
-        # O SDK levanta ValueError quando não há candidatos/partes (ex.: bloqueio).
+    except ErroRespostaInvalida as exc:
         raise _RespostaInvalida("Resposta vazia ou bloqueada.") from exc
 
 
 def _gerar_conteudo(
-    model,
+    provedor: ProvedorLLM,
     prompt: str,
     formato: FormatoSaida,
     avisar_revisao: Callable[[], None],
@@ -252,7 +252,7 @@ def _gerar_conteudo(
     revisao_avisada = False
     for tentativa in range(1, _TENTATIVAS_RESPOSTA_INVALIDA + 1):
         try:
-            resposta_texto = _chamar_llm(model, prompt)
+            resposta_texto = _chamar_llm(provedor, prompt)
             if not revisao_avisada:
                 avisar_revisao()
                 revisao_avisada = True
@@ -342,13 +342,14 @@ def executar_pipeline(
 
     # 3 e 4. Chamada ao LLM e parse do conteúdo gerado ──────────────────────
     _prog("gerando", 65, "Redigindo material didático...")
-    import google.generativeai as genai  # type: ignore
-
-    genai.configure(api_key=settings.google_api_key)
-    model = genai.GenerativeModel(settings.modelo_llm)
+    try:
+        provedor = obter_provedor()
+    except ErroConfiguracao as exc:
+        logger.error("Provedor de LLM não configurado: %r", exc)
+        raise RuntimeError(_MSG_CONFIGURACAO) from exc
     prompt = _montar_prompt(titulo, textos_trechos, perfil, formato, nicho, nivel)
     resposta_texto, conteudo = _gerar_conteudo(
-        model,
+        provedor,
         prompt,
         formato,
         avisar_revisao=lambda: _prog("revisando", 82, "Revisando fidelidade..."),

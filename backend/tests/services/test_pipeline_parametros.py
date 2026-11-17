@@ -11,6 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.core.config import settings
+from app.llm import Mensagem, registrar_provedor
 from app.main import app
 from app.models import FormatoSaida, NichoSetor, NivelDetalhe, PerfilDestinatario
 from app.services import pipeline
@@ -102,31 +103,23 @@ TEXTO_DOCUMENTO = "\n\n".join(
 )
 
 
-class _RespostaFalsa:
-    def __init__(self, texto: str):
-        self.text = texto
-
-
 class _ModeloFalso:
-    """Substitui o GenerativeModel e guarda os prompts recebidos."""
+    """Provedor de LLM falso que guarda os prompts recebidos."""
 
+    nome = "falso"
     prompts: list[str] = []
 
-    def __init__(self, nome_modelo: str):
-        self.nome_modelo = nome_modelo
-
-    def generate_content(self, prompt: str, **_kwargs) -> _RespostaFalsa:
-        _ModeloFalso.prompts.append(prompt)
-        return _RespostaFalsa(RESPOSTA_FLASHCARDS)
+    def gerar(self, mensagens: list[Mensagem], *, timeout_segundos: float) -> str:
+        assert [m.papel for m in mensagens] == ["user"]
+        _ModeloFalso.prompts.append(mensagens[0].conteudo)
+        return RESPOSTA_FLASHCARDS
 
 
 @pytest.fixture
 def modelo_falso(monkeypatch):
-    import google.generativeai as genai
-
     _ModeloFalso.prompts = []
-    monkeypatch.setattr(genai, "configure", lambda **_kwargs: None)
-    monkeypatch.setattr(genai, "GenerativeModel", _ModeloFalso)
+    registrar_provedor("falso", _ModeloFalso)
+    monkeypatch.setattr(settings, "llm_provider", "falso")
     return _ModeloFalso
 
 

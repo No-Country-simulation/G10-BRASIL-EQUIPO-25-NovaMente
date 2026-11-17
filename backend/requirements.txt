@@ -17,8 +17,7 @@ email-validator>=2.2,<3
 sqlalchemy>=2.0,<3
 
 # ── LLM / Google Gemini ───────────────────────────────────────────────────────
-google-generativeai==0.8.4
-google-api-core==2.33.0       # exceções da chamada ao LLM
+# O SDK google-genai (geração e embeddings) está em requirements-rag.txt.
 
 # ── Extração de texto ─────────────────────────────────────────────────────────
 pypdf==5.1.0                  # PDF → texto
