@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="titulo">
+  <title id="titulo">Conceito 3 — Página que vira faísca</title>
+  <defs>
+    <linearGradient id="grad3" x1="140" y1="140" x2="390" y2="390" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <linearGradient id="page3" x1="158" y1="156" x2="354" y2="366" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#161327"/>
+      <stop offset="1" stop-color="#0F0F18"/>
+    </linearGradient>
+    <radialGradient id="halo3" cx="0.5" cy="0.44" r="0.58">
+      <stop offset="0" stop-color="#8B5CF6" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#0B0B12" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow3" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="96" fill="#0B0B12"/>
+  <rect width="512" height="512" rx="96" fill="url(#halo3)"/>
+
+  <!-- página -->
+  <path d="M158 156h150l46 46v164H158z" fill="url(#page3)" stroke="url(#grad3)" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M308 156l46 46h-46z" fill="#1E1B4B" stroke="url(#grad3)" stroke-width="10" stroke-linejoin="round"/>
+
+  <!-- N dentro da página -->
+  <g fill="url(#grad3)">
+    <path d="M196 224h34v118h-34z"/>
+    <path d="M286 224h34v118h-34z"/>
+    <path d="M230 224h32l54 118h-34z"/>
+  </g>
+
+  <!-- linhas de texto -->
+  <g stroke="#8B5CF6" stroke-width="7" stroke-linecap="round" opacity="0.3">
+    <path d="M196 288h44"/>
+    <path d="M196 306h30"/>
+  </g>
+
+  <!-- faísca -->
+  <circle cx="374" cy="138" r="38" fill="#22D3EE" opacity="0.2" filter="url(#glow3)"/>
+  <path d="M374 100l10 28 28 10-28 10-10 28-10-28-28-10 28-10z" fill="#EDE9FE"/>
+  <path d="M374 114l6 16 16 6-16 6-6 16-6-16-16-6 16-6z" fill="#22D3EE"/>
+</svg>

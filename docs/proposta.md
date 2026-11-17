@@ -114,7 +114,6 @@ Para garantir que o **NovaMente** entregue tanto eficácia no aprendizado quanto
 | :--- | :--- |
 | **Alex Grellet** | Vibe Coder / Developer |
 | **Luan Carvalho** | Vibe Coder / Developer |
-| **Mario Lucio Breder Junior** | Product Manager / Developer  |
 | **Renato Campos** | Tech Lead / Vibe Coder |
 
 
