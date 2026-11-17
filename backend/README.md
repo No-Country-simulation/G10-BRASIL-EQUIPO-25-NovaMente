@@ -44,6 +44,46 @@ expira.
   workers (`uvicorn --workers N`), um pedido de cancelamento só alcança o job
   se cair no mesmo processo que o executa.
 
+## Índice do Chroma (descartável)
+
+O pipeline indexa o documento no ChromaDB (em `CHROMA_DIR`) só para recuperar
+trechos durante a geração. Depois que o pacote é salvo, nada mais lê o índice.
+
+- **Collection única:** todos os documentos ficam na collection
+  `novamente_trechos`, uma linha por trecho com o `documento_id` nos
+  metadados; a busca filtra pelo documento. Neste Chroma (1.5.9), apagar uma
+  collection não tira do disco o diretório do índice HNSW, nem libera a
+  memória do processo. Por isso não há mais uma collection por documento.
+- **Limpeza no fim de cada job:** ao terminar (sucesso, falha, cancelamento
+  ou prazo excedido), o worker apaga as linhas do documento, depois de salvar
+  o estado final do job. Uma falha ao apagar vira aviso no log e não muda o
+  resultado do job.
+- **Varredura na subida:** apaga as linhas que jobs interrompidos deixaram para
+  trás (`app/services/limpeza_indice.py`), com três regras de segurança:
+  - só considera documentos criados pelo pipeline (`doc_<ULID>`);
+  - preserva os de jobs `queued` ou `running` no banco;
+  - qualquer erro vira aviso no log e a subida continua.
+
+  Ela também não cria a pasta do Chroma: se a pasta não existe, não há nada a
+  limpar.
+- **Disco:** medido com 300 jobs de 8 trechos e vetores de 3072 dimensões,
+  apagar só as linhas deixou o diretório com 32 MB e o processo com 164 MB de
+  memória. Com uma collection por documento, foram 373 MB e 602 MB. O
+  diretório ainda cresce devagar (cerca de 0,1 MB por job), porque o HNSW só
+  marca as linhas como apagadas; não há compactação automática.
+- **Pasta antiga:** índices de versões anteriores (uma collection por
+  documento) não são apagados automaticamente. Como o índice é descartável, a
+  pasta inteira pode ser apagada à mão, com o backend parado:
+
+  ```bash
+  rm -rf "$CHROMA_DIR"
+  ```
+
+  No Docker, apague o conteúdo do volume montado em `CHROMA_DIR`, com o
+  container parado.
+- **Recursos futuros:** um recurso que precise do índice depois da geração
+  (chat sobre o documento, regeneração) deve reindexar a partir do texto.
+
 ## Documentação Interativa
 
 Com o servidor rodando, acesse:

@@ -15,7 +15,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1.routers import adaptacoes, health, jobs, oci
 from app.core.config import settings
-from app.services import repositorio
+from app.services import limpeza_indice, repositorio
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(_app: FastAPI):
     # Prepara o SQLite e marca como failed os jobs que o processo anterior deixou em andamento.
     repositorio.iniciar()
+    limpeza_indice.varrer_indices_orfaos()  # best-effort: nunca impede a subida
     yield
 
 

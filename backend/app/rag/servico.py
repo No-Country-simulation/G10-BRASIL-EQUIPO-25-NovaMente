@@ -37,7 +37,7 @@ def indexar_documento(
     Levanta ValueError se o texto tiver menos de 200 ou mais de 50.000
     caracteres, ou se o `documento_id` for vazio.
     """
-    armazenamento.nome_collection(documento_id)  # valida o id antes de gastar API
+    armazenamento.validar_documento_id(documento_id)  # valida o id antes de gastar API
     limpo = chunking.validar_texto(texto)
     avisar = on_etapa or (lambda _etapa: None)
 

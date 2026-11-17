@@ -8,7 +8,7 @@ O módulo RAG (`backend/app/rag/`) garante que o conteúdo gerado pelo NovaMente
 flowchart LR
     A[Texto do documento] --> B[Chunking<br/>1000 caracteres, overlap 150]
     B --> C[Embeddings<br/>gemini-embedding-001]
-    C --> D[(ChromaDB<br/>1 collection por documento)]
+    C --> D[(ChromaDB<br/>collection única, linhas por documento)]
     Q[Consulta] --> E[Embedding da consulta]
     E --> D
     D --> F[Top-k trechos<br/>com relevância]
@@ -19,7 +19,7 @@ flowchart LR
 |---|---|---|
 | Chunking | Quebra o texto por parágrafo, linha, frase e palavra, nessa ordem de preferência, com sobreposição para não perder contexto na fronteira | `chunking.py` |
 | Embeddings | Gera vetores de 3072 dimensões com `gemini-embedding-001` (`RETRIEVAL_DOCUMENT` na indexação, `RETRIEVAL_QUERY` na consulta), em lotes de 50, com nova tentativa em caso de erro 429 | `embeddings.py` |
-| Armazenamento | Guarda os vetores no ChromaDB, uma collection por documento (`doc_<id>_<hash>`), com métrica cosseno | `armazenamento.py` |
+| Armazenamento | Guarda os vetores no ChromaDB numa collection única (`novamente_trechos`), uma linha por trecho com o `documento_id` nos metadados, com métrica cosseno; a busca filtra pelo documento | `armazenamento.py` |
 | Serviço | Expõe as duas funções usadas pela API | `servico.py` |
 
 Os valores (tamanho do chunk, overlap, limites de texto, `k` padrão) ficam em `config.py`.
