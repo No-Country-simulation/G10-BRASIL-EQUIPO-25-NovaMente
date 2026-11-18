@@ -26,7 +26,7 @@ from app.api.v1.routers import (
 from app.core.config import settings
 from app.core.db import Base, engine
 from app.llm import validar_provedor_configurado
-from app.services import repositorio
+from app.services import limpeza_indice, repositorio
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -39,6 +39,7 @@ async def lifespan(_app: FastAPI):
     validar_provedor_configurado()
     # Prepara o SQLite e marca como failed os jobs que o processo anterior deixou em andamento.
     repositorio.iniciar()
+    limpeza_indice.varrer_indices_orfaos()  # best-effort: nunca impede a subida
     yield
 
 

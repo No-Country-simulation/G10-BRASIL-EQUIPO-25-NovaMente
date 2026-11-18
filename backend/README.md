@@ -205,6 +205,37 @@ Pior caso com os padrões (`LLM_TENTATIVAS=3`, espera inicial 2 s,
 | Timeout, com o LLM chamado depois de 58 s de job | 1 (a 2ª não cabe) | 120 s |
 | Retentativas seguidas de resposta inválida | +1 chamada do pipeline, sem checagem de prazo | até `JOB_TIMEOUT_SEGUNDOS` + 120 s desde o início do job |
 
+## Conceitos-chave
+
+`metadados.conceitos_chave` é o resumo do que o aluno deve dominar. Ele vem
+da mesma chamada que gera o conteúdo: o prompt pede, no mesmo objeto JSON, o
+campo `conceitos_chave`, com 5 a 8 termos curtos tirados do documento. Não há
+chamada extra ao LLM nem aos embeddings. As regras ficam em
+`app/services/conceitos.py`.
+
+- **Campo opcional:** se o campo faltar, vier vazio ou com tipo errado, a
+  geração segue normalmente. Ele não conta como resposta inválida e não gasta
+  a retentativa do pipeline.
+- **Validação:** a comparação ignora maiúsculas, acentos e espaços extras, e
+  tolera o plural simples terminado em "s"/"es" ("API" e "APIs"; siglas em
+  maiúsculas como "HTTPS" não entram nessa regra). São descartados os itens:
+  - que não são texto, têm 1 caractere ou mais de 60 caracteres;
+  - duplicados;
+  - formados só por palavras genéricas;
+  - iguais ao título do documento;
+  - que não aparecem no texto de origem completo.
+
+  Ficam no máximo 8, na ordem em que o LLM os devolveu.
+- **Fallback:** se nenhum item do LLM for aproveitado, usa termos
+  capitalizados e siglas do título e dos trechos recuperados, sem palavras
+  genéricas. Eles são ordenados pela frequência nos trechos e depois pela
+  ordem de aparição, no máximo 8. Se nada sobrar, usa o título do documento.
+- **Palavras genéricas:** artigos, preposições, quantificadores ("cada",
+  "um") e termos estruturais ("introdução", "resumo", "texto", "capítulo"...)
+  ficam em `PALAVRAS_GENERICAS`, no mesmo módulo. Para cortar outra palavra,
+  acrescente-a ali em minúsculas e sem acento; a validação e o fallback usam
+  a mesma lista.
+
 ## Jobs e histórico
 
 Jobs de geração ficam no arquivo SQLite apontado por `DB_PATH`; a pasta é
@@ -359,6 +390,69 @@ Leia a nota como indicador de risco, não como prova de fidelidade.
 detectaria afirmações erradas e paráfrases. Mas cada geração passaria a gastar
 uma segunda chamada, com mais cota e mais tempo de espera. Fica como
 alternativa futura.
+
+## Índice do Chroma (descartável)
+
+O pipeline indexa o documento no ChromaDB (em `CHROMA_DIR`) só para recuperar
+trechos durante a geração. Depois que o pacote é salvo, nada mais lê o índice.
+
+- **Collection única:** todos os documentos ficam na collection
+  `novamente_trechos`, uma linha por trecho com o `documento_id` nos
+  metadados; a busca filtra pelo documento. Neste Chroma (1.5.9), apagar uma
+  collection não tira do disco o diretório do índice HNSW, nem libera a
+  memória do processo. Por isso não há mais uma collection por documento.
+- **Limpeza no fim de cada job:** ao terminar (sucesso, falha, cancelamento
+  ou prazo excedido), o worker apaga as linhas do documento, depois de salvar
+  o estado final do job. Uma falha ao apagar vira aviso no log e não muda o
+  resultado do job.
+- **Limpeza automática na subida** (`app/services/limpeza_indice.py` e
+  `limpeza_disco_chroma.py`): ninguém precisa apagar nada à mão. Neste Chroma
+  (1.5.9), `delete_collection` tira a collection do catálogo, mas deixa no
+  disco o diretório do seu segmento HNSW (`<CHROMA_DIR>/<uuid>/`, cerca de
+  1,2 MB cada), mesmo depois de reabrir. Por isso a subida faz quatro etapas,
+  todas best-effort: um erro em qualquer uma vira aviso no log e a subida
+  continua.
+  1. **Linhas órfãs:** apaga as linhas de documentos do pipeline (`doc_<ULID>`)
+     cujo job não está `queued` nem `running` no banco.
+  2. **Legado:** apaga as collections de versões anteriores (uma por
+     documento): só as de nome com prefixo `doc_` e `documento_id` no formato
+     `doc_<ULID>` nos metadados. As outras não são tocadas.
+  3. **Rotação:** se a collection compartilhada ficou sem nenhuma linha, não há
+     job em andamento e o índice HNSW dela já existe no disco, ela é recriada,
+     sob o mesmo lock da indexação, para o HNSW recomeçar vazio. Se algo falhar
+     no meio, a próxima indexação a recria.
+  4. **Coleta de diretórios órfãos**, o que de fato libera o disco. Um
+     diretório só é apagado se passar por todas as travas:
+     - o nome é um UUID canônico;
+     - fica diretamente dentro de `CHROMA_DIR` e não é link simbólico;
+     - `CHROMA_DIR` não é vazio, a raiz do sistema, a pasta pessoal nem uma
+       pasta acima dela;
+     - só tem arquivos de índice HNSW (`data_level0.bin`, `header.bin`,
+       `length.bin`, `link_lists.bin`, `index_metadata.pickle`);
+     - nenhum segmento vivo do catálogo (`chroma.sqlite3`, tabela `segments`,
+       lido em modo somente leitura) tem esse id;
+     - ninguém o modifica há mais de 1 hora.
+
+     Se o catálogo não abre, está travado ou não tem a tabela e a coluna
+     esperadas, nada é apagado. Na dúvida, não apaga.
+
+  Um resumo vai para o log em INFO, com uma linha que começa com
+  "Varredura do índice do Chroma". Uma segunda subida não faz nada. Ela também
+  não cria a pasta do Chroma: se a pasta não existe, não há nada a limpar.
+- **Disco:** em 300 jobs de 8 trechos com vetores de 3072 dimensões, apagar só
+  as linhas deixou a pasta com 32 MB e o processo com 164 MB de memória. Com
+  uma collection por documento, foram 373 MB e 602 MB. Entre reinícios a pasta
+  cresce cerca de 0,1 MB por job, porque o HNSW só marca as linhas como
+  apagadas; a rotação na subida descarta esse espaço. Num ambiente com 93
+  collections legadas e 20 diretórios órfãos, a primeira subida levou a pasta
+  de 158 MB para 17 MB, em 0,1 s. O que sobra é o `chroma.sqlite3`, que não
+  encolhe sozinho.
+- **Ao atualizar o `chromadb`:** a coleta depende do formato interno do
+  Chroma. O teste canário de `tests/services/test_limpeza_disco_chroma.py`
+  falha se o catálogo ou os segmentos mudarem; revise
+  `limpeza_disco_chroma.py` antes de aceitar a atualização.
+- **Recursos futuros:** um recurso que precise do índice depois da geração
+  (chat sobre o documento, regeneração) deve reindexar a partir do texto.
 
 ## Banco de dados e catálogo
 
