@@ -150,8 +150,8 @@ def _executar(
             verificar_interrupcao=verificar_cancelamento,
         )
 
-        # Persiste o pacote
-        repositorio.salvar_pacote(pacote)
+        # Persiste o pacote e o texto usado na geração (a fonte é best-effort)
+        repositorio.salvar_pacote(pacote, texto=texto)
 
         # Atualiza o job para succeeded
         job = repositorio.obter_job(job_id)

@@ -1,4 +1,4 @@
-"""Modelos ORM das tabelas SQLite de alunos, materiais e vínculos."""
+"""Modelos ORM das tabelas SQLite de alunos, materiais, vínculos e fontes."""
 
 from __future__ import annotations
 
@@ -85,4 +85,23 @@ class VinculoDB(Base):
         ForeignKey("materiais.material_id", ondelete="CASCADE"),
         primary_key=True,
     )
+    criado_em: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class MaterialFonteDB(Base):
+    """Texto-fonte usado na geração do material (uma linha por material).
+
+    Fica numa tabela própria, e não numa coluna de ``materiais``, porque o
+    ``create_all`` não altera tabelas existentes. Nenhuma rota devolve o texto.
+    """
+
+    __tablename__ = "material_fontes"
+
+    material_id: Mapped[str] = mapped_column(
+        Text,
+        ForeignKey("materiais.material_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    texto: Mapped[str] = mapped_column(Text, nullable=False)
+    caracteres: Mapped[int] = mapped_column(Integer, nullable=False)
     criado_em: Mapped[str] = mapped_column(Text, nullable=False)

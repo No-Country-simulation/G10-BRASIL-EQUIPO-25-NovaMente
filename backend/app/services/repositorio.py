@@ -11,6 +11,7 @@ andamento quando o processo parou.
 
 from __future__ import annotations
 
+import logging
 import sqlite3
 import threading
 import time
@@ -25,7 +26,10 @@ from sqlalchemy import select
 from app.core.db import SessionLocal
 from app.models import AdaptacaoPacote, AdaptacaoResumo, ErroJob, JobResposta
 from app.models.db import MaterialDB
+from app.services import fonte
 from app.services.materiais import material_de_pacote, resumo_de_adaptacao
+
+logger = logging.getLogger(__name__)
 
 MENSAGEM_INTERROMPIDO = "A geração foi interrompida porque o servidor reiniciou. Tente novamente."
 
@@ -176,12 +180,16 @@ def jobs_em_andamento() -> list[str]:
 # ── Pacotes e catálogo ────────────────────────────────────────────────────────
 
 
-def salvar_pacote(pacote: AdaptacaoPacote) -> None:
+def salvar_pacote(pacote: AdaptacaoPacote, texto: str | None = None) -> None:
     """Grava na tabela legada de pacotes e no catálogo de materiais.
 
     A tabela ``pacotes`` mantém compatibilidade com a persistência de jobs e
     histórico da develop; o catálogo é a fonte usada pelas rotas de materiais,
     alunos e catálogo do aluno.
+
+    Com ``texto``, grava também o texto-fonte (``material_fontes``) depois do
+    commit do material, em transação própria e sem garantia: se falhar, o
+    material fica salvo sem fonte e só o tipo do erro vai para o log.
     """
     with _conectar() as conexao, _lock, conexao:
         conexao.execute(
@@ -197,6 +205,23 @@ def salvar_pacote(pacote: AdaptacaoPacote) -> None:
     with SessionLocal() as session:
         material_de_pacote(session, pacote)
         session.commit()
+
+    if texto is not None:
+        _salvar_fonte(pacote.adaptacao_id, texto)
+
+
+def _salvar_fonte(material_id: str, texto: str) -> None:
+    """Grava o texto-fonte sem nunca levantar; o texto não vai para o log."""
+    try:
+        with SessionLocal() as session:
+            if fonte.salvar_fonte(session, material_id, texto):
+                session.commit()
+    except Exception as exc:  # noqa: BLE001 - a fonte é opcional; o material já está salvo
+        # Só o tipo: a mensagem de erro do banco pode trazer os parâmetros (o texto).
+        logger.warning(
+            "Não foi possível gravar o texto-fonte do material %s (%s).",
+            material_id, type(exc).__name__,
+        )
 
 
 def obter_pacote(adaptacao_id: str) -> AdaptacaoPacote | None:

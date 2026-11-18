@@ -475,6 +475,7 @@ O catálogo de materiais, alunos e vínculos é persistido em SQLite via SQLAlch
 - Jobs continuam **em memória** (TTL de 30 min). Pacotes já finalizados sobrevivem ao reinício.
 - `material_id` é igual a `adaptacao_id` nesta fase; todo material gerado nasce com `visibilidade = "rascunho"`.
 - Excluir aluno remove vínculos em cascata; excluir material remove vínculos em cascata e tenta apagar o objeto do OCI.
+- O texto-fonte usado na geração fica na tabela `material_fontes` (não sai em nenhuma rota) e é apagado junto com o material.
 
 ### Rotas novas
 
