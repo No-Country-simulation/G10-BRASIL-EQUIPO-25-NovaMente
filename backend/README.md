@@ -140,6 +140,37 @@ Pior caso com os padrões (`LLM_TENTATIVAS=3`, espera inicial 2 s,
 | Timeout, com o LLM chamado depois de 58 s de job | 1 (a 2ª não cabe) | 120 s |
 | Retentativas seguidas de resposta inválida | +1 chamada do pipeline, sem checagem de prazo | até `JOB_TIMEOUT_SEGUNDOS` + 120 s desde o início do job |
 
+## Conceitos-chave
+
+`metadados.conceitos_chave` é o resumo do que o aluno deve dominar. Ele vem
+da mesma chamada que gera o conteúdo: o prompt pede, no mesmo objeto JSON, o
+campo `conceitos_chave`, com 5 a 8 termos curtos tirados do documento. Não há
+chamada extra ao LLM nem aos embeddings. As regras ficam em
+`app/services/conceitos.py`.
+
+- **Campo opcional:** se o campo faltar, vier vazio ou com tipo errado, a
+  geração segue normalmente. Ele não conta como resposta inválida e não gasta
+  a retentativa do pipeline.
+- **Validação:** a comparação ignora maiúsculas, acentos e espaços extras, e
+  tolera o plural simples terminado em "s"/"es" ("API" e "APIs"; siglas em
+  maiúsculas como "HTTPS" não entram nessa regra). São descartados os itens:
+  - que não são texto, têm 1 caractere ou mais de 60 caracteres;
+  - duplicados;
+  - formados só por palavras genéricas;
+  - iguais ao título do documento;
+  - que não aparecem no texto de origem completo.
+
+  Ficam no máximo 8, na ordem em que o LLM os devolveu.
+- **Fallback:** se nenhum item do LLM for aproveitado, usa termos
+  capitalizados e siglas do título e dos trechos recuperados, sem palavras
+  genéricas. Eles são ordenados pela frequência nos trechos e depois pela
+  ordem de aparição, no máximo 8. Se nada sobrar, usa o título do documento.
+- **Palavras genéricas:** artigos, preposições, quantificadores ("cada",
+  "um") e termos estruturais ("introdução", "resumo", "texto", "capítulo"...)
+  ficam em `PALAVRAS_GENERICAS`, no mesmo módulo. Para cortar outra palavra,
+  acrescente-a ali em minúsculas e sem acento; a validação e o fallback usam
+  a mesma lista.
+
 ## Jobs e histórico
 
 Jobs de geração ficam no arquivo SQLite apontado por `DB_PATH`; a pasta é
