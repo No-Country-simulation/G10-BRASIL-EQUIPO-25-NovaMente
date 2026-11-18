@@ -152,7 +152,8 @@ def test_timeout_vira_runtime_error_sem_texto_cru(modelo, monkeypatch):
     assert "demorou demais" in mensagem
     assert "30 segundos" in mensagem
     assert TEXTO_CRU not in mensagem
-    assert len(modelo.chamadas) == 1  # timeout não é retentado
+    # Timeout é retentado pela camada do provedor; sem prazo de job, até LLM_TENTATIVAS.
+    assert len(modelo.chamadas) == settings.llm_tentativas == 3
 
 
 MSG_LIMITE = "O limite de uso da IA foi atingido. Tente novamente em alguns minutos."
@@ -164,15 +165,15 @@ MSG_INDISPONIVEL = "O serviço de IA está indisponível no momento. Tente novam
 
 
 @pytest.mark.parametrize(
-    "excecao,mensagem",
+    "excecao,mensagem,chamadas",
     [
-        (ErroLimiteTaxa(TEXTO_CRU), MSG_LIMITE),
-        (ErroConfiguracao(f"404 {TEXTO_CRU}"), MSG_CONFIGURACAO),
-        (ErroConfiguracao(f"400 {TEXTO_CRU}"), MSG_CONFIGURACAO),
-        (ErroConfiguracao(f"403 {TEXTO_CRU}"), MSG_CONFIGURACAO),
-        (ErroConfiguracao(f"401 {TEXTO_CRU}"), MSG_CONFIGURACAO),
-        (ErroIndisponivel(f"503 {TEXTO_CRU}"), MSG_INDISPONIVEL),
-        (ErroIndisponivel(f"500 {TEXTO_CRU}"), MSG_INDISPONIVEL),
+        (ErroLimiteTaxa(TEXTO_CRU), MSG_LIMITE, 3),
+        (ErroConfiguracao(f"404 {TEXTO_CRU}"), MSG_CONFIGURACAO, 1),
+        (ErroConfiguracao(f"400 {TEXTO_CRU}"), MSG_CONFIGURACAO, 1),
+        (ErroConfiguracao(f"403 {TEXTO_CRU}"), MSG_CONFIGURACAO, 1),
+        (ErroConfiguracao(f"401 {TEXTO_CRU}"), MSG_CONFIGURACAO, 1),
+        (ErroIndisponivel(f"503 {TEXTO_CRU}"), MSG_INDISPONIVEL, 3),
+        (ErroIndisponivel(f"500 {TEXTO_CRU}"), MSG_INDISPONIVEL, 3),
     ],
     ids=[
         "limite-429",
@@ -184,13 +185,14 @@ MSG_INDISPONIVEL = "O serviço de IA está indisponível no momento. Tente novam
         "indisponivel-500",
     ],
 )
-def test_erros_de_api_por_grupo_sem_texto_cru(modelo, excecao, mensagem):
+def test_erros_de_api_por_grupo_sem_texto_cru(modelo, excecao, mensagem, chamadas):
     modelo.roteiro = [excecao]
     with pytest.raises(RuntimeError) as erro:
         _executar()
     assert str(erro.value) == mensagem
     assert TEXTO_CRU not in str(erro.value)
-    assert len(modelo.chamadas) == 1  # erros de API não são retentados
+    # Configuração falha na primeira; limite de uso e indisponibilidade esgotam LLM_TENTATIVAS.
+    assert len(modelo.chamadas) == chamadas
 
 
 def test_resposta_bloqueada_e_retentada(modelo):
@@ -355,3 +357,87 @@ def test_worker_mantem_mensagem_de_runtime_error(modelo):
     job = _rodar_worker(job_id)
     assert job.status == "failed"
     assert job.mensagem.startswith("O serviço de IA está indisponível")
+
+
+# ── Retentativa de falhas transitórias (worker de ponta a ponta) ─────────────
+
+
+def test_worker_transitorio_seguido_de_sucesso(modelo, espera_da_retentativa_falsa):
+    modelo.roteiro = [ErroIndisponivel(TEXTO_CRU), RESPOSTA_VALIDA]
+    job_id = "JOB_TRANSITORIO_SUCESSO"
+    _criar_job(job_id)
+    job = _rodar_worker(job_id)
+    assert job.status == "succeeded"
+    assert job.resultado.conteudo_adaptado.titulo == "APIs REST"
+    assert len(modelo.chamadas) == 2
+    assert espera_da_retentativa_falsa  # esperou entre as tentativas (sem dormir de verdade)
+
+
+@pytest.mark.parametrize(
+    "classe,mensagem",
+    [(ErroIndisponivel, MSG_INDISPONIVEL), (ErroLimiteTaxa, MSG_LIMITE)],
+    ids=["indisponivel", "limite-429"],
+)
+def test_worker_transitorio_em_todas_as_tentativas(modelo, monkeypatch, classe, mensagem):
+    monkeypatch.setattr(settings, "llm_tentativas", 4)
+    modelo.roteiro = [classe(TEXTO_CRU)]
+    job_id = f"JOB_TRANSITORIO_ESGOTADO_{classe.__name__}"
+    _criar_job(job_id)
+    job = _rodar_worker(job_id)
+    assert job.status == "failed"
+    assert job.mensagem == mensagem
+    assert TEXTO_CRU not in job.erro.mensagem
+    assert len(modelo.chamadas) == 4
+
+
+def test_worker_configuracao_nao_e_retentada(modelo, espera_da_retentativa_falsa):
+    modelo.roteiro = [ErroConfiguracao(TEXTO_CRU), RESPOSTA_VALIDA]
+    job_id = "JOB_CONFIGURACAO"
+    _criar_job(job_id)
+    job = _rodar_worker(job_id)
+    assert job.status == "failed"
+    assert job.mensagem == MSG_CONFIGURACAO
+    assert len(modelo.chamadas) == 1
+    assert espera_da_retentativa_falsa == []
+
+
+def test_resposta_invalida_so_tem_a_retentativa_do_pipeline(modelo):
+    # 1ª geração: inválida (1 chamada). 2ª geração: 503 retentado e de novo inválida
+    # (2 chamadas). A camada nova não retenta a resposta inválida: 3 chamadas no total.
+    modelo.roteiro = [None, ErroIndisponivel(TEXTO_CRU), None, RESPOSTA_VALIDA]
+    with pytest.raises(RuntimeError, match="após duas tentativas"):
+        _executar()
+    assert len(modelo.chamadas) == 3
+
+
+def test_worker_nao_retenta_se_o_prazo_nao_comporta(modelo, monkeypatch, espera_da_retentativa_falsa):
+    monkeypatch.setattr(settings, "job_timeout_segundos", 100)
+    monkeypatch.setattr(settings, "llm_timeout_segundos", 120)  # outra chamada não cabe
+    modelo.roteiro = [ErroIndisponivel(TEXTO_CRU), RESPOSTA_VALIDA]
+    job_id = "JOB_PRAZO_SEM_RETENTATIVA"
+    _criar_job(job_id)
+    job = _rodar_worker(job_id)
+    assert job.status == "failed"
+    assert job.mensagem == MSG_INDISPONIVEL  # mesma mensagem de quando as tentativas se esgotam
+    assert len(modelo.chamadas) == 1
+    assert espera_da_retentativa_falsa == []
+
+
+def test_worker_cancelado_durante_a_espera(modelo, monkeypatch):
+    from app.llm import retentativa
+
+    job_id = "JOB_CANCELADO_NA_ESPERA"
+    fatias = []
+
+    def dormir(segundos):
+        fatias.append(segundos)
+        job_worker.solicitar_cancelamento(job_id)  # o usuário cancela durante a espera
+
+    monkeypatch.setattr(retentativa, "_dormir", dormir)
+    modelo.roteiro = [ErroIndisponivel(TEXTO_CRU), RESPOSTA_VALIDA]
+    _criar_job(job_id)
+    job = _rodar_worker(job_id)
+    assert job.status == "cancelled"
+    assert job.mensagem == "Geração cancelada pelo usuário."
+    assert len(modelo.chamadas) == 1
+    assert len(fatias) == 1  # parou na checagem seguinte à primeira fatia

@@ -1,6 +1,7 @@
 """Fábrica de provedores de LLM, escolhidos por ``LLM_PROVIDER``.
 
-Cada provedor é registrado por nome com um construtor sem argumentos. A
+Cada provedor é registrado por nome com um construtor sem argumentos e é
+entregue embrulhado em ``ProvedorComRetentativa`` (app/llm/retentativa.py). A
 instância do provedor configurado é única e reaproveitada entre jobs; ela só
 é recriada se ``LLM_PROVIDER`` mudar ou se ``redefinir_provedor`` for chamado.
 """
@@ -13,6 +14,7 @@ from collections.abc import Callable
 from app.core.config import settings
 from app.llm.base import ProvedorLLM
 from app.llm.erros import ProvedorDesconhecido
+from app.llm.retentativa import ProvedorComRetentativa
 
 ConstrutorProvedor = Callable[[], ProvedorLLM]
 
@@ -60,12 +62,12 @@ def validar_provedor_configurado() -> str:
 
 
 def obter_provedor() -> ProvedorLLM:
-    """Instância única do provedor configurado em ``LLM_PROVIDER``."""
+    """Instância única do provedor configurado em ``LLM_PROVIDER``, com retentativa."""
     global _instancia, _nome_instancia
     nome = validar_provedor_configurado()
     with _trava:
         if _instancia is None or _nome_instancia != nome:
-            _instancia = _construtores[nome]()
+            _instancia = ProvedorComRetentativa(_construtores[nome]())
             _nome_instancia = nome
         return _instancia
 
