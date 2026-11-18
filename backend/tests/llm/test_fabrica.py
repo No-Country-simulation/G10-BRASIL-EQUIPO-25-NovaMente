@@ -14,6 +14,7 @@ from app.llm import (
     validar_provedor_configurado,
 )
 from app.llm.gemini import ProvedorGemini
+from app.llm.retentativa import ProvedorComRetentativa
 from app.main import app
 
 
@@ -34,8 +35,9 @@ def test_gemini_e_instancia_unica_e_nao_exige_chave_para_existir(monkeypatch):
     monkeypatch.setattr(settings, "llm_provider", "gemini")
     monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
     provedor = obter_provedor()
-    assert isinstance(provedor, ProvedorGemini)
-    assert provedor.modelo == settings.modelo_llm
+    assert isinstance(provedor, ProvedorComRetentativa)  # a fábrica sempre embrulha
+    assert isinstance(provedor.base, ProvedorGemini)
+    assert provedor.base.modelo == settings.modelo_llm
     assert obter_provedor() is provedor
 
 
@@ -43,7 +45,9 @@ def test_registrar_e_selecionar_por_nome_sem_diferenciar_maiusculas(monkeypatch)
     registrar_provedor("Teste", _ProvedorTeste)
     monkeypatch.setattr(settings, "llm_provider", "  TESTE ")
     provedor = obter_provedor()
-    assert isinstance(provedor, _ProvedorTeste)
+    assert isinstance(provedor, ProvedorComRetentativa)
+    assert isinstance(provedor.base, _ProvedorTeste)
+    assert provedor.nome == "teste"
     assert obter_provedor() is provedor
     assert "teste" in provedores_disponiveis()
 
@@ -53,7 +57,7 @@ def test_trocar_llm_provider_troca_a_instancia(monkeypatch):
     monkeypatch.setattr(settings, "llm_provider", "gemini")
     gemini = obter_provedor()
     monkeypatch.setattr(settings, "llm_provider", "teste")
-    assert isinstance(obter_provedor(), _ProvedorTeste)
+    assert isinstance(obter_provedor().base, _ProvedorTeste)
     monkeypatch.setattr(settings, "llm_provider", "gemini")
     assert obter_provedor() is not gemini  # recriado depois da troca
 
