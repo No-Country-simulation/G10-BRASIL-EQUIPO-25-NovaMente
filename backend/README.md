@@ -171,6 +171,13 @@ python scripts/comparar_modelos.py
 python scripts/comparar_modelos.py --modelos org/modelo-a,org/modelo-b --raciocinio padrao,desligado --formatos Quiz --intervalo 3
 ```
 
+Nas primeiras medições (18/11/2026; 3 documentos de exemplo, formatos
+Flashcards e Tutorial, 6 gerações por célula), o nemotron-3.5-lightning com o
+raciocínio no padrão teve latência média de 63 s, respostas cortadas e
+ancoragem 0,871; com `NVIDIA_NIM_RACIOCINIO=desligado`, teve 6,9 s, nenhuma
+resposta cortada e 0,923. No nemotron-3.5-bolt-e4b e no gemma-4-31b-it a opção
+não mudou o consumo de tokens. É uma amostra pequena, e a ancoragem é lexical.
+
 ### Retentativa de falhas transitórias
 
 A fábrica entrega todo provedor embrulhado em `ProvedorComRetentativa`

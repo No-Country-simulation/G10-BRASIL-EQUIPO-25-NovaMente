@@ -13,6 +13,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+import httpx
 import pytest
 from pydantic import SecretStr
 
@@ -24,6 +25,7 @@ from app.llm import (
     ErroRequisicaoRecusada,
     ErroRespostaInvalida,
 )
+from app.llm.nvidia import ProvedorNvidia
 
 _CAMINHO = Path(__file__).resolve().parents[2] / "scripts" / "comparar_modelos.py"
 _spec = importlib.util.spec_from_file_location("comparar_modelos", _CAMINHO)
@@ -212,6 +214,25 @@ def test_erro_do_provedor_vira_falha_com_o_tipo(relogio):
 def test_modelo_404_fica_indisponivel(relogio):
     medicao = _medir(_ProvedorFalso([ErroModeloIndisponivel("404")]), relogio)
     assert (medicao.status, medicao.erro) == (cm.INDISPONIVEL, "ErroModeloIndisponivel")
+
+
+def test_modelo_removido_410_fica_indisponivel(relogio, monkeypatch):
+    """Com o provedor NVIDIA de verdade e um servidor simulado que responde 410."""
+    monkeypatch.setattr(settings, "nvidia_nim_api_key", SecretStr("nvapi-chave-falsa-so-para-teste"))
+    requisicoes = []
+
+    def servidor(requisicao):
+        requisicoes.append(requisicao)
+        return httpx.Response(410, text="gone")
+
+    provedor = ProvedorNvidia(
+        "org/modelo", "https://nim.exemplo.test/v1/", transporte=httpx.MockTransport(servidor)
+    )
+    medicao = _medir(provedor, relogio)
+    assert (medicao.status, medicao.erro, medicao.chamadas) == (
+        cm.INDISPONIVEL, "ErroModeloIndisponivel", 1,
+    )
+    assert len(requisicoes) == 1  # 410 não entra em retentativa
 
 
 def test_variante_recusada_fica_nao_suportada(relogio):

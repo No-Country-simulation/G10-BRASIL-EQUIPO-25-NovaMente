@@ -66,6 +66,8 @@ def _erro_por_status(status: int) -> Exception:
         )
     if status == 404:
         return ErroModeloIndisponivel("NVIDIA NIM: modelo indisponível no catálogo (HTTP 404).")
+    if status == 410:
+        return ErroModeloIndisponivel("NVIDIA NIM: modelo removido do catálogo (HTTP 410).")
     if status >= 500:
         return ErroIndisponivel(f"NVIDIA NIM: serviço indisponível (HTTP {status}).")
     return ErroRequisicaoRecusada(f"NVIDIA NIM: requisição recusada (HTTP {status}).")

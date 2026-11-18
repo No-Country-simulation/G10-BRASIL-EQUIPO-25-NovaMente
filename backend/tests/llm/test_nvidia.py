@@ -190,7 +190,9 @@ def test_falhas_passageiras_sao_retentaveis(provedor, servidor, item, categoria)
         (401, ErroAutenticacao, "chave inválida ou sem acesso"),
         (403, ErroAutenticacao, "chave inválida ou sem acesso"),
         (404, ErroModeloIndisponivel, "modelo indisponível no catálogo"),
+        (410, ErroModeloIndisponivel, "modelo removido do catálogo"),
         (400, ErroRequisicaoRecusada, "requisição recusada"),
+        (409, ErroRequisicaoRecusada, "requisição recusada"),
         (422, ErroRequisicaoRecusada, "requisição recusada"),
     ],
 )

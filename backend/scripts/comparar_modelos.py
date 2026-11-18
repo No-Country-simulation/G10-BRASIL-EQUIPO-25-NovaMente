@@ -77,15 +77,14 @@ from app.llm.erros import (  # noqa: E402
 from app.rag.chunking import dividir_texto  # noqa: E402
 from app.services import pipeline  # noqa: E402
 
-# Lista baseada no catálogo de chat do build.nvidia.com em 18/11/2026; o
-# GET /models da conta é quem decide (veja --listar).
+# Modelos que geraram nas medições de 18/11/2026. minimaxai/minimax-m3.1-flash,
+# z-ai/glm-5.3-flash e meta/muse-glimmer-30b deram timeout de 120 s com o
+# raciocínio no padrão e precisam ser retestados com --raciocinio desligado.
+# Os ids dos modelos da conta saem de --listar.
 MODELOS_PADRAO = [
     "nvidia/nemotron-3.5-lightning-30b-a3b",
-    "nvidia/nemotron-3-super-120b-a12b",
+    "nvidia/nemotron-3.5-bolt-e4b",
     "google/gemma-4-31b-it",
-    "openai/gpt-oss-20b",
-    "deepseek-ai/deepseek-v4.1-flash",
-    "z-ai/glm-5-3-flash",
 ]
 DOCUMENTOS_PADRAO = ["http_apis_rest.md", "sql_consultas.md", "git_versionamento.md"]
 FORMATOS_PADRAO = ["Flashcards", "Tutorial"]
