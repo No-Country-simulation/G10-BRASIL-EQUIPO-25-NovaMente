@@ -1,0 +1,89 @@
+{
+  "adaptacao_id": "01M7BN0Q5YZFBBB8DCJ8B376BT",
+  "status": "sucesso",
+  "criado_em": "2026-11-13T23:48:50.494437+00:00",
+  "documento": {
+    "titulo": "Consultas em bancos de dados relacionais com SQL",
+    "origem": "texto",
+    "nome_arquivo": null,
+    "tamanho_bytes": null
+  },
+  "metadados": {
+    "perfil_aplicado": "Desenvolvedor",
+    "formato_gerado": "Quiz",
+    "nivel_detalhe_aplicado": "Tecnico",
+    "nicho_setor_aplicado": "Geral",
+    "tempo_estimado_estudo_minutos": 8,
+    "conceitos_chave": [
+      "Consultas",
+      "SQL",
+      "Texto",
+      "NovaMente",
+      "Tabelas",
+      "Um",
+      "Cada",
+      "SELECT"
+    ]
+  },
+  "conteudo_adaptado": {
+    "tipo": "quiz",
+    "titulo": "Fundamentos de Consultas SQL e Modelagem Relacional",
+    "introducao_contextualizada": "Teste seus conhecimentos técnicos sobre estruturação de dados relacionais, sintaxe SQL, estratégias de junção, agregações e otimização por índices, conceitos essenciais para o desenvolvimento de software escalável.",
+    "itens": [
+      {
+        "pergunta": "Qual é a função primordial da chave estrangeira (foreign key) em um banco de dados relacional?",
+        "opcoes": [
+          "Garantir que cada linha de uma tabela seja única e identificável.",
+          "Acelerar a execução de consultas do tipo SELECT com junções.",
+          "Apontar para a chave primária de outra tabela, estabelecendo o relacionamento entre elas.",
+          "Armazenar valores nulos quando não há correspondência em consultas LEFT JOIN."
+        ],
+        "resposta_correta": 2,
+        "explicacao": "A chave estrangeira é uma coluna (ou conjunto de colunas) que referencia a chave primária de outra tabela, assegurando a integridade referencial e modelando o relacionamento entre as entidades."
+      },
+      {
+        "pergunta": "No contexto de filtragem de dados em SQL, qual é a principal diferença de escopo entre as cláusulas WHERE e HAVING?",
+        "opcoes": [
+          "O WHERE atua filtrando as linhas antes do agrupamento (GROUP BY), enquanto o HAVING é utilizado para filtrar os grupos resultantes após a agregação.",
+          "O WHERE é utilizado exclusivamente em comandos SELECT com JOIN, enquanto o HAVING é usado apenas em tabelas sem relacionamentos.",
+          "O HAVING possui melhor performance de indexação que o WHERE em grandes volumes de dados.",
+          "Não há diferença funcional; a escolha depende apenas da preferência de legibilidade do desenvolvedor."
+        ],
+        "resposta_correta": 0,
+        "explicacao": "A cláusula WHERE processa o filtro linha por linha antes que qualquer agregação ocorra. Já a cláusula HAVING é avaliada após a execução do GROUP BY e das funções de agregação, permitindo filtrar o resultado consolidado dos grupos."
+      },
+      {
+        "pergunta": "Ao executar uma consulta utilizando LEFT JOIN entre duas tabelas (Tabela A à esquerda e Tabela B à direita), qual será o comportamento do resultado quando um registro da Tabela A não possuir correspondência na Tabela B?",
+        "opcoes": [
+          "O registro da Tabela A será omitido do resultado final.",
+          "Todas as colunas da Tabela B para aquele registro serão preenchidas com valores nulos (NULL).",
+          "O banco de dados retornará um erro de violação de integridade referencial.",
+          "O registro da Tabela B será duplicado para compensar a ausência de dados."
+        ],
+        "resposta_correta": 1,
+        "explicacao": "O LEFT JOIN garante o retorno de todas as linhas da tabela posicionada à esquerda (Tabela A). Caso não haja correspondência na tabela da direita (Tabela B), as colunas correspondentes da Tabela B virão preenchidas com NULL."
+      },
+      {
+        "pergunta": "Considerando o impacto de performance dos índices em bancos de dados relacionais, qual das seguintes afirmações é tecnicamente correta?",
+        "opcoes": [
+          "Índices aceleram operações de INSERT e UPDATE, mas tornam comandos SELECT mais lentos.",
+          "Índices não ocupam espaço em disco significativo e melhoram todas as operações de escrita e leitura simultaneamente.",
+          "Índices aceleram buscas baseadas em WHERE e JOIN, porém introduzem overhead em inserções e atualizações devido à necessidade de manutenção da estrutura auxiliar.",
+          "Índices devem ser criados em todas as colunas de uma tabela para garantir performance máxima em qualquer cenário."
+        ],
+        "resposta_correta": 2,
+        "explicacao": "Embora os índices otimizem drasticamente a leitura (SELECT, WHERE, JOIN), eles exigem que a estrutura de árvore seja atualizada a cada inserção (INSERT), alteração (UPDATE) ou exclusão (DELETE), penalizando operações de escrita."
+      }
+    ]
+  },
+  "avaliacao_qualidade": {
+    "ancoragem_fonte_score": 0.4417,
+    "clareza_pedagogica": "Media",
+    "observacoes": null
+  },
+  "armazenamento_oci": {
+    "bucket": "novamente-conteudos-educativos",
+    "objeto_id": "novamente-consultas-em-bancos-de-dados-relacionais-com-sql-desenvolvedor-quiz-01M7BN0Q.json",
+    "status_upload": "falha"
+  }
+}
