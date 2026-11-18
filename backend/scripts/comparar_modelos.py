@@ -32,11 +32,14 @@ Variáveis de ambiente:
   e o Chroma não é usado.
 
 As chamadas são sequenciais, com intervalo mínimo entre elas (padrão 1,6 s,
-cerca de 37 por minuto, abaixo do limite de ~40 do plano gratuito). Um modelo
-fora do catálogo (``GET /models`` ou HTTP 404) fica como "indisponível" e o
-script segue para o próximo. A falha de uma geração não interrompe as outras
-e não há retentativa de falhas passageiras: um 429 conta como falha. Chave
-inválida (HTTP 401/403) interrompe tudo e grava o relatório parcial.
+cerca de 37 por minuto, abaixo do limite de ~40 do plano gratuito). Quem decide
+que um modelo está indisponível é o HTTP 404 na geração: aí ele fica como
+"indisponível" e o script segue para o próximo. Um modelo que não aparece no
+``GET /models`` é tentado mesmo assim (alguns modelos com endpoint próprio não
+são listados); se gerar, fica como "disponível (fora do /models)". A falha de
+uma geração não interrompe as outras e não há retentativa de falhas
+passageiras: um 429 conta como falha. Chave inválida (HTTP 401/403)
+interrompe tudo e grava o relatório parcial.
 
 O relatório em Markdown vai para ``data/relatorios/`` (ignorada pelo git).
 Nada da chave nem de corpo de resposta é impresso ou gravado.
@@ -121,6 +124,7 @@ class Medicao:
     latencia_s: float | None = None
     tokens: int | None = None
     erro: str | None = None
+    fora_do_catalogo: bool = False  # o modelo não apareceu no GET /models, mas foi tentado
 
 
 @dataclass
@@ -225,7 +229,10 @@ def medir_geracao(
     )
     medicao = Medicao(modelo, raciocinio, documento.nome, formato, OK)
     try:
-        _texto, conteudo = pipeline._gerar_conteudo(medido, prompt, formato, avisar_revisao=lambda: None)
+        # Devolve também o valor cru de conceitos_chave, que o comparador não mede.
+        _texto, conteudo, _conceitos = pipeline._gerar_conteudo(
+            medido, prompt, formato, avisar_revisao=lambda: None
+        )
         # Sem recuperação, não há relevância: o último recurso da ancoragem fica em 0.
         avaliacao = pipeline._avaliar_qualidade(0.0, conteudo, documento.texto)
         medicao.ancoragem = avaliacao.ancoragem_fonte_score
@@ -280,10 +287,14 @@ def comparar(
     criar_provedor: Callable[[str, str], object],
     ritmo: Ritmo,
     avisar: Callable[[Medicao], None] = lambda _m: None,
+    informar: Callable[[str], None] = lambda _t: None,
 ) -> list[Medicao]:
     """Mede cada modelo em cada variante de raciocínio, documento e formato, em sequência.
 
     ``criar_provedor(modelo, variante)`` devolve o provedor daquela variante.
+    Um modelo que não aparece no ``GET /models`` é tentado mesmo assim (alguns
+    modelos com endpoint próprio não são listados); só o HTTP 404 na geração
+    o marca como indisponível. ``informar`` recebe os avisos de texto.
     Levanta ``ComparacaoInterrompida`` (com o que já foi medido) se a chave
     for recusada.
     """
@@ -295,15 +306,16 @@ def comparar(
 
     try:
         for modelo in modelos:
-            if verificar_catalogo(criar_provedor(modelo, variantes[0]), ritmo) is False:
-                registrar(Medicao(modelo, "-", "-", "-", INDISPONIVEL, erro="fora do catálogo (GET /models)"))
-                continue
+            fora_do_catalogo = verificar_catalogo(criar_provedor(modelo, variantes[0]), ritmo) is False
+            if fora_do_catalogo:
+                informar(f"{modelo}: não listado em /models; tentando mesmo assim")
             pares = [(documento, formato) for documento in documentos for formato in formatos]
             for variante in variantes:
                 medido = ProvedorMedido(criar_provedor(modelo, variante), ritmo)
                 parada = None
                 for documento, formato in pares:
                     medicao = medir_geracao(medido, modelo, variante, documento, formato)
+                    medicao.fora_do_catalogo = fora_do_catalogo
                     registrar(medicao)
                     if medicao.status in (INDISPONIVEL, NAO_SUPORTADO):
                         parada = medicao.status  # o resto desta variante daria o mesmo
@@ -327,6 +339,8 @@ def _situacao(lista: list[Medicao]) -> str:
         return INDISPONIVEL
     if any(m.status == NAO_SUPORTADO for m in lista):
         return NAO_SUPORTADO
+    if any(m.fora_do_catalogo for m in lista):
+        return "disponível (fora do /models)"
     return "disponível"
 
 
@@ -489,7 +503,8 @@ def main(argv: list[str] | None = None, *, criar_provedor=None, pasta_relatorios
     interrompido = None
     try:
         medicoes = comparar(args.modelos, args.raciocinio, documentos, args.formatos, criar_provedor,
-                            Ritmo(args.intervalo), avisar)
+                            Ritmo(args.intervalo), avisar,
+                            informar=lambda texto: print(texto, flush=True))
     except ComparacaoInterrompida as exc:
         medicoes, interrompido = exc.medicoes, str(exc)
 

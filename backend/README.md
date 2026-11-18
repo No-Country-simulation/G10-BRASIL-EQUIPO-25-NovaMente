@@ -157,9 +157,12 @@ documento de `data/exemplos/` e formato. Ele mede:
 
 Precisa só de `NVIDIA_NIM_API_KEY`: a ancoragem não usa embeddings, então
 `GOOGLE_API_KEY` não é necessária. As chamadas são sequenciais, com intervalo
-mínimo configurável (padrão 1,6 s, abaixo de ~40 por minuto). Um modelo fora
-do catálogo fica como "indisponível" e o script segue para o próximo. O
-relatório em Markdown vai para `data/relatorios/`, que o git ignora.
+mínimo configurável (padrão 1,6 s, abaixo de ~40 por minuto). Quem decide que
+um modelo está indisponível é o HTTP 404 na geração: aí ele fica como
+"indisponível" e o script segue para o próximo. Um modelo que não aparece no
+`GET /models` é tentado mesmo assim, porque alguns modelos com endpoint
+próprio não são listados; se gerar, fica como "disponível (fora do /models)".
+O relatório em Markdown vai para `data/relatorios/`, que o git ignora.
 
 ```bash
 cd backend

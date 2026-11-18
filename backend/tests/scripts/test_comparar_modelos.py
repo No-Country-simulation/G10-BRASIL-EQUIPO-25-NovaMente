@@ -43,6 +43,7 @@ FLASHCARDS = json.dumps({
         {"frente": "POST", "verso": "Cria um recurso novo.", "dica_didatica": None},
         {"frente": "DELETE", "verso": "Remove o recurso.", "dica_didatica": None},
     ],
+    "conceitos_chave": ["HTTP", "GET", "POST"],  # o prompt atual pede este campo (opcional na leitura)
 })
 
 
@@ -112,7 +113,7 @@ def _medir(provedor, relogio, formato="Flashcards", raciocinio="padrao"):
 
 
 def _comparar(provedores, relogio, variantes=("padrao",), documentos=(DOCUMENTO, SQL),
-              formatos=("Flashcards", "Tutorial"), avisos=None):
+              formatos=("Flashcards", "Tutorial"), avisos=None, informes=None):
     """``provedores``: {modelo: provedor} ou {(modelo, variante): provedor}."""
 
     def criar(modelo, variante):
@@ -120,7 +121,8 @@ def _comparar(provedores, relogio, variantes=("padrao",), documentos=(DOCUMENTO,
 
     modelos = list(dict.fromkeys(m if isinstance(m, str) else m[0] for m in provedores))
     return cm.comparar(modelos, list(variantes), list(documentos), list(formatos), criar,
-                       _ritmo(relogio), avisar=(avisos.append if avisos is not None else lambda _m: None))
+                       _ritmo(relogio), avisar=(avisos.append if avisos is not None else lambda _m: None),
+                       informar=(informes.append if informes is not None else lambda _t: None))
 
 
 # ── Documentos ────────────────────────────────────────────────────────────────
@@ -251,20 +253,57 @@ def test_ritmo_respeita_o_intervalo_entre_requisicoes(relogio):
 
 def test_comparar_marca_indisponivel_e_segue_para_o_proximo(relogio):
     provedores = {
-        "fora/catalogo": _ProvedorFalso([FLASHCARDS], disponivel=False),
         "some/404": _ProvedorFalso([ErroModeloIndisponivel("404")]),
         "bom/modelo": _ProvedorFalso([FLASHCARDS]),
-        "catalogo/fora-do-ar": _ProvedorFalso([FLASHCARDS], disponivel=ErroLimiteTaxa("429")),
     }
     avisos = []
     medicoes = _comparar(provedores, relogio, avisos=avisos)
     por_modelo = {m: [x for x in medicoes if x.modelo == m] for m in provedores}
-    assert [x.status for x in por_modelo["fora/catalogo"]] == [cm.INDISPONIVEL]
-    assert provedores["fora/catalogo"].chamadas == 0
     assert [x.status for x in por_modelo["some/404"]] == [cm.INDISPONIVEL]  # parou no primeiro 404
     assert len(por_modelo["bom/modelo"]) == 4  # 2 documentos x 2 formatos
-    assert len(por_modelo["catalogo/fora-do-ar"]) == 4  # catálogo inacessível: tenta gerar mesmo assim
     assert avisos == medicoes
+
+
+def _situacoes(medicoes):
+    return {r.modelo: r.situacao for r in cm.agregar(medicoes)}
+
+
+def test_fora_do_models_mas_gera_e_medido_e_fica_disponivel(relogio):
+    provedores = {"endpoint/dedicado": _ProvedorFalso([FLASHCARDS], disponivel=False)}
+    informes = []
+    medicoes = _comparar(provedores, relogio, informes=informes)
+    assert informes == ["endpoint/dedicado: não listado em /models; tentando mesmo assim"]
+    assert [x.status for x in medicoes] == [cm.OK, cm.FALHA, cm.OK, cm.FALHA]  # Tutorial com JSON de flashcards
+    assert all(x.fora_do_catalogo for x in medicoes)
+    assert provedores["endpoint/dedicado"].chamadas == 6
+    assert _situacoes(medicoes) == {"endpoint/dedicado": "disponível (fora do /models)"}
+    assert "| `endpoint/dedicado` | padrao | disponível (fora do /models) | 2/4 |" in cm.tabela_markdown(
+        cm.agregar(medicoes)
+    )
+
+
+def test_fora_do_models_e_404_na_geracao_fica_indisponivel(relogio):
+    provedores = {
+        "sumiu/de-vez": _ProvedorFalso([ErroModeloIndisponivel("404")], disponivel=False),
+        "outro": _ProvedorFalso([FLASHCARDS]),
+    }
+    medicoes = _comparar(provedores, relogio, variantes=("padrao", "ligado"))
+    sumiu = [x for x in medicoes if x.modelo == "sumiu/de-vez"]
+    assert [(x.raciocinio, x.status, x.erro) for x in sumiu] == [
+        ("padrao", cm.INDISPONIVEL, "ErroModeloIndisponivel")
+    ]
+    assert provedores["sumiu/de-vez"].chamadas == 1  # só o 404 decide, e ele decide para todas as variantes
+    assert _situacoes(medicoes) == {"sumiu/de-vez": cm.INDISPONIVEL, "outro": "disponível"}
+
+
+def test_catalogo_com_erro_segue_e_gera(relogio):
+    provedores = {"catalogo/fora-do-ar": _ProvedorFalso([FLASHCARDS], disponivel=ErroLimiteTaxa("429"))}
+    informes = []
+    medicoes = _comparar(provedores, relogio, informes=informes)
+    assert len(medicoes) == 4  # catálogo inacessível: tenta gerar mesmo assim
+    assert not any(x.fora_do_catalogo for x in medicoes)  # não se sabe se está listado
+    assert informes == []
+    assert _situacoes(medicoes) == {"catalogo/fora-do-ar": "disponível"}
 
 
 def test_comparar_mede_cada_variante_de_raciocinio(relogio):
@@ -336,7 +375,7 @@ def _medicoes():
         M("a/modelo", "padrao", "d2", "Flashcards", cm.OK, 0.6, "Media", False, True, 2, 4.0, 300),
         M("a/modelo", "padrao", "d3", "Tutorial", cm.FALHA, chamadas=1, latencia_s=3.0, erro="ErroLimiteTaxa"),
         M("a/modelo", "ligado", "d1", "Flashcards", cm.NAO_SUPORTADO, chamadas=1, erro="ErroRequisicaoRecusada"),
-        M("b/modelo", "-", "-", "-", cm.INDISPONIVEL, erro="fora do catálogo (GET /models)"),
+        M("b/modelo", "padrao", "d1", "Flashcards", cm.INDISPONIVEL, chamadas=1, erro="ErroModeloIndisponivel"),
     ]
 
 
@@ -364,7 +403,7 @@ def test_tabela_markdown():
     assert ("| `a/modelo` | padrao | disponível | 2/3 | 0,700 | 33% | 1 | 3,0 | 200 "
             "| ErroLimiteTaxa ×1 |") in tabela
     assert "| `a/modelo` | ligado | não suportado | 0/0 | — | — | 0 | — | — | ErroRequisicaoRecusada ×1 |" in tabela
-    assert "| `b/modelo` | - | indisponível | 0/0 | — | — | 0 | — | — | fora do catálogo (GET /models) ×1 |" in tabela
+    assert "| `b/modelo` | padrao | indisponível | 0/0 | — | — | 0 | — | — | ErroModeloIndisponivel ×1 |" in tabela
 
 
 def test_relatorio_tem_resumo_detalhe_e_documentos():
