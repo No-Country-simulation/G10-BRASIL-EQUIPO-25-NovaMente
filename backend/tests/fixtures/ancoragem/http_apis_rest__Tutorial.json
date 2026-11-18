@@ -1,0 +1,44 @@
+{
+  "adaptacao_id": "01M7BMZMGK7T9KNJ09EZ4X7Y3P",
+  "status": "sucesso",
+  "criado_em": "2026-11-13T23:48:14.995903+00:00",
+  "documento": {
+    "titulo": "Introdução a APIs REST com HTTP",
+    "origem": "texto",
+    "nome_arquivo": null,
+    "tamanho_bytes": null
+  },
+  "metadados": {
+    "perfil_aplicado": "Desenvolvedor",
+    "formato_gerado": "Tutorial",
+    "nivel_detalhe_aplicado": "Tecnico",
+    "nicho_setor_aplicado": "Geral",
+    "tempo_estimado_estudo_minutos": 12,
+    "conceitos_chave": [
+      "Introdução",
+      "APIs",
+      "REST",
+      "HTTP",
+      "Texto",
+      "NovaMente",
+      "Cada",
+      "Métodos"
+    ]
+  },
+  "conteudo_adaptado": {
+    "tipo": "markdown",
+    "titulo": "Desenvolvendo APIs RESTful com HTTP: Guia Prático para Desenvolvedores",
+    "introducao_contextualizada": "No desenvolvimento de software moderno, a integração entre sistemas depende fortemente de APIs que seguem o padrão REST sobre o protocolo HTTP. Para desenvolvedores júnior e pleno, dominar os conceitos fundamentais — como semântica de métodos, tratamento de códigos de status e aplicação de boas práticas de design de API — é essencial para construir sistemas escaláveis, manuteníveis e aderentes aos padrões da indústria. Este tutorial guiará você pelos pilares essenciais da implementação de uma API REST robusta.",
+    "itens": "## Passo 1: Compreensão do Modelo Cliente-Servidor e Stateless\nAntes de codificar, é fundamental entender que o protocolo HTTP opera em um modelo estritamente *stateless* (sem estado). Cada requisição enviada pelo cliente (seja um navegador, SPA ou aplicativo mobile) deve ser autossuficiente, contendo todo o contexto necessário para o servidor processá-la, incluindo cabeçalhos de autenticação (como tokens JWT em `Authorization`). O servidor processa a mensagem e devolve uma resposta estruturada, sem reter memória de transações anteriores na camada de transporte.\n\n## Passo 2: Mapeamento Correto dos Métodos HTTP e Idempotência\nA escolha do método HTTP correto define a intenção da operação sobre o recurso. Utilize a seguinte semântica:\n- **GET**: Recupera um recurso. É **idempotente** (múltiplas requisições geram o mesmo estado no servidor).\n- **POST**: Cria um novo recurso. **Não é idempotente** (múltiplas requisições idênticas podem criar múltiplos recursos).\n- **PUT**: Substitui integralmente um recurso existente. É **idempotente**.\n- **PATCH**: Aplica modificações parciais a um recurso.\n- **DELETE**: Remove um recurso. É **idempotente**.\n\n## Passo 3: Modelagem de URLs e Boas Práticas de REST\nO design da API deve refletir recursos (substantivos no plural) e não ações. \n- Utilize URIs estruturadas como `/usuarios` para coleções e `/pedidos/42` para recursos específicos.\n- Implemente versionamento na URI (ex: `/v1/usuarios`) para garantir a retrocompatibilidade e evitar quebras em clientes legados durante evoluções de contrato.\n- Para coleções extensas, implemente paginação utilizando parâmetros de query string (ex: `?pagina=1&limite=20`).\n- Utilize o formato JSON para o payload de requisições e respostas.\n\n## Passo 4: Tratamento Adequado de Códigos de Status HTTP\nRetorne códigos de status HTTP precisos que reflitam o resultado da execução:\n- **Família 2xx (Sucesso)**: `200 OK` para operações bem-sucedidas em geral; `201 Created` obrigatoriamente após a criação bem-sucedida de um recurso via POST.\n- **Família 4xx (Erro do Cliente)**: `400 Bad Request` para payloads malformados; `401 Unauthorized` para ausência ou invalidade de credenciais; `403 Forbidden` quando o cliente autenticado não possui privilégios para a ação; `404 Not Found` quando o recurso endereçado não existe.\n- **Família 5xx (Erro do Servidor)**: `500 Internal Server Error` para falhas inesperadas na aplicação; `503 Service Unavailable` para indisponibilidades temporárias.\n\n## Passo 5: Padronização de Mensagens de Erro\nEm caso de falhas (principalmente nas famílias 4xx e 5xx), retorne corpos de resposta em JSON padronizados contendo mensagens claras, descritivas e orientadas ao desenvolvedor cliente, permitindo identificar rapidamente se a requisição deve ser corrigida ou se o cliente deve tentar novamente mais tarde (especialmente relevante em cenários de retry com 5xx)."
+  },
+  "avaliacao_qualidade": {
+    "ancoragem_fonte_score": 0.4669,
+    "clareza_pedagogica": "Alta",
+    "observacoes": null
+  },
+  "armazenamento_oci": {
+    "bucket": "novamente-conteudos-educativos",
+    "objeto_id": "novamente-introducao-a-apis-rest-com-http-desenvolvedor-tutorial-01M7BMZM.json",
+    "status_upload": "falha"
+  }
+}
