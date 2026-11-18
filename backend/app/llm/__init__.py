@@ -12,14 +12,21 @@ from app.llm.erros import (
     ErroRespostaInvalida,
     ErroTimeout,
     ErroTransitorio,
+    ModeloNaoPermitido,
     ProvedorDesconhecido,
 )
+from app.llm.chat import ProvedorDoChat
 from app.llm.retentativa import ProvedorComRetentativa, limites_da_geracao
 from app.llm.fabrica import (
+    modelo_padrao_do_chat,
+    modelos_do_chat,
     obter_provedor,
+    obter_provedor_chat,
     provedores_disponiveis,
     redefinir_provedor,
+    redefinir_provedor_chat,
     registrar_provedor,
+    validar_provedor_chat_configurado,
     validar_provedor_configurado,
 )
 
@@ -35,14 +42,21 @@ __all__ = [
     "ErroTimeout",
     "ErroTransitorio",
     "Mensagem",
+    "ModeloNaoPermitido",
     "PapelMensagem",
     "ProvedorComRetentativa",
     "ProvedorDesconhecido",
+    "ProvedorDoChat",
     "ProvedorLLM",
     "limites_da_geracao",
+    "modelo_padrao_do_chat",
+    "modelos_do_chat",
     "obter_provedor",
+    "obter_provedor_chat",
     "provedores_disponiveis",
     "redefinir_provedor",
+    "redefinir_provedor_chat",
     "registrar_provedor",
+    "validar_provedor_chat_configurado",
     "validar_provedor_configurado",
 ]

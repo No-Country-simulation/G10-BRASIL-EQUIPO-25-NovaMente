@@ -39,6 +39,22 @@ class Settings(BaseSettings):
     nvidia_nim_raciocinio: str = ""  # "", "ligado" ou "desligado" (vazio: padrão do modelo)
     nvidia_nim_orcamento_raciocinio: int | None = Field(None, ge=1)  # vazio: não envia
 
+    # ── Chat sobre o material (provedor próprio, independente de LLM_PROVIDER) ──
+    # Vazio em qualquer CHAT_* vale como o padrão abaixo.
+    chat_llm_provider: str = "nvidia"  # provedor registrado em app/llm/fabrica.py
+    chat_llm_modelo: str = ""  # vazio: o modelo padrão do provedor (NVIDIA_NIM_MODELO na nvidia)
+    chat_llm_raciocinio: str = "desligado"  # "ligado" ou "desligado"; vazio vale "desligado"
+    chat_llm_max_tokens: int = Field(1024, ge=64)
+    chat_llm_temperatura: float = Field(0.2, ge=0, le=2)
+    chat_llm_timeout_segundos: int = Field(45, ge=5)  # prazo total de uma pergunta
+    # Ids separados por vírgula; vazio: só o modelo do chat (CHAT_LLM_MODELO ou o padrão).
+    chat_modelos_permitidos: str = ""
+    # Limites do serviço do chat
+    chat_max_pergunta_caracteres: int = Field(1000, ge=1)
+    chat_max_mensagens_historico: int = Field(10, ge=1)  # mensagens anteriores aceitas no pedido
+    chat_max_contexto_caracteres: int = Field(24_000, ge=1)
+    chat_limite_por_minuto: int = Field(12, ge=1)  # perguntas por aluno
+
     # ── Banco de dados ───────────────────────────────────────────────────────
     database_url: str = "sqlite:///./data/novamente.db"
 
@@ -74,6 +90,46 @@ class Settings(BaseSettings):
         if isinstance(valor, str) and not valor.strip():
             return None
         return valor
+
+    @field_validator(
+        "chat_llm_provider",
+        "chat_llm_raciocinio",
+        "chat_llm_max_tokens",
+        "chat_llm_temperatura",
+        "chat_llm_timeout_segundos",
+        "chat_max_pergunta_caracteres",
+        "chat_max_mensagens_historico",
+        "chat_max_contexto_caracteres",
+        "chat_limite_por_minuto",
+        mode="before",
+    )
+    @classmethod
+    def _chat_vazio_e_padrao(cls, valor, info):
+        """``CHAT_LLM_MAX_TOKENS=`` (linha vazia no .env) vale como o padrão do campo."""
+        if valor is None or (isinstance(valor, str) and not valor.strip()):
+            return cls.model_fields[info.field_name].default
+        return valor
+
+    @field_validator("chat_llm_provider", "chat_llm_modelo", "chat_modelos_permitidos")
+    @classmethod
+    def _sem_espacos(cls, valor: str) -> str:
+        return valor.strip()
+
+    @field_validator("chat_llm_provider")
+    @classmethod
+    def _provedor_minusculo(cls, valor: str) -> str:
+        return valor.lower()
+
+    @field_validator("chat_llm_raciocinio")
+    @classmethod
+    def _raciocinio_do_chat_valido(cls, valor: str) -> str:
+        normalizado = str(valor).strip().lower()
+        if normalizado not in ("ligado", "desligado"):
+            raise ValueError(
+                f"CHAT_LLM_RACIOCINIO '{valor}' inválido. "
+                "Valores válidos: vazio (desligado), ligado, desligado."
+            )
+        return normalizado
 
     @field_validator("nvidia_nim_raciocinio", mode="before")
     @classmethod

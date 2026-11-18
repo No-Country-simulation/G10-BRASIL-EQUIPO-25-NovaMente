@@ -50,3 +50,15 @@ class ErroAutenticacao(ErroConfiguracao):
 
 class ErroRequisicaoRecusada(ErroConfiguracao):
     """O provedor recusou a requisição (HTTP 4xx), por exemplo um parâmetro que o modelo não aceita."""
+
+
+class ModeloNaoPermitido(ErroConfiguracao):
+    """O modelo pedido para o chat não está em ``CHAT_MODELOS_PERMITIDOS``."""
+
+    def __init__(self, modelo: str, permitidos: list[str]):
+        self.modelo = modelo
+        self.permitidos = list(permitidos)
+        lista = ", ".join(self.permitidos) or "nenhum"
+        super().__init__(
+            f"Modelo '{modelo[:100]}' não permitido no chat. Modelos permitidos: {lista}."
+        )

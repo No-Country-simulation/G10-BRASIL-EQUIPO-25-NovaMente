@@ -241,8 +241,10 @@ def fabrica_llm_isolada(monkeypatch):
 
     monkeypatch.setattr(fabrica, "_construtores", dict(fabrica._construtores))
     fabrica.redefinir_provedor()
+    fabrica.redefinir_provedor_chat()
     yield
     fabrica.redefinir_provedor()
+    fabrica.redefinir_provedor_chat()
 
 
 @pytest.fixture(autouse=True)
