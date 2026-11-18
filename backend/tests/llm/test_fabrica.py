@@ -87,3 +87,37 @@ def test_subida_sem_chave_continua_funcionando(monkeypatch):
         resposta = client.get("/api/v1/health")
     assert resposta.status_code == 200
     assert resposta.json()["llm"] == "indisponivel"
+
+
+def test_seleciona_nvidia_quando_configurado(monkeypatch):
+    from app.llm.nvidia import ProvedorNvidia
+
+    monkeypatch.setattr(settings, "llm_provider", "nvidia")
+    monkeypatch.setattr(settings, "nvidia_nim_modelo", "org/modelo-teste")
+    assert "nvidia" in provedores_disponiveis()
+    assert validar_provedor_configurado() == "nvidia"
+    provedor = obter_provedor()
+    assert isinstance(provedor, ProvedorComRetentativa)  # a retentativa vale para a NVIDIA também
+    assert isinstance(provedor.base, ProvedorNvidia)
+    assert provedor.nome == "nvidia"
+    assert provedor.base.modelo == "org/modelo-teste"
+
+
+def test_nvidia_sem_chave_nao_impede_a_subida_e_falha_na_geracao(monkeypatch):
+    from pydantic import SecretStr
+
+    from app.llm import ErroConfiguracao, Mensagem
+
+    monkeypatch.setattr(settings, "llm_provider", "nvidia")
+    monkeypatch.setattr(settings, "nvidia_nim_api_key", SecretStr(""))
+    with TestClient(app) as client:
+        assert client.get("/api/v1/health").status_code == 200
+    with pytest.raises(ErroConfiguracao, match="NVIDIA_NIM_API_KEY não definida"):
+        obter_provedor().gerar([Mensagem("user", "oi")], timeout_segundos=5)
+
+
+def test_gemini_continua_sendo_o_padrao(monkeypatch):
+    monkeypatch.delenv("LLM_PROVIDER", raising=False)
+    assert Settings(_env_file=None).llm_provider == "gemini"
+    monkeypatch.setattr(settings, "llm_provider", "gemini")
+    assert isinstance(obter_provedor().base, ProvedorGemini)

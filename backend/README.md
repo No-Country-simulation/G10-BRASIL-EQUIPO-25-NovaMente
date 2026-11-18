@@ -56,6 +56,13 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `CHROMA_DIR` | — | Diretório do ChromaDB (default: `/data/chroma`) |
 | `MODELO_LLM` | — | Modelo Gemini (default: `gemini-3.5-flash-lite`) |
 | `LLM_PROVIDER` | — | Provedor de LLM usado na geração (default: `gemini`; valores válidos: os provedores registrados) |
+| `NVIDIA_NIM_API_KEY` | com `LLM_PROVIDER=nvidia` | Chave da NVIDIA NIM; só é exigida na geração |
+| `NVIDIA_NIM_BASE_URL` | — | URL da API compatível com OpenAI (default: `https://integrate.api.nvidia.com/v1`) |
+| `NVIDIA_NIM_MODELO` | — | Id do modelo no catálogo da NVIDIA (default sugerido: `nvidia/nemotron-3.5-lightning-30b-a3b`; o catálogo gratuito muda com frequência) |
+| `NVIDIA_NIM_MAX_TOKENS` | — | Limite de tokens da resposta, raciocínio incluído; precisa ser maior que o orçamento de raciocínio (default: `8192`) |
+| `NVIDIA_NIM_TEMPERATURA` | — | Temperatura da geração (default: vazia, vale a do modelo) |
+| `NVIDIA_NIM_RACIOCINIO` | — | `ligado` ou `desligado` envia `chat_template_kwargs.enable_thinking`; vazio não envia (vale o padrão do modelo). Outro valor impede a subida |
+| `NVIDIA_NIM_ORCAMENTO_RACIOCINIO` | — | Tokens de raciocínio (`reasoning_budget`); vazio não envia, e não vai com o raciocínio `desligado` |
 | `LLM_TENTATIVAS` | — | Chamadas ao LLM por geração em falhas transitórias, contando a primeira (default: `3`; mínimo `1`, que desliga a retentativa) |
 | `LLM_ESPERA_INICIAL_SEGUNDOS` | — | Espera antes da primeira retentativa; dobra a cada tentativa (default: `2`; mínimo `0`) |
 | `JOB_TIMEOUT_SEGUNDOS` | — | Prazo total de um job de geração, em segundos (default: `300`) |
@@ -102,6 +109,64 @@ e use `LLM_PROVIDER=meu-provedor`. Um `LLM_PROVIDER` desconhecido impede a
 subida do backend, com uma mensagem que lista os valores válidos. A falta de
 `GOOGLE_API_KEY` não impede a subida: a geração é que falha. O cliente do
 Gemini é criado na primeira geração e reaproveitado pelos jobs seguintes.
+
+### Provedor NVIDIA NIM (opcional)
+
+Com `LLM_PROVIDER=nvidia`, a geração usa um modelo do catálogo da NVIDIA NIM
+(`app/llm/nvidia.py`), por `POST {NVIDIA_NIM_BASE_URL}/chat/completions`, a
+API compatível com OpenAI. Os embeddings continuam no Gemini.
+
+- **Chave:** como no Gemini, só é exigida na geração. Sem
+  `NVIDIA_NIM_API_KEY`, a geração falha com erro de configuração e a subida
+  segue normal.
+- **Retentativa:** a mesma dos outros provedores.
+  - 429, 5xx, timeout e falha de conexão são passageiros e entram na
+    retentativa.
+  - 401/403 ("chave inválida ou sem acesso") e 404 ("modelo indisponível no
+    catálogo") falham na hora.
+  - Resposta sem `choices` ou sem texto é tratada como resposta inválida.
+- **Raciocínio:** `NVIDIA_NIM_RACIOCINIO` e `NVIDIA_NIM_ORCAMENTO_RACIOCINIO`
+  vão no nível raiz do JSON da requisição (`chat_template_kwargs`,
+  `reasoning_budget`), que é o que o `extra_body` do cliente OpenAI produz. Da
+  resposta vale só `message.content`, sem os blocos `<think>...</think>`;
+  `reasoning_content` é ignorado.
+- **Resposta cortada:** `finish_reason` igual a `length` é resposta inválida,
+  mesmo com texto parcial, porque JSON cortado não serve. Aumente
+  `NVIDIA_NIM_MAX_TOKENS` ou reduza o raciocínio.
+- **Plano gratuito:** o plano gratuito da NVIDIA é para protótipo e testes, não
+  para produção. Os limites de uso da conta aparecem em build.nvidia.com.
+
+Para escolher o modelo, `scripts/comparar_modelos.py` gera material com as
+funções do pipeline para cada modelo candidato, variante de raciocínio,
+documento de `data/exemplos/` e formato. Ele mede:
+
+- a ancoragem na fonte;
+- se o JSON veio válido na primeira resposta;
+- quantas gerações foram cortadas pelo limite de tokens (coluna "Cortadas");
+- a latência;
+- os tokens.
+
+- **`--raciocinio`:** escolhe as variantes, entre `padrao` (não envia nada),
+  `desligado` e `ligado`, separadas por vírgula; o padrão é `padrao`. Cada
+  modelo é medido em cada variante.
+- **Variante recusada:** fica como "não suportado" e o script segue para a
+  próxima.
+- **Chave recusada (401/403):** interrompe a comparação, grava o relatório
+  parcial e sai com código 1.
+- **`--listar`:** só imprime os ids do `GET /models` da conta, em ordem, e sai.
+
+Precisa só de `NVIDIA_NIM_API_KEY`: a ancoragem não usa embeddings, então
+`GOOGLE_API_KEY` não é necessária. As chamadas são sequenciais, com intervalo
+mínimo configurável (padrão 1,6 s, abaixo de ~40 por minuto). Um modelo fora
+do catálogo fica como "indisponível" e o script segue para o próximo. O
+relatório em Markdown vai para `data/relatorios/`, que o git ignora.
+
+```bash
+cd backend
+python scripts/comparar_modelos.py --listar
+python scripts/comparar_modelos.py
+python scripts/comparar_modelos.py --modelos org/modelo-a,org/modelo-b --raciocinio padrao,desligado --formatos Quiz --intervalo 3
+```
 
 ### Retentativa de falhas transitórias
 

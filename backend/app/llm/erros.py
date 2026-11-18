@@ -38,3 +38,15 @@ class ErroConfiguracao(ErroLLM):
 
 class ProvedorDesconhecido(ErroConfiguracao):
     """``LLM_PROVIDER`` aponta para um provedor que não está registrado."""
+
+
+class ErroModeloIndisponivel(ErroConfiguracao):
+    """O modelo configurado não existe ou saiu do catálogo do provedor (HTTP 404)."""
+
+
+class ErroAutenticacao(ErroConfiguracao):
+    """Chave inválida ou sem acesso ao modelo (HTTP 401/403)."""
+
+
+class ErroRequisicaoRecusada(ErroConfiguracao):
+    """O provedor recusou a requisição (HTTP 4xx), por exemplo um parâmetro que o modelo não aceita."""

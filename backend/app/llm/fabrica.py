@@ -25,7 +25,13 @@ def _criar_gemini() -> ProvedorLLM:
     return ProvedorGemini(modelo=settings.modelo_llm)
 
 
-_construtores: dict[str, ConstrutorProvedor] = {"gemini": _criar_gemini}
+def _criar_nvidia() -> ProvedorLLM:
+    from app.llm.nvidia import criar_provedor_nvidia
+
+    return criar_provedor_nvidia()
+
+
+_construtores: dict[str, ConstrutorProvedor] = {"gemini": _criar_gemini, "nvidia": _criar_nvidia}
 _instancia: ProvedorLLM | None = None
 _nome_instancia: str | None = None
 _trava = threading.Lock()

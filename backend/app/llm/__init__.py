@@ -2,10 +2,13 @@
 
 from app.llm.base import Mensagem, PapelMensagem, ProvedorLLM
 from app.llm.erros import (
+    ErroAutenticacao,
     ErroConfiguracao,
     ErroIndisponivel,
     ErroLimiteTaxa,
     ErroLLM,
+    ErroModeloIndisponivel,
+    ErroRequisicaoRecusada,
     ErroRespostaInvalida,
     ErroTimeout,
     ErroTransitorio,
@@ -21,10 +24,13 @@ from app.llm.fabrica import (
 )
 
 __all__ = [
+    "ErroAutenticacao",
     "ErroConfiguracao",
     "ErroIndisponivel",
     "ErroLimiteTaxa",
     "ErroLLM",
+    "ErroModeloIndisponivel",
+    "ErroRequisicaoRecusada",
     "ErroRespostaInvalida",
     "ErroTimeout",
     "ErroTransitorio",
