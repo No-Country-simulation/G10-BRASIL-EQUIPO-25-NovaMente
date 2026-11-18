@@ -95,6 +95,33 @@ def remover_objeto(objeto_id: str) -> bool:
         return False
 
 
+def fazer_upload_documento_original(
+    conteudo: bytes,
+    nome_objeto: str,
+    content_type: str = "application/octet-stream",
+) -> str | None:
+    """Envia o arquivo original enviado pelo usuário (PDF/MD/TXT) para o bucket OCI."""
+    client, namespace = _cliente_oci()
+    if client is None:
+        logger.warning("OCI não configurado; upload do original ignorado.")
+        return None
+
+    try:
+        caminho_objeto = f"originais/{nome_objeto}"
+        client.put_object(
+            namespace_name=namespace,
+            bucket_name=settings.oci_bucket,
+            object_name=caminho_objeto,
+            put_object_body=conteudo,
+            content_type=content_type,
+        )
+        logger.info("Documento original salvo no OCI: %s", caminho_objeto)
+        return caminho_objeto
+    except Exception as exc:
+        logger.error("Falha ao salvar original no OCI: %s", exc)
+        return None
+
+
 def obter_status() -> OciStatus:
     """Consulta o bucket e devolve um ``OciStatus``.
 
