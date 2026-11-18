@@ -4,7 +4,7 @@ import { M } from '@/lib/mensagens';
 
 export function EmpresaShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-dvh bg-[var(--bg)] text-[var(--fg)]">
+    <div className="min-h-dvh bg-[var(--bg-pagina)] text-[var(--fg)]">
       <a
         href="#conteudo"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-[var(--accent)] focus:px-4 focus:py-2 focus:text-[var(--accent-fg)]"

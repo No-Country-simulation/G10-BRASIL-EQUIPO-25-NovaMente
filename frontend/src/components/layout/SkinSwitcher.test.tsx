@@ -44,6 +44,24 @@ describe('SkinSwitcher', () => {
     expect(document.documentElement.dataset.modo).toBe('dark');
   });
 
+  it('lista a skin Neural com o selo Especial e a aplica', async () => {
+    render(
+      <SkinProvider>
+        <SkinSwitcher />
+      </SkinProvider>,
+    );
+
+    const neural = screen.getByRole('button', { name: /neural/i });
+    expect(neural).toHaveTextContent('Especial');
+    expect(screen.getAllByRole('button', { name: /violeta|ciano|neural/i })).toHaveLength(3);
+
+    await userEvent.click(neural);
+
+    expect(document.documentElement.dataset.skin).toBe('neural');
+    expect(neural).toHaveAttribute('aria-pressed', 'true');
+    expect(JSON.parse(localStorage.getItem('novamente.skin')!).state.skin).toBe('neural');
+  });
+
   it('anuncia a skin e o modo ativos com aria-pressed', () => {
     render(
       <SkinProvider>

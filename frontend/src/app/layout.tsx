@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import { Providers } from './providers';
 import { SkinProvider } from '@/features/theme/SkinProvider';
+import { SKIN_PADRAO, SKINS } from '@/themes/registry';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
@@ -15,7 +16,8 @@ export const metadata: Metadata = {
   description: 'Gere flashcards, quizzes, tutoriais e resumos executivos ancorados na sua documentação.',
 };
 
-const scriptTema = `try{var b=localStorage.getItem('novamente.skin');var s=b?JSON.parse(b).state:null;var skin=s&&s.skin==='ciano'?'ciano':'violeta';var modo=s&&s.modo==='light'?'light':'dark';document.documentElement.dataset.skin=skin;document.documentElement.dataset.modo=modo;document.documentElement.style.colorScheme=modo}catch(e){document.documentElement.dataset.skin='violeta';document.documentElement.dataset.modo='dark';document.documentElement.style.colorScheme='dark'}`;
+// A lista de skins válidas vem do registro, para o script não ficar para trás quando entrar uma skin nova.
+const scriptTema = `try{var b=localStorage.getItem('novamente.skin');var s=b?JSON.parse(b).state:null;var v=${JSON.stringify(Object.keys(SKINS))};var skin=s&&v.indexOf(s.skin)>=0?s.skin:'${SKIN_PADRAO}';var modo=s&&s.modo==='light'?'light':'dark';document.documentElement.dataset.skin=skin;document.documentElement.dataset.modo=modo;document.documentElement.style.colorScheme=modo}catch(e){document.documentElement.dataset.skin='violeta';document.documentElement.dataset.modo='dark';document.documentElement.style.colorScheme='dark'}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

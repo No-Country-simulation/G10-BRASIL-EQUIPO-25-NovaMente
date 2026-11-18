@@ -2,7 +2,7 @@
 
 import { Moon, Sun } from 'lucide-react';
 import { useSkin } from '@/features/theme/useSkin';
-import { SKINS, type SkinId } from '@/themes/registry';
+import { SKINS, seloDaSkin, type SkinId } from '@/themes/registry';
 import { M } from '@/lib/mensagens';
 import { cn } from '@/lib/cn';
 
@@ -53,6 +53,11 @@ export function SkinSwitcher() {
               style={{ backgroundColor: SKINS[id].cor }}
             />
             <span className="sr-only sm:not-sr-only">{SKINS[id].nome}</span>
+            {seloDaSkin(id) ? (
+              <span className="sr-only sm:not-sr-only sm:ml-1 sm:text-[10px] sm:font-semibold sm:uppercase sm:tracking-wide sm:opacity-80">
+                {seloDaSkin(id)}
+              </span>
+            ) : null}
           </button>
         ))}
       </div>

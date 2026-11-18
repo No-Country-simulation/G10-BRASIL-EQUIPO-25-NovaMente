@@ -1,6 +1,7 @@
 :root,
 [data-skin='violeta'][data-modo='dark'] {
   --bg: #0b0d14;
+  --bg-pagina: var(--bg);
   --surface: #12141d;
   --surface-elevated: #191c27;
   --border: #262a38;
@@ -19,6 +20,7 @@
 
 [data-skin='ciano'][data-modo='dark'] {
   --bg: #0a0f14;
+  --bg-pagina: var(--bg);
   --surface: #111820;
   --surface-elevated: #18212b;
   --border: #243140;
@@ -37,6 +39,7 @@
 
 [data-skin='violeta'][data-modo='light'] {
   --bg: #f7f5ff;
+  --bg-pagina: var(--bg);
   --surface: #ffffff;
   --surface-elevated: #f1edff;
   --border: #ddd6fe;
@@ -55,6 +58,7 @@
 
 [data-skin='ciano'][data-modo='light'] {
   --bg: #f1fbfd;
+  --bg-pagina: var(--bg);
   --surface: #ffffff;
   --surface-elevated: #e6f7fb;
   --border: #bae6fd;
@@ -69,4 +73,62 @@
   --warning: #b45309;
   --danger: #b91c1c;
   --ring: #0e7490;
+}
+
+/* Skin especial Neural: preto esverdeado com acento verde vivo. O fundo das
+   páginas fica transparente para o brilho e a rede animada aparecerem atrás
+   do conteúdo (as outras skins usam o próprio --bg em --bg-pagina). */
+[data-skin='neural'][data-modo='dark'] {
+  --bg: #070907;
+  --bg-pagina: transparent;
+  --surface: #121411;
+  --surface-elevated: #1a1d18;
+  --border: #272c23;
+  --border-strong: #363d30;
+  --fg: #eef2ea;
+  --fg-muted: #a3b09a;
+  --accent: #76b900;
+  --accent-fg: #050705;
+  --accent-hover: #8fd11a;
+  --accent-muted: #1c2a0c;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --ring: #8fd11a;
+}
+
+[data-skin='neural'][data-modo='light'] {
+  --bg: #f4f7ef;
+  --bg-pagina: transparent;
+  --surface: #ffffff;
+  --surface-elevated: #edf2e5;
+  --border: #d3dec3;
+  --border-strong: #b3c598;
+  --fg: #141a10;
+  --fg-muted: #4d5a43;
+  --accent: #3f6b00;
+  --accent-fg: #ffffff;
+  --accent-hover: #345900;
+  --accent-muted: #e2efcd;
+  --success: #047857;
+  --warning: #b45309;
+  --danger: #b91c1c;
+  --ring: #3f6b00;
+}
+
+/* Brilhos difusos em cantos opostos (oliva no alto à esquerda, azul-petróleo
+   embaixo à direita), fixos atrás do conteúdo e da rede animada. */
+[data-skin='neural'] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60vmax 45vmax at 0% 0%, rgb(140 170 40 / 0.14), transparent 70%),
+    radial-gradient(55vmax 45vmax at 100% 100%, rgb(20 110 120 / 0.12), transparent 70%);
+}
+
+[data-skin='neural'][data-modo='light'] body::before {
+  opacity: 0.55;
 }

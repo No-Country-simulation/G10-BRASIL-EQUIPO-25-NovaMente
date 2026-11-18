@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { SKINS } from '@/themes/registry';
 import { useSkin } from './useSkin';
 
 describe('useSkin', () => {
@@ -17,6 +18,23 @@ describe('useSkin', () => {
 
     expect(useSkin.getState().skin).toBe('ciano');
     expect(useSkin.getState().modo).toBe('dark');
+  });
+
+  it('aceita a skin neural vinda do localStorage', async () => {
+    localStorage.setItem(
+      'novamente.skin',
+      JSON.stringify({ state: { skin: 'neural', modo: 'light' }, version: 2 }),
+    );
+
+    await useSkin.persist.rehydrate();
+
+    expect(useSkin.getState().skin).toBe('neural');
+    expect(useSkin.getState().modo).toBe('light');
+  });
+
+  it('o registro tem as três skins', () => {
+    expect(Object.keys(SKINS)).toEqual(['violeta', 'ciano', 'neural']);
+    expect(SKINS.neural.nome).toBe('Neural');
   });
 
   it('cai nos padrões quando skin ou modo são inválidos', async () => {

@@ -5,7 +5,7 @@ interface CasoAcessibilidade {
   rota: string;
   titulo: RegExp | string;
   /** Skin aplicada antes da primeira pintura. */
-  skin?: 'violeta' | 'ciano';
+  skin?: 'violeta' | 'ciano' | 'neural';
   /** Modo aplicado antes da primeira pintura. */
   modo?: 'dark' | 'light';
   /** Inclui violações `serious` (contraste AA) além das `critical`. */
@@ -44,6 +44,25 @@ const ROTAS: CasoAcessibilidade[] = [
   {
     rota: '/',
     skin: 'ciano',
+    modo: 'light',
+    titulo: /material didático/i,
+    incluirSerios: true,
+    espera: async (page) => {
+      await expect(page.getByRole('link', { name: /área da empresa/i }).first()).toBeVisible();
+    },
+  },
+  {
+    rota: '/',
+    skin: 'neural',
+    titulo: /material didático/i,
+    incluirSerios: true,
+    espera: async (page) => {
+      await expect(page.getByRole('link', { name: /área da empresa/i }).first()).toBeVisible();
+    },
+  },
+  {
+    rota: '/',
+    skin: 'neural',
     modo: 'light',
     titulo: /material didático/i,
     incluirSerios: true,
