@@ -164,6 +164,15 @@ def _purgar() -> None:
         conexao.execute("DELETE FROM jobs WHERE expira_em < ?", (time.time(),))
 
 
+def jobs_em_andamento() -> list[str]:
+    """``job_id`` dos jobs ``queued`` ou ``running`` agora (só leitura, não purga)."""
+    with _conectar() as conexao:
+        linhas = conexao.execute(
+            "SELECT job_id FROM jobs WHERE status IN ('queued', 'running')"
+        ).fetchall()
+    return [job_id for (job_id,) in linhas]
+
+
 # ── Pacotes e catálogo ────────────────────────────────────────────────────────
 
 

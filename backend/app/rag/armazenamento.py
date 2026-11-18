@@ -1,47 +1,89 @@
-"""Persistência dos trechos no ChromaDB: uma collection por documento.
+"""Persistência dos trechos no ChromaDB: uma collection única para todos os documentos.
 
-Separar por documento evita misturar fontes na recuperação. A collection usa
+Cada trecho é uma linha com id ``"<documento_id>:<indice>"`` e metadados
+``documento_id``, ``indice`` e ``titulo``; a busca filtra por
+``documento_id``, então fontes diferentes não se misturam. A collection usa
 métrica cosseno; a relevância devolvida é 1 - distância, limitada a [0, 1].
 Este módulo recebe vetores prontos; quem gera os embeddings é `embeddings.py`.
+
+Por que uma collection só: neste Chroma, apagar uma collection não remove do
+disco o diretório do índice HNSW, nem libera a memória do processo; apagar as
+linhas de um documento numa collection única cresce cerca de 10 vezes menos.
 """
 
-import hashlib
-import re
+import threading
+from collections.abc import Callable
 
 import chromadb
-from chromadb.errors import NotFoundError
 
 from app.rag import config
 from app.rag.modelos import Trecho
 
 _cliente: chromadb.ClientAPI | None = None
+# Protege a troca do cliente e a criação da collection: vários jobs rodam em threads.
+_trava = threading.RLock()
+_LOTE_LEITURA = 1000  # linhas por página ao listar a collection inteira
 
 
 def definir_cliente(cliente: chromadb.ClientAPI | None) -> None:
     """Troca o cliente Chroma (usado nos testes com pasta temporária)."""
     global _cliente
-    _cliente = cliente
+    with _trava:
+        _cliente = cliente
+
+
+def cliente_atual() -> chromadb.ClientAPI | None:
+    """Cliente já criado ou injetado, sem criar um novo (nem a pasta do Chroma)."""
+    return _cliente
 
 
 def obter_cliente() -> chromadb.ClientAPI:
     global _cliente
-    if _cliente is None:
-        _cliente = chromadb.PersistentClient(path=config.CHROMA_DIR)
-    return _cliente
+    with _trava:
+        if _cliente is None:
+            _cliente = chromadb.PersistentClient(path=config.CHROMA_DIR)
+        return _cliente
 
 
-def nome_collection(documento_id: str) -> str:
-    """Converte o id do documento num nome válido de collection.
-
-    O Chroma aceita só [a-zA-Z0-9._-], de 3 a 512 caracteres, começando e
-    terminando com letra ou número. O hash no final evita colisão entre ids
-    que ficariam iguais depois de limpos (ex.: "a b" e "a-b").
-    """
+def validar_documento_id(documento_id: str) -> None:
+    """Levanta ValueError se o id do documento for vazio."""
     if not documento_id or not documento_id.strip():
         raise ValueError("O documento_id não pode ser vazio.")
-    limpo = re.sub(r"[^a-zA-Z0-9_-]+", "-", documento_id.strip())[:40]
-    resumo = hashlib.sha1(documento_id.encode("utf-8")).hexdigest()[:12]
-    return f"{config.PREFIXO_COLLECTION}{limpo}_{resumo}"
+
+
+def _colecao():
+    """A collection compartilhada, criada na primeira vez (com segurança entre threads)."""
+    with _trava:
+        return obter_cliente().get_or_create_collection(
+            config.NOME_COLLECTION,
+            configuration={"hnsw": {"space": config.METRICA}},
+            embedding_function=None,
+        )
+
+
+def recriar_colecao_se_vazia(pode_recriar: Callable[[str], bool]) -> bool:
+    """Apaga e recria a collection compartilhada, para o índice HNSW começar vazio.
+
+    Só recria se ela não tiver nenhuma linha e ``pode_recriar(id_da_collection)``
+    (avaliado sob o mesmo lock da criação) devolver True. Se algo falhar entre
+    apagar e recriar, a próxima chamada a ``_colecao`` a recria com
+    ``get_or_create``. Devolve se recriou.
+    """
+    with _trava:
+        colecao = _colecao()
+        if colecao.count() > 0 or not pode_recriar(str(colecao.id)):
+            return False
+        obter_cliente().delete_collection(config.NOME_COLLECTION)
+        _colecao()
+        return True
+
+
+def _filtro(documento_id: str) -> dict:
+    return {"documento_id": documento_id}
+
+
+def _ids_do_documento(colecao, documento_id: str) -> list[str]:
+    return colecao.get(where=_filtro(documento_id), include=[])["ids"]
 
 
 def salvar_trechos(
@@ -50,62 +92,73 @@ def salvar_trechos(
     trechos: list[str],
     vetores: list[list[float]],
 ) -> int:
-    """Grava os trechos do documento, substituindo o que já existia."""
+    """Grava os trechos do documento, substituindo o que já existia dele."""
+    validar_documento_id(documento_id)
     if len(trechos) != len(vetores):
         raise ValueError("Quantidade de trechos e de vetores não confere.")
-    cliente = obter_cliente()
-    nome = nome_collection(documento_id)
-    remover_documento(documento_id)
-    colecao = cliente.create_collection(
-        nome,
-        configuration={"hnsw": {"space": config.METRICA}},
-        metadata={"documento_id": documento_id, "titulo": titulo},
-        embedding_function=None,
-    )
+    colecao = _colecao()
+    colecao.delete(where=_filtro(documento_id))
     if trechos:
         colecao.add(
-            ids=[f"{i:05d}" for i in range(len(trechos))],
+            ids=[f"{documento_id}:{i:05d}" for i in range(len(trechos))],
             documents=trechos,
             embeddings=vetores,
-            metadatas=[{"indice": i, "documento_id": documento_id} for i in range(len(trechos))],
+            metadatas=[
+                {"documento_id": documento_id, "indice": i, "titulo": titulo}
+                for i in range(len(trechos))
+            ],
         )
     return len(trechos)
 
 
 def existe_documento(documento_id: str) -> bool:
-    try:
-        obter_cliente().get_collection(nome_collection(documento_id), embedding_function=None)
-        return True
-    except NotFoundError:
-        return False
+    validar_documento_id(documento_id)
+    return bool(_ids_do_documento(_colecao(), documento_id))
 
 
 def remover_documento(documento_id: str) -> bool:
-    """Apaga a collection do documento. Devolve False se ela não existia."""
-    try:
-        obter_cliente().delete_collection(nome_collection(documento_id))
-        return True
-    except NotFoundError:
+    """Apaga as linhas do documento. Devolve False se não havia nenhuma."""
+    validar_documento_id(documento_id)
+    colecao = _colecao()
+    ids = _ids_do_documento(colecao, documento_id)
+    if not ids:
         return False
+    colecao.delete(ids=ids)
+    return True
+
+
+def documentos_indexados() -> dict[str, int]:
+    """Quantas linhas cada ``documento_id`` tem na collection (sem ler os vetores)."""
+    colecao = _colecao()
+    contagem: dict[str, int] = {}
+    inicio = 0
+    while True:
+        pagina = colecao.get(include=["metadatas"], limit=_LOTE_LEITURA, offset=inicio)
+        for meta in pagina["metadatas"]:
+            documento_id = (meta or {}).get("documento_id")
+            if isinstance(documento_id, str):
+                contagem[documento_id] = contagem.get(documento_id, 0) + 1
+        if len(pagina["ids"]) < _LOTE_LEITURA:
+            return contagem
+        inicio += _LOTE_LEITURA
 
 
 def buscar(documento_id: str, vetor_consulta: list[float], k: int = config.K_PADRAO) -> list[Trecho]:
-    """Devolve os k trechos mais parecidos, do mais relevante ao menos.
+    """Devolve os k trechos do documento mais parecidos, do mais relevante ao menos.
 
     Levanta LookupError se o documento não foi indexado.
     """
+    validar_documento_id(documento_id)
     if k < 1:
         raise ValueError("k precisa ser pelo menos 1.")
-    try:
-        colecao = obter_cliente().get_collection(nome_collection(documento_id), embedding_function=None)
-    except NotFoundError:
-        raise LookupError(f"Documento não indexado: {documento_id}") from None
-    total = colecao.count()
+    colecao = _colecao()
+    total = len(_ids_do_documento(colecao, documento_id))
     if total == 0:
-        return []
+        raise LookupError(f"Documento não indexado: {documento_id}")
     r = colecao.query(
         query_embeddings=[vetor_consulta],
         n_results=min(k, total),
+        where=_filtro(documento_id),
         include=["documents", "metadatas", "distances"],
     )
     return [

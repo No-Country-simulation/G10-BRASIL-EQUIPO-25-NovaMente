@@ -28,7 +28,7 @@ from app.models import (
     PerfilDestinatario,
     OrigemDocumento,
 )
-from app.services import repositorio
+from app.services import limpeza_indice, repositorio
 
 logger = logging.getLogger(__name__)
 
@@ -204,6 +204,10 @@ def _executar(
         else:
             mensagem = "Erro interno ao gerar o material."
         _marcar_falha(job_id, mensagem, request_id)
+
+    finally:
+        # O estado final já está salvo; o índice só servia a este job (best-effort).
+        limpeza_indice.remover_indice(documento_id)
 
 
 def _marcar_falha(job_id: str, mensagem: str, request_id: str | None = None) -> None:
