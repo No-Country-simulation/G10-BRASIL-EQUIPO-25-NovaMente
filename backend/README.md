@@ -122,8 +122,9 @@ API compatível com OpenAI. Os embeddings continuam no Gemini.
 - **Retentativa:** a mesma dos outros provedores.
   - 429, 5xx, timeout e falha de conexão são passageiros e entram na
     retentativa.
-  - 401/403 ("chave inválida ou sem acesso") e 404 ("modelo indisponível no
-    catálogo") falham na hora.
+  - 401/403 ("chave inválida ou sem acesso"), 404 ("modelo indisponível no
+    catálogo") e 410 ("modelo removido do catálogo") falham na hora; 404 e
+    410 viram `ErroModeloIndisponivel`.
   - Resposta sem `choices` ou sem texto é tratada como resposta inválida.
 - **Raciocínio:** `NVIDIA_NIM_RACIOCINIO` e `NVIDIA_NIM_ORCAMENTO_RACIOCINIO`
   vão no nível raiz do JSON da requisição (`chat_template_kwargs`,
@@ -472,7 +473,7 @@ O catálogo de materiais, alunos e vínculos é persistido em SQLite via SQLAlch
 - O engine habilita `PRAGMA foreign_keys=ON`, `PRAGMA journal_mode=WAL` e `check_same_thread=False`.
 - Os arquivos `*.db`, `*.db-wal` e `*.db-shm` ficam fora do git.
 - **Não há Alembic/migrations nesta fase.** `create_all` só cria tabelas ausentes; mudanças de schema exigem migração ou recriação controlada.
-- Jobs continuam **em memória** (TTL de 30 min). Pacotes já finalizados sobrevivem ao reinício.
+- Jobs ficam no SQLite, na tabela `jobs` do arquivo de `DB_PATH` (esquema versionado por `PRAGMA user_version`), e expiram em `JOB_TTL_SEGUNDOS` (padrão 30 min). Pacotes já finalizados sobrevivem ao reinício.
 - `material_id` é igual a `adaptacao_id` nesta fase; todo material gerado nasce com `visibilidade = "rascunho"`.
 - Excluir aluno remove vínculos em cascata; excluir material remove vínculos em cascata e tenta apagar o objeto do OCI.
 - O texto-fonte usado na geração fica na tabela `material_fontes` (não sai em nenhuma rota) e é apagado junto com o material.
@@ -492,6 +493,177 @@ Não existe `POST /materiais`: a criação continua em `POST /adaptacoes` e `POS
 
 O guia completo de alterações, schema, erros e checklist de handoff está em
 [`docs/backend-alteracoes-2026-11-09.md`](../docs/backend-alteracoes-2026-11-09.md).
+
+## Chat sobre o material
+
+O aluno (ou a empresa, antes de publicar) faz perguntas sobre um material já
+gerado. A resposta usa só o documento original e o pacote gerado, cita os
+trechos usados (`[F1]` para o documento, `[P2]` para o pacote) e, quando a
+resposta não está no material, recusa com "Não encontrei isso no material.".
+O chat não guarda histórico: o cliente manda as mensagens anteriores a cada
+pergunta e o servidor usa só as últimas `CHAT_MAX_MENSAGENS_HISTORICO`.
+
+O provedor do chat é próprio (`CHAT_LLM_*`), independente de `LLM_PROVIDER`:
+a geração pode usar um modelo e o chat outro. O código fica em
+`app/services/servico_chat.py` (serviço), `contexto_chat.py` (trechos e
+cache), `busca_lexical.py` (BM25) e `app/api/v1/routers/chat.py` (rotas).
+
+### Rotas
+
+Base: `/api/v1`. As rotas de pergunta recebem e devolvem o mesmo formato.
+
+| Rota | Quem usa | Regras |
+|---|---|---|
+| `POST /aluno/materiais/{material_id}/chat?aluno_id=` | aluno | identificado como nas outras rotas `/aluno/*`; só material publicado e vinculado a ele, senão o mesmo 404 |
+| `POST /materiais/{material_id}/chat` | empresa | qualquer visibilidade, para testar antes de publicar |
+| `GET /chat/modelos` | frontend | modelos aceitos pelo chat, com o padrão primeiro |
+
+```json
+POST /api/v1/aluno/materiais/01JAVCNQUIZ000000000002/chat?aluno_id=01JALUNO000000000000000001
+{
+  "pergunta": "O que é uma subnet?",
+  "historico": [
+    {"papel": "user", "conteudo": "O que é uma VCN?"},
+    {"papel": "assistant", "conteudo": "É a rede virtual privada da nuvem [F1]."}
+  ],
+  "modelo": null
+}
+```
+
+```json
+{
+  "resposta": "É uma subdivisão da VCN com o próprio bloco de endereços [F2].",
+  "citacoes": [{"id": "F2", "origem": "documento", "excerto": "Cada subnet recebe um bloco de endereços…"}],
+  "base": "documento_e_pacote",
+  "recusou": false,
+  "fundamentada": true,
+  "ancoragem": 0.92,
+  "modelo": "nvidia/nemotron-3.5-lightning-30b-a3b",
+  "trechos_usados": 6
+}
+```
+
+`GET /api/v1/chat/modelos` devolve, por exemplo,
+`{"padrao": "nvidia/nemotron-3.5-lightning-30b-a3b", "modelos": ["nvidia/nemotron-3.5-lightning-30b-a3b", "google/gemma-4-31b-it"]}`.
+
+- `base` é `"pacote"` quando o material foi gerado antes do texto-fonte ser
+  guardado (`material_fontes`): aí só o pacote serve de fonte.
+- `fundamentada` é falso quando a resposta não citou nenhum trecho válido;
+  marcadores que não existem nos trechos enviados são tirados do texto.
+- `ancoragem` (0 a 1) é a mesma medida lexical do material aplicada à
+  resposta; é informativa e nula na recusa.
+
+### Erros
+
+No envelope `{"erro": {"codigo", "mensagem", ...}}`. As mensagens são fixas:
+nem a pergunta, nem o material, nem o texto de erro do provedor voltam ao
+cliente ou vão para o log.
+
+| Status | Código | Quando |
+|---|---|---|
+| 422 | `VALIDACAO` | corpo inválido (papel fora de `user`/`assistant`, histórico com mais de 50 itens, campos grandes demais); `campos` aponta o campo |
+| 422 | `PERGUNTA_VAZIA`, `PERGUNTA_LONGA` | pergunta vazia ou acima de `CHAT_MAX_PERGUNTA_CARACTERES`; `campos.pergunta` |
+| 422 | `CHAT_MODELO_NAO_PERMITIDO` | modelo fora da lista; `detalhes.modelos_permitidos` |
+| 404 | `MATERIAL_NAO_ENCONTRADO` | material inexistente ou, para o aluno, em rascunho ou não vinculado |
+| 404 / 403 | `ALUNO_NAO_ENCONTRADO` / `ALUNO_INATIVO` | identificação do aluno, como nas outras rotas do aluno |
+| 429 | `CHAT_LIMITE_EXCEDIDO` | limite de perguntas por minuto; `Retry-After` com os segundos até liberar |
+| 429 | `CHAT_PROVEDOR_OCUPADO` | o provedor devolveu 429; `Retry-After: 10` |
+| 502 | `CHAT_RESPOSTA_VAZIA`, `CHAT_RESPOSTA_INVALIDA` | o modelo não devolveu texto aproveitável |
+| 503 | `CHAT_INDISPONIVEL` | provedor fora do ar ou mal configurado (chave, modelo removido, requisição recusada) |
+| 504 | `CHAT_TEMPO_ESGOTADO` | passou de `CHAT_LLM_TIMEOUT_SEGUNDOS` |
+| 500 | `INTERNO` | pacote corrompido ou erro inesperado |
+
+### Variáveis
+
+Todas opcionais; vazio vale o padrão. A chave é a do provedor
+(`NVIDIA_NIM_API_KEY` na nvidia) e só é exigida quando o chat é usado.
+
+| Variável | Padrão | Para que serve |
+|---|---|---|
+| `CHAT_LLM_PROVIDER` | `nvidia` | Provedor do chat (`nvidia` ou `gemini`); desconhecido impede a subida |
+| `CHAT_LLM_MODELO` | modelo padrão do provedor | Modelo do chat (`NVIDIA_NIM_MODELO` na nvidia, `MODELO_LLM` no gemini) |
+| `CHAT_LLM_RACIOCINIO` | `desligado` | `ligado` ou `desligado`; ligado deixa as respostas lentas |
+| `CHAT_LLM_MAX_TOKENS` | `1024` | Limite de tokens da resposta (mínimo 64) |
+| `CHAT_LLM_TEMPERATURA` | `0.2` | Temperatura, entre 0 e 2 |
+| `CHAT_LLM_TIMEOUT_SEGUNDOS` | `45` | Prazo total de uma pergunta, com a retentativa incluída (mínimo 5) |
+| `CHAT_MODELOS_PERMITIDOS` | só o modelo do chat | Outros ids aceitos no campo `modelo`, separados por vírgula |
+| `CHAT_MAX_PERGUNTA_CARACTERES` | `1000` | Tamanho máximo da pergunta |
+| `CHAT_MAX_MENSAGENS_HISTORICO` | `10` | Mensagens anteriores usadas (o resto é descartado) |
+| `CHAT_MAX_CONTEXTO_CARACTERES` | `24000` | Orçamento de texto dos trechos enviados ao modelo |
+| `CHAT_LIMITE_POR_MINUTO` | `12` | Perguntas por minuto por aluno (e no balde único da empresa) |
+
+Na nvidia valem modelo, raciocínio, temperatura e max_tokens do chat; no
+gemini, só o modelo. Uma falha passageira (429, 5xx, timeout) é repetida no
+máximo uma vez, dentro do prazo da pergunta; o prazo e as retentativas dos
+jobs de geração não se aplicam ao chat.
+
+### Como o chat busca
+
+- **Trechos:** o documento é dividido com o mesmo splitter da geração (1.000
+  caracteres, 150 de sobreposição), e o pacote vira texto por item (cada
+  flashcard, cada questão com a resposta e a explicação, cada seção do
+  tutorial ou resumo).
+- **Busca:** BM25 lexical em Python puro, sem embeddings e sem chamada
+  externa, sobre documento e pacote juntos. Pergunta curta de seguimento ("e
+  as limitações?") leva junto a última pergunta do histórico.
+- **Orçamento:** os melhores trechos entram até `CHAT_MAX_CONTEXTO_CARACTERES`;
+  o último pode entrar cortado. Se algum trecho do pacote pontuou, pelo menos
+  um vai junto. Se nada pontuou, vão os primeiros trechos do pacote e o
+  modelo decide se recusa.
+- **Material antigo**, sem texto-fonte guardado: só o pacote (`base: "pacote"`).
+- **Cache:** o índice de cada material fica num cache LRU de 32 materiais,
+  limpo quando o material é apagado.
+
+### Limite por aluno
+
+Janela deslizante de 60 s, em memória: `CHAT_LIMITE_POR_MINUTO` perguntas por
+aluno, e um balde único para a empresa. O limite é conferido antes de
+carregar o material; um corpo inválido não conta, uma pergunta aceita conta
+mesmo que dê erro depois. Chaves ociosas são descartadas, com teto de 10.000.
+
+### Limitações e riscos
+
+1. **`aluno_id` na query não é credencial** (veja a issue #66): quem conhece
+   um id válido pergunta em nome daquele aluno e consome a cota do chat, e o
+   limite por aluno não impede quem troca de id.
+2. **O histórico vem do cliente:** uma mensagem falsa de `assistant` pode
+   tentar influenciar o modelo. O prompt trata o histórico e os trechos como
+   dados, e as citações são validadas no servidor, mas isso mitiga, não
+   impede.
+3. **A busca é lexical:** perguntas muito parafraseadas, sem as palavras do
+   texto, podem não achar o trecho certo e acabar em recusa.
+4. **A cota gratuita do provedor é compartilhada** com a geração: com uso
+   alto, o chat pode receber 429 (`CHAT_PROVEDOR_OCUPADO`).
+5. **O limite é por processo:** com vários workers, cada um conta à parte.
+
+### Medir o chat
+
+`scripts/medir_chat.py` compara modelos no chat com as perguntas de gabarito
+de `data/exemplos/chat_perguntas.json` (dois documentos de exemplo; perguntas
+dentro e fora do material, de injeção e de seguimento). O material é montado
+em memória, sem tocar no banco, e o serviço do chat é chamado de verdade.
+
+```bash
+cd backend
+python scripts/medir_chat.py --listar
+python scripts/medir_chat.py --simulado
+python scripts/medir_chat.py
+python scripts/medir_chat.py --modelos org/modelo-a,org/modelo-b --raciocinio desligado,ligado --categorias dentro,fora --intervalo 5
+```
+
+- `--listar` mostra quantas chamadas serão feitas, sem chamar; `--simulado`
+  usa um provedor falso, sem rede e sem chave, para ver o formato.
+- Por modelo: acerto (dentro e seguimento), fundamentação, recusa correta
+  (fora), obediência à injeção, ancoragem média, latência p50 e p95, tamanho
+  médio da resposta e erros por tipo, com um veredito (APROVADO com acerto e
+  recusa de pelo menos 80%, nenhuma obediência à injeção, p95 dentro do prazo
+  do chat e até 10% de erros) e um ranking.
+- O relatório vai em Markdown e JSON para `data/relatorios/`, com pergunta,
+  resposta, ids citados e métricas; nunca a chave, o prompt nem o texto do
+  material.
+- O acerto e a ancoragem são aproximações lexicais, e a amostra é pequena (o
+  relatório mostra o n por categoria): serve para comparar modelos entre si,
+  não como prova estatística.
 
 ## Documentação Interativa
 

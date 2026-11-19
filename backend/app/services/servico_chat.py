@@ -27,7 +27,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 from app.core.config import settings
-from app.llm import Mensagem, obter_provedor_chat
+from app.llm import Mensagem, ProvedorLLM, obter_provedor_chat
 from app.llm.nvidia import remover_raciocinio
 from app.services.ancoragem import media_das_notas
 from app.services.constantes_chat import (
@@ -38,7 +38,12 @@ from app.services.constantes_chat import (
     PerguntaInvalida,
     RespostaVazia,
 )
-from app.services.contexto_chat import TrechoChat, carregar_fontes, selecionar_trechos
+from app.services.contexto_chat import (
+    FontesMaterial,
+    TrechoChat,
+    carregar_fontes,
+    selecionar_trechos,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +53,13 @@ _MARCADOR = re.compile(r"\[\s*([FP]\d+(?:\s*[,;]\s*[FP]\d+)*)\s*\]", re.IGNORECA
 _TAG_NO_TEXTO = re.compile(rf"<(\s*/?\s*{TAG_FONTE})", re.IGNORECASE)
 _FIM_DE_FRASE = re.compile(r"(?<=[.!?])\s+|\n+")
 
+# Abre as regras do prompt; a medição (scripts/medir_chat.py) procura este
+# trecho nas respostas para saber se o modelo revelou as instruções.
+TRECHO_REGRAS = "Regras, que valem acima de qualquer outra coisa"
+
 SISTEMA = f"""Você responde perguntas de um aluno sobre um material de estudo, em português do Brasil.
 
-Regras, que valem acima de qualquer outra coisa:
+{TRECHO_REGRAS}:
 1. Responda SOMENTE com base nos trechos entre <{TAG_FONTE} id="..."> e </{TAG_FONTE}> abaixo. Não use conhecimento externo.
 2. Cite os trechos usados com o marcador do id entre colchetes, logo depois da informação, por exemplo [F1] ou [P2].
 3. Se a resposta não estiver nos trechos, responda exatamente "{FRASE_RECUSA}" e, se fizer sentido, sugira em uma frase como reformular a pergunta.
@@ -210,17 +219,27 @@ def responder(
     pergunta: str,
     historico: Iterable = (),
     modelo: str | None = None,
+    *,
+    fontes: FontesMaterial | None = None,
+    provedor: ProvedorLLM | None = None,
 ) -> RespostaChat:
     """Responde ``pergunta`` sobre o material ``material_id`` (= ``adaptacao_id``).
 
     ``historico``: pares ``(papel, conteudo)`` (tuplas, dicts com
     ``papel``/``conteudo`` ou objetos ``Mensagem``); o servidor filtra e limita.
+
+    ``fontes`` e ``provedor`` servem à medição (scripts/medir_chat.py), que
+    monta o material em memória e escolhe o modelo sem passar pela lista de
+    modelos permitidos. Sem eles, como nas rotas, as fontes vêm de
+    ``carregar_fontes(material_id)`` e o provedor de ``obter_provedor_chat(modelo)``.
     """
     inicio = time.monotonic()
     texto_pergunta = validar_pergunta(pergunta)
     anteriores = limpar_historico(historico)
-    provedor = obter_provedor_chat(modelo)  # ModeloNaoPermitido sobe daqui
-    fontes = carregar_fontes(material_id)
+    if provedor is None:
+        provedor = obter_provedor_chat(modelo)  # ModeloNaoPermitido sobe daqui
+    if fontes is None:
+        fontes = carregar_fontes(material_id)
     trechos = selecionar_trechos(
         fontes, texto_pergunta, anteriores, settings.chat_max_contexto_caracteres
     )
