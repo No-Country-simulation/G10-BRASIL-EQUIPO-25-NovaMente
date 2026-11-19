@@ -24,6 +24,7 @@ from app.models import (
 )
 from app.models.db import MaterialDB
 from app.services import materiais as materiais_service
+from app.services.contexto_chat import invalidar_material
 from app.services.oci import remover_objeto
 
 router = APIRouter(prefix="/materiais", tags=["materiais"])
@@ -181,6 +182,7 @@ def excluir(
     objeto_id = row.oci_objeto_id
     db.delete(row)
     db.commit()
+    invalidar_material(material_id)  # o índice do chat não pode sobreviver ao material
 
     oci_removido = remover_objeto(objeto_id)
     return RemocaoMaterialResposta(

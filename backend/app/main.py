@@ -18,6 +18,7 @@ from app.api.v1.routers import (
     adaptacoes,
     aluno,
     alunos,
+    chat,
     health,
     jobs,
     materiais,
@@ -72,6 +73,7 @@ _V1 = "/api/v1"
 app.include_router(adaptacoes.router, prefix=_V1)
 app.include_router(aluno.router, prefix=_V1)
 app.include_router(alunos.router, prefix=_V1)
+app.include_router(chat.router, prefix=_V1)
 app.include_router(jobs.router, prefix=_V1)
 app.include_router(materiais.router, prefix=_V1)
 app.include_router(oci.router, prefix=_V1)
@@ -95,7 +97,10 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
                 "mensagem": str(detail),
             }
         }
-    return JSONResponse(status_code=exc.status_code, content=content)
+    # Repassa os cabeçalhos da exceção (por exemplo Retry-After no 429).
+    return JSONResponse(
+        status_code=exc.status_code, content=content, headers=getattr(exc, "headers", None)
+    )
 
 
 @app.exception_handler(RequestValidationError)
