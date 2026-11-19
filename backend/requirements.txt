@@ -19,6 +19,9 @@ sqlalchemy>=2.0,<3
 # ── LLM / Google Gemini ───────────────────────────────────────────────────────
 # O SDK google-genai (geração e embeddings) está em requirements-rag.txt.
 
+# ── Geração multiagente (GERACAO_MULTIAGENTE) ─────────────────────────────────
+langgraph==1.2.23             # grafo roteador → pesquisador → redator → crítico
+
 # ── Extração de texto ─────────────────────────────────────────────────────────
 pypdf==5.1.0                  # PDF → texto
 

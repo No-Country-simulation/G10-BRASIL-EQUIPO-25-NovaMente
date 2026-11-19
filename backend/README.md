@@ -248,6 +248,76 @@ chamada extra ao LLM nem aos embeddings. As regras ficam em
   acrescente-a ali em minúsculas e sem acento; a validação e o fallback usam
   a mesma lista.
 
+## Geração multiagente
+
+Com `GERACAO_MULTIAGENTE=true`, a geração do material passa por um grafo em
+LangGraph (`app/services/geracao_grafo.py`) que escreve, confere a ancoragem
+e revisa. Desligada (o padrão), a geração é a passada única de sempre, com o
+mesmo prompt; a passada única também é o fallback do grafo.
+
+```
+roteador -> pesquisador -> redator -> crítico -> fim (aprovado ou parada)
+                 ^                        |
+                 +-------- revisar -------+
+```
+
+- **Roteador** (sem LLM): plano com formato, perfil e `tem_diagrama`
+  (sempre falso; reservado para a etapa de diagramas).
+- **Pesquisador:** na 1ª rodada, a mesma recuperação da passada única (k=6);
+  nas revisões, uma busca dirigida com o texto dos itens mal ancorados do
+  rascunho, juntando os trechos novos aos já usados (sem repetir, até 12).
+- **Redator:** o prompt da passada única; nas revisões, mais um bloco curto
+  com os itens fracos e as palavras do próprio rascunho que não aparecem nos
+  trechos. Nunca vai texto do documento nesse bloco.
+- **Crítico** (sem LLM): a mesma avaliação que grava `ancoragem_fonte_score`,
+  então as notas dos dois modos são comparáveis. Aprova com ancoragem igual
+  ou acima do limiar; senão para quando as revisões acabam, quando a nota não
+  melhora em relação à rodada anterior ou quando o prazo do job não comporta
+  outra chamada.
+
+O resultado é sempre o rascunho de maior ancoragem (não o último); não atingir
+o limiar não faz o job falhar. O progresso usa só as etapas de hoje, e elas
+só avançam: a pesquisa e a redação da 1ª rodada aparecem como `gerando`;
+depois da primeira avaliação, tudo aparece como `revisando` (inclusive a
+passada única do fallback), com a rodada no texto da mensagem ("Buscando
+trechos para a revisão (rodada 2 de 3)..."). O percentual só sobe.
+
+| Variável | Padrão | Para que serve |
+|---|---|---|
+| `GERACAO_MULTIAGENTE` | `false` | Liga o grafo |
+| `GRAFO_MAX_REVISOES` | `2` | Revisões depois da primeira escrita (0 a 2) |
+| `GRAFO_LIMIAR_ANCORAGEM` | `0.75` | Ancoragem que aprova o rascunho (0 a 1) |
+| `GRAFO_MAX_SIMULTANEOS` | `2` | Jobs no grafo ao mesmo tempo; sem vaga, o job vai pela passada única |
+
+Vazio vale o padrão. O limiar de 0,75 vem das 12 saídas reais da calibração
+da ancoragem: as fiéis vão de 0,706 a 0,999, com um vão entre 0,732 e 0,787,
+e o maior falso positivo é 0,187. Com 0,75, só as duas saídas mais fracas
+seriam revisadas. É provisório: são poucas saídas.
+
+- **Orçamento:** no pior caso, 3 escritas com a repetição por JSON inválido em
+  cada uma, ou seja, 6 chamadas ao LLM por job (hoje são até 2), cada uma com
+  a retentativa de falhas passageiras. Roteador e crítico não chamam o LLM.
+  As buscas das revisões usam embeddings (uma chamada por revisão).
+- **Fallback:** qualquer falha do grafo na primeira rodada cai na passada
+  única, se o prazo ainda comportar uma chamada; uma falha numa revisão
+  entrega o melhor rascunho que já existe. Cancelamento, prazo do job e erro
+  de chave ou configuração não vão para o fallback.
+- **Log:** por nó, o nome, a rodada, a duração, o número de trechos e de
+  caracteres, a ancoragem, se o JSON veio válido na primeira e o tipo do
+  erro; por job, as rodadas, o motivo da parada, a rodada vencedora, se caiu
+  no fallback e se foi para a passada única por falta de vaga. Nada do
+  documento, do rascunho nem das consultas.
+
+Limitações:
+
+- A ancoragem é lexical: pode aprovar uma paráfrase ruim que usa as palavras
+  do texto ou reprovar uma paráfrase boa, e o redator pode tender a copiar o
+  texto para subir a nota.
+- A cota gratuita do provedor é compartilhada com o chat; mais chamadas por
+  job aumentam a chance de 429.
+- Roteador e crítico são determinísticos nesta versão; diagramas ficam para
+  outra etapa.
+
 ## Jobs e histórico
 
 Jobs de geração ficam no arquivo SQLite apontado por `DB_PATH`; a pasta é

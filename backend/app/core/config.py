@@ -65,6 +65,17 @@ class Settings(BaseSettings):
     chat_max_contexto_caracteres: int = Field(24_000, ge=1)
     chat_limite_por_minuto: int = Field(12, ge=1)  # perguntas por aluno
 
+    # ── Geração multiagente (app/services/geracao_grafo.py) ─────────────────
+    # Desligada por padrão: a geração é a passada única de sempre. Vazio vale o padrão.
+    geracao_multiagente: bool = False
+    grafo_max_revisoes: int = Field(2, ge=0, le=2)  # rodadas de revisão além da primeira escrita
+    # Ancoragem que aprova o rascunho. Nas 12 saídas reais da calibração
+    # (tests/services/test_ancoragem_calibracao.py) as fiéis vão de 0,706 a 0,999,
+    # com um vão entre 0,732 e 0,787; 0,75 revisa só as duas mais fracas e fica
+    # muito acima do maior falso positivo (0,187). Provisório: são só 12 saídas.
+    grafo_limiar_ancoragem: float = Field(0.75, ge=0, le=1)
+    grafo_max_simultaneos: int = Field(2, ge=1)  # jobs no grafo ao mesmo tempo; sem vaga, passada única
+
     # ── Banco de dados ───────────────────────────────────────────────────────
     database_url: str = "sqlite:///./data/novamente.db"
 
@@ -113,6 +124,10 @@ class Settings(BaseSettings):
         "chat_max_mensagens_historico",
         "chat_max_contexto_caracteres",
         "chat_limite_por_minuto",
+        "geracao_multiagente",
+        "grafo_max_revisoes",
+        "grafo_limiar_ancoragem",
+        "grafo_max_simultaneos",
         mode="before",
     )
     @classmethod

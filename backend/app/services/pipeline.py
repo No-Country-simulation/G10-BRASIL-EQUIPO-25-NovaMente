@@ -22,6 +22,7 @@ import re
 import time
 import unicodedata
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from pydantic import ValidationError
@@ -136,6 +137,15 @@ _INSTRUCAO_CONCEITOS = (
 )
 
 
+# Só nas revisões do fluxo em grafo (app/services/geracao_grafo.py).
+_TITULO_REVISAO = "REVISÃO DA VERSÃO ANTERIOR:"
+_INSTRUCAO_REVISAO = (
+    "Reescreva o material inteiro, no mesmo formato JSON. Nos itens indicados, troque "
+    "o que não aparece nos trechos do documento por informação que esteja neles; "
+    "mantenha os outros itens."
+)
+
+
 def _montar_prompt(
     titulo: str,
     trechos: list[str],
@@ -143,10 +153,13 @@ def _montar_prompt(
     formato: FormatoSaida,
     nicho: NichoSetor,
     nivel: NivelDetalhe,
+    retorno_revisor: str | None = None,
 ) -> str:
+    """Prompt da geração. ``retorno_revisor`` (revisões do fluxo em grafo) vai no
+    fim; sem ele o prompt é exatamente o da passada única."""
     contexto = "\n\n---\n\n".join(trechos)
     instrucoes = _INSTRUCOES_FORMATO[formato]
-    return (
+    prompt = (
         f"Você é um especialista em educação técnica.\n"
         f"Público-alvo: {_PERFIL_DESC[perfil]}.\n"
         f"Setor / nicho: {nicho}.\n"
@@ -155,6 +168,9 @@ def _montar_prompt(
         f"TRECHOS RELEVANTES DO DOCUMENTO:\n{contexto}\n\n"
         f"TAREFA:\n{instrucoes}\n{_INSTRUCAO_CONCEITOS}"
     )
+    if retorno_revisor:
+        prompt += f"\n\n{_TITULO_REVISAO}\n{retorno_revisor}\n{_INSTRUCAO_REVISAO}"
+    return prompt
 
 
 # ── Parser de resposta do LLM ─────────────────────────────────────────────────
@@ -311,6 +327,76 @@ def _avaliar_qualidade(
     )
 
 
+# ── Geração em passada única ─────────────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class ResultadoGeracao:
+    """O que a geração entrega para a montagem do pacote."""
+
+    conteudo: ConteudoAdaptado
+    conceitos_do_llm: object  # valor cru de conceitos_chave (validado depois)
+    avaliacao: AvaliacaoQualidade
+    textos_trechos: list[str]  # trechos usados no prompt (fallback dos conceitos)
+
+
+def _consulta_padrao(titulo: str, perfil: PerfilDestinatario) -> str:
+    return f"Conteúdo educacional sobre {titulo} para {perfil}"
+
+
+def _relevancia_media(trechos) -> float:
+    return sum(t.relevancia for t in trechos) / len(trechos) if trechos else 0.5
+
+
+def _obter_provedor_da_geracao() -> ProvedorLLM:
+    try:
+        return obter_provedor()
+    except ErroConfiguracao as exc:
+        logger.error("Provedor de LLM não configurado: %r", exc)
+        raise RuntimeError(_MSG_CONFIGURACAO) from exc
+
+
+def _gerar_passada_unica(
+    *,
+    documento_id: str,
+    titulo: str,
+    texto: str,
+    perfil: PerfilDestinatario,
+    formato: FormatoSaida,
+    nicho: NichoSetor,
+    nivel: NivelDetalhe,
+    progresso: Callable[[EtapaJob, int, str], None],
+    prazo: float | None = None,
+    verificar_interrupcao: Callable[[], None] | None = None,
+) -> ResultadoGeracao:
+    """Recupera os trechos, gera o conteúdo numa chamada (mais a repetição por
+    resposta inválida) e avalia. É o caminho padrão e o fallback do grafo."""
+    from app.rag import servico as rag_servico  # importação tardia
+
+    # 2. Recuperação dos trechos mais relevantes
+    progresso("gerando", 55, "Recuperando trechos relevantes...")
+    consulta = _consulta_padrao(titulo, perfil)
+    trechos = rag_servico.recuperar(documento_id=documento_id, consulta=consulta, k=6)
+    relevancia_media = _relevancia_media(trechos)
+    textos_trechos = [t.texto for t in trechos]
+
+    # 3 e 4. Chamada ao LLM e parse do conteúdo gerado
+    progresso("gerando", 65, "Redigindo material didático...")
+    provedor = _obter_provedor_da_geracao()
+    prompt = _montar_prompt(titulo, textos_trechos, perfil, formato, nicho, nivel)
+    with limites_da_geracao(prazo, verificar_interrupcao):
+        _resposta_texto, conteudo, conceitos_do_llm = _gerar_conteudo(
+            provedor,
+            prompt,
+            formato,
+            avisar_revisao=lambda: progresso("revisando", 82, "Revisando fidelidade..."),
+        )
+
+    # 5. Avaliação de qualidade
+    avaliacao = _avaliar_qualidade(relevancia_media, conteudo, texto)
+    return ResultadoGeracao(conteudo, conceitos_do_llm, avaliacao, textos_trechos)
+
+
 # ── Pipeline principal ────────────────────────────────────────────────────────
 
 
@@ -359,33 +445,28 @@ def executar_pipeline(
         on_etapa=_on_rag_etapa,
     )
 
-    # 2. Recuperação dos trechos mais relevantes ─────────────────────────────
-    _prog("gerando", 55, "Recuperando trechos relevantes...")
-    consulta = f"Conteúdo educacional sobre {titulo} para {perfil}"
-    trechos = rag_servico.recuperar(documento_id=documento_id, consulta=consulta, k=6)
-    relevancia_media = (
-        sum(t.relevancia for t in trechos) / len(trechos) if trechos else 0.5
+    # 2 a 5. Recuperação, chamada ao LLM e avaliação ────────────────────────
+    # Passada única (padrão) ou o fluxo em grafo com revisões (GERACAO_MULTIAGENTE),
+    # que cai na passada única quando falha ou não há vaga.
+    gerar = _gerar_passada_unica
+    if settings.geracao_multiagente:
+        from app.services.geracao_grafo import executar_pipeline_grafo as gerar
+    resultado = gerar(
+        documento_id=documento_id,
+        titulo=titulo,
+        texto=texto,
+        perfil=perfil,
+        formato=formato,
+        nicho=nicho,
+        nivel=nivel,
+        progresso=_prog,
+        prazo=prazo,
+        verificar_interrupcao=verificar_interrupcao,
     )
-    textos_trechos = [t.texto for t in trechos]
-
-    # 3 e 4. Chamada ao LLM e parse do conteúdo gerado ──────────────────────
-    _prog("gerando", 65, "Redigindo material didático...")
-    try:
-        provedor = obter_provedor()
-    except ErroConfiguracao as exc:
-        logger.error("Provedor de LLM não configurado: %r", exc)
-        raise RuntimeError(_MSG_CONFIGURACAO) from exc
-    prompt = _montar_prompt(titulo, textos_trechos, perfil, formato, nicho, nivel)
-    with limites_da_geracao(prazo, verificar_interrupcao):
-        resposta_texto, conteudo, conceitos_do_llm = _gerar_conteudo(
-            provedor,
-            prompt,
-            formato,
-            avisar_revisao=lambda: _prog("revisando", 82, "Revisando fidelidade..."),
-        )
-
-    # 5. Avaliação de qualidade ──────────────────────────────────────────────
-    avaliacao = _avaliar_qualidade(relevancia_media, conteudo, texto)
+    conteudo = resultado.conteudo
+    conceitos_do_llm = resultado.conceitos_do_llm
+    avaliacao = resultado.avaliacao
+    textos_trechos = resultado.textos_trechos
 
     # 6. Montar pacote ───────────────────────────────────────────────────────
     adaptacao_id = str(ULID())
