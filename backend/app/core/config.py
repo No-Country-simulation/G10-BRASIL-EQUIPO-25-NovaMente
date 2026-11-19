@@ -2,8 +2,15 @@
 
 import os
 from pathlib import Path
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Padrões do chat na nvidia, escolhidos pela medição de 19/11/2026 (README,
+# "Modelo padrão do chat"). O modelo padrão vem primeiro na lista.
+MODELO_PADRAO_CHAT = "google/gemma-4-31b-it"
+MODELOS_PERMITIDOS_CHAT = (
+    "google/gemma-4-31b-it,nvidia/nemotron-3.5-bolt-e4b,nvidia/nemotron-3.5-lightning-30b-a3b"
+)
 
 # Busca .env em backend/.env ou na pasta atual
 _BASE_DIR = Path(__file__).resolve().parents[2]
@@ -42,13 +49,16 @@ class Settings(BaseSettings):
     # ── Chat sobre o material (provedor próprio, independente de LLM_PROVIDER) ──
     # Vazio em qualquer CHAT_* vale como o padrão abaixo.
     chat_llm_provider: str = "nvidia"  # provedor registrado em app/llm/fabrica.py
-    chat_llm_modelo: str = ""  # vazio: o modelo padrão do provedor (NVIDIA_NIM_MODELO na nvidia)
+    # Medição de 19/11/2026 (scripts/medir_chat.py; veja o README). Os dois
+    # padrões abaixo são ids da NVIDIA: com outro CHAT_LLM_PROVIDER e sem valor
+    # próprio, ficam vazios e valem o modelo padrão daquele provedor.
+    chat_llm_modelo: str = MODELO_PADRAO_CHAT
     chat_llm_raciocinio: str = "desligado"  # "ligado" ou "desligado"; vazio vale "desligado"
     chat_llm_max_tokens: int = Field(1024, ge=64)
     chat_llm_temperatura: float = Field(0.2, ge=0, le=2)
     chat_llm_timeout_segundos: int = Field(45, ge=5)  # prazo total de uma pergunta
-    # Ids separados por vírgula; vazio: só o modelo do chat (CHAT_LLM_MODELO ou o padrão).
-    chat_modelos_permitidos: str = ""
+    # Ids separados por vírgula; o modelo do chat sempre entra, em primeiro lugar.
+    chat_modelos_permitidos: str = MODELOS_PERMITIDOS_CHAT
     # Limites do serviço do chat
     chat_max_pergunta_caracteres: int = Field(1000, ge=1)
     chat_max_mensagens_historico: int = Field(10, ge=1)  # mensagens anteriores aceitas no pedido
@@ -93,6 +103,8 @@ class Settings(BaseSettings):
 
     @field_validator(
         "chat_llm_provider",
+        "chat_llm_modelo",
+        "chat_modelos_permitidos",
         "chat_llm_raciocinio",
         "chat_llm_max_tokens",
         "chat_llm_temperatura",
@@ -119,6 +131,20 @@ class Settings(BaseSettings):
     @classmethod
     def _provedor_minusculo(cls, valor: str) -> str:
         return valor.lower()
+
+    @model_validator(mode="after")
+    def _modelos_do_chat_so_na_nvidia(self):
+        """Fora da nvidia, os padrões de modelo do chat (ids da NVIDIA) não se aplicam.
+
+        Sem CHAT_LLM_MODELO/CHAT_MODELOS_PERMITIDOS próprios (ausentes ou vazios),
+        ficam vazios e o chat usa o modelo padrão do provedor (app/llm/fabrica.py).
+        """
+        if self.chat_llm_provider != "nvidia":
+            if self.chat_llm_modelo == MODELO_PADRAO_CHAT:
+                self.chat_llm_modelo = ""
+            if self.chat_modelos_permitidos == MODELOS_PERMITIDOS_CHAT:
+                self.chat_modelos_permitidos = ""
+        return self
 
     @field_validator("chat_llm_raciocinio")
     @classmethod

@@ -434,3 +434,24 @@ def test_rotas_documentadas_no_openapi(cliente):
     assert componentes["PerguntaChat"]["examples"]
     respostas = caminhos["/api/v1/aluno/materiais/{material_id}/chat"]["post"]["responses"]
     assert {"200", "404", "422", "429", "502", "503", "504"} <= set(respostas)
+
+
+def test_lista_de_modelos_sem_variaveis_do_chat(cliente, monkeypatch):
+    """Sem nenhuma CHAT_* no ambiente: o padrão da medição de 19/11/2026, primeiro na lista."""
+    from app.core.config import Settings
+
+    for nome in ("CHAT_LLM_PROVIDER", "CHAT_LLM_MODELO", "CHAT_MODELOS_PERMITIDOS"):
+        monkeypatch.delenv(nome, raising=False)
+    padrao = Settings(_env_file=None)
+    for campo in ("chat_llm_provider", "chat_llm_modelo", "chat_modelos_permitidos"):
+        monkeypatch.setattr(settings, campo, getattr(padrao, campo))
+    resp = cliente.get("/api/v1/chat/modelos")
+    assert resp.status_code == 200
+    assert resp.json() == {
+        "padrao": "google/gemma-4-31b-it",
+        "modelos": [
+            "google/gemma-4-31b-it",
+            "nvidia/nemotron-3.5-bolt-e4b",
+            "nvidia/nemotron-3.5-lightning-30b-a3b",
+        ],
+    }

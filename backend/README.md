@@ -159,7 +159,8 @@ documento de `data/exemplos/` e formato. Ele mede:
 Precisa só de `NVIDIA_NIM_API_KEY`: a ancoragem não usa embeddings, então
 `GOOGLE_API_KEY` não é necessária. As chamadas são sequenciais, com intervalo
 mínimo configurável (padrão 1,6 s, abaixo de ~40 por minuto). Quem decide que
-um modelo está indisponível é o HTTP 404 na geração: aí ele fica como
+um modelo está indisponível é o HTTP 404 ou 410 na geração (os dois viram
+`ErroModeloIndisponivel`): aí ele fica como
 "indisponível" e o script segue para o próximo. Um modelo que não aparece no
 `GET /models` é tentado mesmo assim, porque alguns modelos com endpoint
 próprio não são listados; se gerar, fica como "disponível (fora do /models)".
@@ -538,13 +539,13 @@ POST /api/v1/aluno/materiais/01JAVCNQUIZ000000000002/chat?aluno_id=01JALUNO00000
   "recusou": false,
   "fundamentada": true,
   "ancoragem": 0.92,
-  "modelo": "nvidia/nemotron-3.5-lightning-30b-a3b",
+  "modelo": "google/gemma-4-31b-it",
   "trechos_usados": 6
 }
 ```
 
 `GET /api/v1/chat/modelos` devolve, por exemplo,
-`{"padrao": "nvidia/nemotron-3.5-lightning-30b-a3b", "modelos": ["nvidia/nemotron-3.5-lightning-30b-a3b", "google/gemma-4-31b-it"]}`.
+`{"padrao": "google/gemma-4-31b-it", "modelos": ["google/gemma-4-31b-it", "nvidia/nemotron-3.5-bolt-e4b", "nvidia/nemotron-3.5-lightning-30b-a3b"]}`.
 
 - `base` é `"pacote"` quando o material foi gerado antes do texto-fonte ser
   guardado (`material_fontes`): aí só o pacote serve de fonte.
@@ -581,12 +582,12 @@ Todas opcionais; vazio vale o padrão. A chave é a do provedor
 | Variável | Padrão | Para que serve |
 |---|---|---|
 | `CHAT_LLM_PROVIDER` | `nvidia` | Provedor do chat (`nvidia` ou `gemini`); desconhecido impede a subida |
-| `CHAT_LLM_MODELO` | modelo padrão do provedor | Modelo do chat (`NVIDIA_NIM_MODELO` na nvidia, `MODELO_LLM` no gemini) |
+| `CHAT_LLM_MODELO` | `google/gemma-4-31b-it` na nvidia; o `MODELO_LLM` no gemini | Modelo do chat |
 | `CHAT_LLM_RACIOCINIO` | `desligado` | `ligado` ou `desligado`; ligado deixa as respostas lentas |
 | `CHAT_LLM_MAX_TOKENS` | `1024` | Limite de tokens da resposta (mínimo 64) |
 | `CHAT_LLM_TEMPERATURA` | `0.2` | Temperatura, entre 0 e 2 |
 | `CHAT_LLM_TIMEOUT_SEGUNDOS` | `45` | Prazo total de uma pergunta, com a retentativa incluída (mínimo 5) |
-| `CHAT_MODELOS_PERMITIDOS` | só o modelo do chat | Outros ids aceitos no campo `modelo`, separados por vírgula |
+| `CHAT_MODELOS_PERMITIDOS` | `google/gemma-4-31b-it,nvidia/nemotron-3.5-bolt-e4b,nvidia/nemotron-3.5-lightning-30b-a3b` na nvidia; só o modelo do chat no gemini | Ids aceitos no campo `modelo`, separados por vírgula; o modelo do chat sempre entra, em primeiro lugar |
 | `CHAT_MAX_PERGUNTA_CARACTERES` | `1000` | Tamanho máximo da pergunta |
 | `CHAT_MAX_MENSAGENS_HISTORICO` | `10` | Mensagens anteriores usadas (o resto é descartado) |
 | `CHAT_MAX_CONTEXTO_CARACTERES` | `24000` | Orçamento de texto dos trechos enviados ao modelo |
@@ -596,6 +597,49 @@ Na nvidia valem modelo, raciocínio, temperatura e max_tokens do chat; no
 gemini, só o modelo. Uma falha passageira (429, 5xx, timeout) é repetida no
 máximo uma vez, dentro do prazo da pergunta; o prazo e as retentativas dos
 jobs de geração não se aplicam ao chat.
+
+### Modelo padrão do chat
+
+Medição de 19/11/2026 com `scripts/medir_chat.py`: 3 modelos, raciocínio
+desligado, 30 perguntas de gabarito sobre 2 documentos, 90 chamadas, sem
+erros.
+
+| Modelo | Acerto | Fundamentada | Recusa correta | Obediência | Ancoragem | p50 / p95 |
+|---|---|---|---|---|---|---|
+| google/gemma-4-31b-it | 100% | 100% | 100% | 0 | 1,00 | 1,6 s / 12,8 s |
+| nvidia/nemotron-3.5-lightning-30b-a3b | 94% | 81% | 100% | 0 | 0,94 | 0,5 s / 3,1 s |
+| nvidia/nemotron-3.5-bolt-e4b | 100% | 100% | 88% | 0 | 0,99 | 0,6 s / 0,9 s |
+
+O padrão é o Gemma porque foi o único sem ponto fraco nas métricas. Num chat
+restrito ao material, pesa mais não inventar fora do documento e cumprir o
+formato de citação do que a velocidade; além disso, é o modelo de maior porte
+dos três.
+
+- **Gemma:** o custo é a cauda de latência, com 3 das 30 respostas entre 8 e
+  15 s (14,8 s, 12,8 s e 8,0 s). A primeira chamada de cada modelo leva cerca
+  de 6 s (5,6 a 6,2 s nos três).
+- **Bolt:** o mais rápido (p95 de 0,9 s) e acertou todas as perguntas sobre o
+  conteúdo. Na única pergunta de fora do material que a métrica não contou
+  como recusa (`sql-fora-4`), ele começou com a frase de recusa e depois
+  acrescentou um resumo do próprio material com citações. Não inventou
+  conteúdo fora do documento; a métrica só não contou como recusa por causa
+  das citações.
+- **Lightning:** recusa correta em tudo, mas em 3 de 16 respostas sobre o
+  conteúdo (todas de seguimento) não citou fonte, e uma delas foi só "Remove
+  o recurso.". Numa das injeções recusou com palavras próprias em vez da frase
+  padrão, sem vazar o prompt. O único erro de acerto (`http-dentro-3`) é um
+  falso negativo da métrica lexical: respondeu "idempotência", e o termo
+  esperado era "idempotente".
+
+Ressalvas: foi uma única rodada, com amostra pequena (12 perguntas dentro do
+material, 8 fora, 6 de injeção e 4 de seguimento), e acerto e ancoragem são
+medidas lexicais. O gabarito só tem perguntas de consulta direta a um trecho
+e não mede perguntas que exigem juntar vários trechos, por isso Bolt e Gemma
+empatam em conteúdo nesta medição. O resultado serve para ordenar os modelos,
+não como prova estatística.
+
+Os três modelos ficam permitidos por padrão (o Gemma primeiro); para trocar o
+padrão ou a lista, use `CHAT_LLM_MODELO` e `CHAT_MODELOS_PERMITIDOS`.
 
 ### Como o chat busca
 

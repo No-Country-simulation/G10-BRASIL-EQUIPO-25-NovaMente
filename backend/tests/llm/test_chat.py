@@ -12,7 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr, ValidationError
 
-from app.core.config import Settings, settings
+from app.core.config import MODELO_PADRAO_CHAT, MODELOS_PERMITIDOS_CHAT, Settings, settings
 from app.llm import (
     ErroAutenticacao,
     ErroConfiguracao,
@@ -26,6 +26,7 @@ from app.llm import (
     ProvedorDesconhecido,
     ProvedorDoChat,
     limites_da_geracao,
+    modelo_padrao_do_chat,
     modelos_do_chat,
     obter_provedor,
     obter_provedor_chat,
@@ -71,12 +72,14 @@ def _settings_com(monkeypatch, **variaveis) -> Settings:
 def test_padroes_sem_nenhuma_variavel_chat(monkeypatch):
     s = _settings_com(monkeypatch)
     assert s.chat_llm_provider == "nvidia"
-    assert s.chat_llm_modelo == ""
+    assert s.chat_llm_modelo == "google/gemma-4-31b-it"
     assert s.chat_llm_raciocinio == "desligado"
     assert s.chat_llm_max_tokens == 1024
     assert s.chat_llm_temperatura == 0.2
     assert s.chat_llm_timeout_segundos == 45
-    assert s.chat_modelos_permitidos == ""
+    assert s.chat_modelos_permitidos == (
+        "google/gemma-4-31b-it,nvidia/nemotron-3.5-bolt-e4b,nvidia/nemotron-3.5-lightning-30b-a3b"
+    )
     assert (
         s.chat_max_pergunta_caracteres,
         s.chat_max_mensagens_historico,
@@ -93,6 +96,40 @@ def test_variaveis_vazias_valem_o_padrao(monkeypatch):
     assert s.chat_llm_temperatura == 0.2
     assert s.chat_llm_timeout_segundos == 45
     assert s.chat_limite_por_minuto == 12
+    # Vazio vale o padrão também para o modelo e a lista (como as linhas vazias do .env.example).
+    assert s.chat_llm_modelo == MODELO_PADRAO_CHAT
+    assert s.chat_modelos_permitidos == MODELOS_PERMITIDOS_CHAT
+
+
+def test_padrao_do_chat_e_o_primeiro_dos_permitidos(monkeypatch):
+    s = _settings_com(monkeypatch)
+    assert s.chat_modelos_permitidos.split(",")[0] == s.chat_llm_modelo == "google/gemma-4-31b-it"
+    assert s.chat_modelos_permitidos.split(",") == [
+        "google/gemma-4-31b-it", "nvidia/nemotron-3.5-bolt-e4b", "nvidia/nemotron-3.5-lightning-30b-a3b",
+    ]
+
+
+def test_padrao_entra_primeiro_mesmo_fora_da_lista_configurada(chat_padrao, monkeypatch):
+    monkeypatch.setattr(settings, "chat_modelos_permitidos", "org/b, google/gemma-4-31b-it")
+    assert modelos_do_chat() == ["google/gemma-4-31b-it", "org/b"]
+    assert modelos_do_chat()[0] == modelo_padrao_do_chat()
+    assert modelos_do_chat()[0] == "google/gemma-4-31b-it"
+
+
+def test_padroes_da_nvidia_nao_valem_para_outro_provedor(monkeypatch):
+    s = _settings_com(monkeypatch, CHAT_LLM_PROVIDER="gemini")
+    assert (s.chat_llm_modelo, s.chat_modelos_permitidos) == ("", "")
+    vazio = _settings_com(monkeypatch, CHAT_LLM_PROVIDER="gemini", CHAT_LLM_MODELO="", CHAT_MODELOS_PERMITIDOS="")
+    assert (vazio.chat_llm_modelo, vazio.chat_modelos_permitidos) == ("", "")
+    proprio = _settings_com(monkeypatch, CHAT_LLM_PROVIDER="gemini", CHAT_LLM_MODELO="gemini-outro",
+                            CHAT_MODELOS_PERMITIDOS="gemini-a")
+    assert (proprio.chat_llm_modelo, proprio.chat_modelos_permitidos) == ("gemini-outro", "gemini-a")
+
+
+def test_variavel_de_ambiente_manda_no_modelo(monkeypatch):
+    s = _settings_com(monkeypatch, CHAT_LLM_MODELO="org/outro", CHAT_MODELOS_PERMITIDOS="org/x")
+    assert (s.chat_llm_modelo, s.chat_modelos_permitidos) == ("org/outro", "org/x")
+
 
 
 def test_valores_sao_normalizados(monkeypatch):
@@ -139,7 +176,7 @@ def test_provedor_padrao_e_nvidia_com_os_parametros_do_chat(chat_padrao):
     assert isinstance(provedor, ProvedorDoChat)
     base = provedor.base
     assert isinstance(base, ProvedorNvidia)
-    assert base.modelo == "nvidia/modelo-padrao"
+    assert base.modelo == "google/gemma-4-31b-it"
     assert base.temperatura == 0.2
     assert base.max_tokens == 1024
     assert base.raciocinio == "desligado"
@@ -162,7 +199,7 @@ def test_reaproveita_a_instancia_e_cria_outra_para_outro_modelo(chat_padrao, mon
     monkeypatch.setattr(settings, "chat_modelos_permitidos", "org/outro")
     padrao = obter_provedor_chat()
     assert obter_provedor_chat() is padrao
-    assert obter_provedor_chat("nvidia/modelo-padrao") is padrao
+    assert obter_provedor_chat("google/gemma-4-31b-it") is padrao
     assert obter_provedor_chat("  ") is padrao
     outro = obter_provedor_chat("org/outro")
     assert outro is not padrao
@@ -185,18 +222,26 @@ def test_modelo_fora_da_lista_levanta_erro_especifico_sem_a_chave(chat_padrao, m
     assert isinstance(erro.value, ErroConfiguracao)
     mensagem = str(erro.value)
     assert "'org/c'" in mensagem
-    assert "nvidia/modelo-padrao, org/a, org/b" in mensagem
-    assert erro.value.permitidos == ["nvidia/modelo-padrao", "org/a", "org/b"]
+    assert "google/gemma-4-31b-it, org/a, org/b" in mensagem
+    assert erro.value.permitidos == ["google/gemma-4-31b-it", "org/a", "org/b"]
     assert CHAVE_FALSA not in mensagem
     assert CHAVE_FALSA not in repr(erro.value)
     assert CHAVE_FALSA not in repr(obter_provedor_chat())
 
 
-def test_lista_vazia_permite_so_o_modelo_padrao(chat_padrao):
-    assert modelos_do_chat() == ["nvidia/modelo-padrao"]
-    assert obter_provedor_chat("nvidia/modelo-padrao").base.modelo == "nvidia/modelo-padrao"
+def test_lista_vazia_permite_so_o_modelo_padrao(chat_padrao, monkeypatch):
+    monkeypatch.setattr(settings, "chat_modelos_permitidos", "")
+    assert modelos_do_chat() == ["google/gemma-4-31b-it"]
+    assert obter_provedor_chat("google/gemma-4-31b-it").base.modelo == "google/gemma-4-31b-it"
     with pytest.raises(ModeloNaoPermitido):
         obter_provedor_chat("org/qualquer")
+
+
+def test_modelo_vazio_cai_no_modelo_do_provedor(chat_padrao, monkeypatch):
+    monkeypatch.setattr(settings, "chat_llm_modelo", "")
+    monkeypatch.setattr(settings, "chat_modelos_permitidos", "")
+    assert modelo_padrao_do_chat() == "nvidia/modelo-padrao"
+    assert obter_provedor_chat().base.modelo == "nvidia/modelo-padrao"
 
 
 def test_modelos_do_chat_padrao_primeiro_sem_repeticao(chat_padrao, monkeypatch):
@@ -220,6 +265,9 @@ def test_raciocinio_invalido_em_tempo_de_execucao(chat_padrao, monkeypatch):
 
 def test_gemini_no_chat_aceita_so_o_modelo(chat_padrao, monkeypatch):
     monkeypatch.setattr(settings, "chat_llm_provider", "gemini")
+    # Como o Settings deixa os dois campos com CHAT_LLM_PROVIDER=gemini (veja o teste de configuração).
+    monkeypatch.setattr(settings, "chat_llm_modelo", "")
+    monkeypatch.setattr(settings, "chat_modelos_permitidos", "")
     provedor = obter_provedor_chat()
     assert isinstance(provedor.base, ProvedorGemini)
     assert provedor.base.modelo == settings.modelo_llm
