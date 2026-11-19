@@ -24,7 +24,7 @@ from app.models import (
     PaginaAdaptacoes,
     PerfilDestinatario,
 )
-from app.services import repositorio
+from app.services import oci as oci_service, repositorio
 from app.services.exportacao import (
     DependenciasPdfAusentes,
     gerar_csv,
@@ -199,6 +199,17 @@ async def criar_por_arquivo(
                 }
             },
         )
+
+    # Upload do documento original para o OCI Object Storage (não bloqueia em caso de falha)
+    try:
+        nome_sanitizado = f"{uuid.uuid4().hex}_{nome}"
+        oci_service.fazer_upload_documento_original(
+            conteudo=conteudo_bytes,
+            nome_objeto=nome_sanitizado,
+            content_type=content_type or "application/octet-stream",
+        )
+    except Exception as exc:
+        logger.warning("Falha ao salvar arquivo original no OCI: %s", exc)
 
     job = criar_job(
         titulo=documento_titulo,
