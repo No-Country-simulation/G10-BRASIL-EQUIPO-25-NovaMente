@@ -452,8 +452,11 @@ requisições simultâneas não passam juntas pelo último lugar. Um job que ter
   - **gitleaks:** varre o histórico completo (`fetch-depth: 0`) com o binário
     oficial em contêiner, com a versão fixa na imagem, e `--redact` para não
     imprimir o segredo. Achado reprova o job. (Não usamos a `gitleaks-action`,
-    que exige licença em repositórios de organização.) Falso positivo conhecido
-    entra em um arquivo `.gitleaksignore` com a impressão digital do achado.
+    que exige licença em repositórios de organização.) O `.gitleaks.toml` da raiz
+    mantém as regras padrão e libera só valores fictícios de exemplos e testes
+    (`chave-ficticia...` e `fake_key_for_ci_testing`). Outro falso positivo
+    conhecido entra nesse arquivo, em `regexes`, ou em um `.gitleaksignore` com
+    a impressão digital do achado.
   - **pip-audit** (backend) e **npm audit** (frontend): informativos
     (`continue-on-error`). O resultado aparece no log e, no backend, no resumo
     da execução; vulnerabilidades não reprovam o pipeline.

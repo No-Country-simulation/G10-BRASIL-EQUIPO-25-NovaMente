@@ -7,6 +7,7 @@ Os testes são ignorados se o PyYAML não estiver instalado ou se a pasta
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -16,9 +17,11 @@ yaml = pytest.importorskip("yaml")
 RAIZ = Path(__file__).resolve().parents[2]
 WORKFLOW = RAIZ / ".github" / "workflows" / "seguranca.yml"
 DEPENDABOT = RAIZ / ".github" / "dependabot.yml"
+GITLEAKS = RAIZ / ".gitleaks.toml"
 
 pytestmark = pytest.mark.skipif(
-    not (WORKFLOW.exists() and DEPENDABOT.exists()), reason="pasta .github ausente"
+    not (WORKFLOW.exists() and DEPENDABOT.exists() and GITLEAKS.exists()),
+    reason="pasta .github ou .gitleaks.toml ausente",
 )
 
 
@@ -72,6 +75,25 @@ def test_gitleaks_por_container_com_tag_fixa_e_redact(workflow):
     imagem = next(t for t in texto.split() if "gitleaks/gitleaks:" in t)
     tag = imagem.split(":", 1)[1]
     assert tag != "latest" and tag.startswith("v8.")
+
+
+def test_gitleaks_usa_a_configuracao_da_raiz(workflow):
+    texto = "\n".join(p.get("run", "") for p in workflow["jobs"]["segredos"]["steps"])
+    assert "--config=/repo/.gitleaks.toml" in texto
+
+
+def test_gitleaks_toml_mantem_regras_padrao_e_libera_so_valores_ficticios():
+    import tomllib
+
+    config = tomllib.loads(GITLEAKS.read_text(encoding="utf-8"))
+    assert config["extend"]["useDefault"] is True
+    assert "paths" not in config["allowlist"]  # nenhum arquivo inteiro é ignorado
+    padroes = [re.compile(r) for r in config["allowlist"]["regexes"]]
+
+    for ficticio in ("chave-ficticia-de-exemplo", "fake_key_for_ci_testing"):
+        assert any(p.search(ficticio) for p in padroes), ficticio
+    for real in ("AIzaSyD-exemplo-de-chave-real-0123456789", "nvapi-abcdef0123456789abcdef"):
+        assert not any(p.search(real) for p in padroes), real
 
 
 def test_gitleaks_le_o_historico_completo(workflow):

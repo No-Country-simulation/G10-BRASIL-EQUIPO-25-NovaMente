@@ -25,6 +25,7 @@ jobs:
       # O binário oficial roda em container, com versão fixa. Não usamos a
       # gitleaks-action, que exige licença em repositórios de organização.
       # --redact esconde o valor do segredo no log; o código de saída 1 reprova o job.
+      # .gitleaks.toml libera só os valores fictícios de exemplos e testes.
       # GIT_CONFIG_*: o git do container precisa confiar na pasta montada.
       - name: Varrer o histórico com o gitleaks
         run: |
@@ -34,7 +35,7 @@ jobs:
             -e GIT_CONFIG_KEY_0=safe.directory \
             -e GIT_CONFIG_VALUE_0=/repo \
             ghcr.io/gitleaks/gitleaks:v8.21.2 \
-            detect --source=/repo --redact --verbose --no-banner
+            detect --source=/repo --config=/repo/.gitleaks.toml --redact --verbose --no-banner
 
   auditoria-backend:
     name: Auditoria de dependências do backend (pip-audit)
