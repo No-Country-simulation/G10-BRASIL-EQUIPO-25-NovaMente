@@ -40,6 +40,10 @@ class Settings(BaseSettings):
 
     # ── Jobs e histórico (SQLite) ────────────────────────────────────────────
     db_path: str = "./data/novamente.db"  # mesmo arquivo do catálogo; em produção, use um volume
+    # Backup do SQLite (app/services/backup.py). Caminhos relativos valem a partir
+    # da pasta de execução (backend/). BACKUP_RETENCAO fora do intervalo impede a subida.
+    backup_dir: str = Field("./data/backups", min_length=1)
+    backup_retencao: int = Field(7, ge=1)  # quantidade de backups mantidos na pasta
     job_ttl_segundos: int = 1800  # 30 minutos
     job_timeout_segundos: int = 300  # 5 minutos (igual ao frontend)
     llm_timeout_segundos: int = 120  # por chamada ao Gemini
