@@ -522,3 +522,69 @@ def test_valores_invalidos(monkeypatch, variavel, valor):
     with pytest.raises(ValidationError) as erro:
         _settings(monkeypatch, **{variavel: valor})
     assert variavel.lower() in str(erro.value)
+
+
+# ── Detalhes (executar_grafo_com_detalhes, usados pela medição) ──────────────
+
+
+def _com_detalhes(**kw):
+    return geracao_grafo.executar_grafo_com_detalhes(
+        documento_id="doc-grafo", titulo="APIs REST", texto=TEXTO, perfil="Desenvolvedor",
+        formato="Flashcards", nicho="Geral", nivel="Tecnico", **kw,
+    )
+
+
+def test_detalhes_por_rodada(modelo, rag):
+    modelo.roteiro = [FRACO, MEDIO, FRACO]
+    resultado, detalhes = _com_detalhes()
+    assert [r.rodada for r in detalhes.rascunhos] == [1, 2, 3]
+    assert [r.nota for r in detalhes.rascunhos] == [_nota(FRACO), _nota(MEDIO), _nota(FRACO)]
+    assert detalhes.motivo_parada == "rodadas_esgotadas"
+    assert detalhes.melhor_rodada == 2
+    assert resultado is detalhes.rascunhos[1].resultado
+    assert (detalhes.chamadas_total, detalhes.chamadas_rodada1) == (3, 1)
+    assert 0 <= detalhes.duracao_rodada1_s <= detalhes.duracao_total_s
+    # A rodada 1 é a passada única: mesmo prompt.
+    assert modelo.prompts[0] == _prompt_da_passada_unica()
+
+
+def test_detalhes_contam_a_repeticao_por_json_invalido_na_rodada1(modelo, rag):
+    modelo.roteiro = ["sem json", FIEL]
+    _resultado, detalhes = _com_detalhes()
+    assert (detalhes.chamadas_total, detalhes.chamadas_rodada1, len(detalhes.rascunhos)) == (2, 2, 1)
+    assert detalhes.motivo_parada == "aprovado"
+
+
+def test_detalhes_aceitam_limiar_revisoes_recuperacao_e_provedor_proprios(modelo, rag):
+    class Proprio:
+        nome = "proprio"
+        prompts: list = []
+
+        def gerar(self, mensagens, *, timeout_segundos):
+            Proprio.prompts.append(mensagens[0].conteudo)
+            return FRACO
+
+    consultas = []
+
+    def recuperar(documento_id, consulta, k=4):
+        consultas.append((documento_id, consulta, k))
+        return [Trecho(texto=PARAGRAFOS[0], indice=0, relevancia=1.0, documento_id=documento_id)]
+
+    _resultado, detalhes = _com_detalhes(limiar=0.99, max_revisoes=1, recuperar=recuperar, provedor=Proprio())
+    assert modelo.prompts == [] and rag["consultas"] == []  # nada do provedor nem do RAG configurados
+    assert len(Proprio.prompts) == 2 and len(consultas) == 2
+    assert detalhes.motivo_parada == "rodadas_esgotadas"  # max_revisoes=1: 2 rodadas
+    assert len(detalhes.rascunhos) == 2
+
+
+def test_detalhes_sao_imutaveis_e_erros_sobem_sem_fallback(modelo, rag):
+    import dataclasses
+
+    _resultado, detalhes = _com_detalhes()
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        detalhes.motivo_parada = "outro"
+    rag["falhas"].append(RuntimeError("falha no pesquisador"))
+    modelo.prompts = []
+    with pytest.raises(RuntimeError, match="falha no pesquisador"):
+        _com_detalhes()
+    assert modelo.prompts == []

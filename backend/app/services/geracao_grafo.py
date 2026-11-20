@@ -252,7 +252,12 @@ class _Execucao:
     verificar_interrupcao: Callable[[], None] | None
     limiar: float
     max_revisoes: int
+    recuperar: Callable | None = None  # padrão: rag.servico.recuperar
+    provedor_base: object | None = None  # padrão: o provedor da geração (obter_provedor)
     provedor: _ProvedorContado | None = None
+    inicio: float = 0.0
+    chamadas_rodada1: int = 0
+    duracao_rodada1: float | None = None
 
     @property
     def total_rodadas(self) -> int:
@@ -278,6 +283,9 @@ def _tolerar_na_revisao(no: str, rodada: int, exc: Exception) -> dict:
 def _montar_grafo(ex: _Execucao):
     from app.rag import servico as rag_servico  # importação tardia, como no pipeline
 
+    def buscar(**kw):
+        return (ex.recuperar or rag_servico.recuperar)(**kw)
+
     def roteador(_estado: EstadoGrafo) -> dict:
         inicio = _relogio()
         ex.verificar()
@@ -293,13 +301,13 @@ def _montar_grafo(ex: _Execucao):
         try:
             if rodada == 1:
                 ex.progresso("gerando", 55, "Recuperando trechos relevantes...")
-                trechos = rag_servico.recuperar(
+                trechos = buscar(
                     documento_id=ex.documento_id, consulta=pipeline._consulta_padrao(ex.titulo, ex.perfil), k=6
                 )
             else:
                 ex.progresso("gerando", _PERCENTUAL[rodada][0],
                              f"Buscando trechos para a revisão (rodada {rodada} de {ex.total_rodadas})...")
-                novos = rag_servico.recuperar(documento_id=ex.documento_id, consulta=estado["consulta"], k=K_REVISAO)
+                novos = buscar(documento_id=ex.documento_id, consulta=estado["consulta"], k=K_REVISAO)
                 trechos = juntar_trechos(estado["trechos"], novos)
         except Exception as exc:
             return _tolerar_na_revisao("pesquisador", rodada, exc)
@@ -324,7 +332,7 @@ def _montar_grafo(ex: _Execucao):
             retorno_revisor=estado.get("retorno_revisor"),
         )
         if ex.provedor is None:
-            ex.provedor = _ProvedorContado(pipeline._obter_provedor_da_geracao())
+            ex.provedor = _ProvedorContado(ex.provedor_base or pipeline._obter_provedor_da_geracao())
         antes = ex.provedor.chamadas
         try:
             with limites_da_geracao(ex.prazo, ex.verificar_interrupcao):
@@ -352,6 +360,9 @@ def _montar_grafo(ex: _Execucao):
         nota = avaliacao.ancoragem_fonte_score
         rascunhos = [*estado["rascunhos"],
                      Rascunho(rodada, pipeline.ResultadoGeracao(conteudo, conceitos, avaliacao, textos), nota)]
+        if rodada == 1:  # a rodada 1 é a passada única: guardada à parte para a medição
+            ex.chamadas_rodada1 = ex.provedor.chamadas if ex.provedor else 0
+            ex.duracao_rodada1 = _relogio() - ex.inicio
         atualizacao: dict = {"rascunhos": rascunhos}
         if nota >= ex.limiar:
             atualizacao["motivo_parada"] = "aprovado"
@@ -391,19 +402,77 @@ def _montar_grafo(ex: _Execucao):
     return grafo.compile()
 
 
-def _executar_grafo(ex: _Execucao) -> pipeline.ResultadoGeracao:
-    inicio = _relogio()
+@dataclass(frozen=True)
+class DetalhesGrafo:
+    """O que aconteceu numa execução do grafo (para a medição; sem texto no log)."""
+
+    rascunhos: tuple[Rascunho, ...]  # um por rodada, na ordem
+    motivo_parada: str | None
+    melhor_rodada: int
+    chamadas_total: int
+    chamadas_rodada1: int
+    duracao_total_s: float
+    duracao_rodada1_s: float | None
+
+
+def _executar_grafo(ex: _Execucao) -> tuple[pipeline.ResultadoGeracao, DetalhesGrafo]:
+    ex.inicio = inicio = _relogio()
     final = _montar_grafo(ex).invoke({}, {"recursion_limit": LIMITE_RECURSAO})
     rascunhos: list[Rascunho] = final.get("rascunhos") or []
     if not rascunhos:  # só acontece se a revisão falhar sem rascunho, o que a rodada 1 impede
         raise RuntimeError(pipeline._MSG_RESPOSTA_INVALIDA)
     melhor = max(rascunhos, key=lambda r: (r.nota, -r.rodada))
+    chamadas = ex.provedor.chamadas if ex.provedor else 0
+    duracao = _relogio() - inicio
     logger.info(
         "Grafo: fim rodadas=%d motivo=%s melhor_rodada=%d ancoragem=%.4f chamadas=%d duracao=%.2fs",
-        len(rascunhos), final.get("motivo_parada"), melhor.rodada, melhor.nota,
-        ex.provedor.chamadas if ex.provedor else 0, _relogio() - inicio,
+        len(rascunhos), final.get("motivo_parada"), melhor.rodada, melhor.nota, chamadas, duracao,
     )
-    return melhor.resultado
+    detalhes = DetalhesGrafo(
+        rascunhos=tuple(rascunhos),
+        motivo_parada=final.get("motivo_parada"),
+        melhor_rodada=melhor.rodada,
+        chamadas_total=chamadas,
+        chamadas_rodada1=ex.chamadas_rodada1,
+        duracao_total_s=duracao,
+        duracao_rodada1_s=ex.duracao_rodada1,
+    )
+    return melhor.resultado, detalhes
+
+
+def executar_grafo_com_detalhes(
+    *,
+    documento_id: str,
+    titulo: str,
+    texto: str,
+    perfil,
+    formato,
+    nicho,
+    nivel,
+    progresso: Progresso = lambda _e, _p, _m: None,
+    prazo: float | None = None,
+    verificar_interrupcao: Callable[[], None] | None = None,
+    limiar: float | None = None,
+    max_revisoes: int | None = None,
+    recuperar: Callable | None = None,
+    provedor=None,
+) -> tuple[pipeline.ResultadoGeracao, DetalhesGrafo]:
+    """Roda só o grafo (sem semáforo nem fallback) e devolve o resultado e os detalhes.
+
+    ``limiar`` e ``max_revisoes`` (padrão: os de ``settings``), ``recuperar``
+    (padrão: ``rag.servico.recuperar``) e ``provedor`` (padrão: o da geração)
+    existem para a medição (scripts/medir_geracao.py). Erros sobem como estão.
+    """
+    execucao = _Execucao(
+        documento_id=documento_id, titulo=titulo, texto=texto, perfil=perfil, formato=formato,
+        nicho=nicho, nivel=nivel,
+        progresso=progresso if isinstance(progresso, _ProgressoMonotonico) else _ProgressoMonotonico(progresso),
+        prazo=prazo, verificar_interrupcao=verificar_interrupcao,
+        limiar=settings.grafo_limiar_ancoragem if limiar is None else limiar,
+        max_revisoes=settings.grafo_max_revisoes if max_revisoes is None else max_revisoes,
+        recuperar=recuperar, provedor_base=provedor,
+    )
+    return _executar_grafo(execucao)
 
 
 def executar_pipeline_grafo(
@@ -432,14 +501,9 @@ def executar_pipeline_grafo(
                     settings.grafo_max_simultaneos)
         return pipeline._gerar_passada_unica(**argumentos)
 
-    execucao = _Execucao(
-        documento_id=documento_id, titulo=titulo, texto=texto, perfil=perfil, formato=formato,
-        nicho=nicho, nivel=nivel, progresso=monotonico, prazo=prazo,
-        verificar_interrupcao=verificar_interrupcao,
-        limiar=settings.grafo_limiar_ancoragem, max_revisoes=settings.grafo_max_revisoes,
-    )
     try:
-        return _executar_grafo(execucao)
+        resultado, _detalhes = executar_grafo_com_detalhes(**argumentos)
+        return resultado
     except Exception as exc:
         if _sem_fallback(exc):
             raise

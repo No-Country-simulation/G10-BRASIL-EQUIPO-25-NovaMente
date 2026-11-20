@@ -318,6 +318,42 @@ Limitações:
 - Roteador e crítico são determinísticos nesta versão; diagramas ficam para
   outra etapa.
 
+### Medir a geração multiagente
+
+`scripts/medir_geracao.py` decide, com números, se vale ligar o grafo por
+padrão. O desenho é pareado: a rodada 1 do grafo é a passada única (mesmo
+prompt, mesmos trechos), então cada job compara a rodada 1 com o resultado
+final sem rodar a passada única à parte. Para cada documento de
+`data/exemplos/`, formato e repetição, mede a ancoragem e a clareza da rodada
+1 e do final, as rodadas, o motivo da parada, as chamadas e o tempo (total e
+da rodada 1) e a cópia literal (fração dos trechos de 8 palavras do conteúdo
+que aparecem iguais no documento).
+
+```bash
+cd backend
+python scripts/medir_geracao.py --listar
+python scripts/medir_geracao.py --simulado
+python scripts/medir_geracao.py --recuperacao lexical --limiar 0.9
+```
+
+- **Provedor:** o de `LLM_PROVIDER`; `--modelo` troca o modelo só no processo.
+  `--intervalo` (padrão 3 s) espaça as chamadas; um 429 que sobrar espera
+  20 s e repete a combinação uma vez.
+- **Recuperação:** `real` (padrão) usa o RAG da geração num Chroma
+  temporário e precisa de `GOOGLE_API_KEY`; `lexical` usa o BM25 do chat, sem
+  rede. O relatório diz qual foi usada, porque muda o resultado.
+- **Limiar e revisões:** `--limiar` e `--max-revisoes` valem só no processo.
+  Com o limiar padrão, muitos jobs aprovam na rodada 1 e não há ganho a medir;
+  o relatório mostra essa proporção logo no início.
+- **Veredito:** RECOMENDADO só com pelo menos 5 jobs revisados, ganho médio de
+  ancoragem de 0,05 ou mais nos revisados, cópia literal subindo no máximo
+  0,10, até 2 chamadas extras por job, p95 do tempo total dentro de
+  `JOB_TIMEOUT_SEGUNDOS` e até 10% de erros. Com menos revisados, INCONCLUSIVO.
+- **Relatório:** Markdown e JSON em `data/relatorios/medicao_geracao_<data>`,
+  sem texto do documento nem do conteúdo gerado e sem chaves.
+- **Limitações:** a amostra é pequena e a ancoragem é lexical; serve para
+  decidir entre os modos, não como prova estatística.
+
 ## Jobs e histórico
 
 Jobs de geração ficam no arquivo SQLite apontado por `DB_PATH`; a pasta é
@@ -559,6 +595,7 @@ Base: `/api/v1`.
 | Alunos (empresa) | `POST/GET /alunos`, `GET/PATCH/DELETE /alunos/{id}` |
 | Vínculos | `GET/PUT /alunos/{id}/materiais`, `POST/DELETE /alunos/{id}/materiais/{material_id}` |
 | Área do aluno | `GET /aluno/identificacao`, `GET /aluno/materiais`, `GET /aluno/materiais/{id}` |
+| Chat (veja [Chat sobre o material](#chat-sobre-o-material)) | `POST /aluno/materiais/{material_id}/chat`, `POST /materiais/{material_id}/chat`, `GET /chat/modelos` |
 
 Não existe `POST /materiais`: a criação continua em `POST /adaptacoes` e `POST /adaptacoes/upload`, e o pipeline cria o material em rascunho ao concluir.
 
@@ -797,8 +834,9 @@ pytest tests/ -v
 
 O `conftest.py` aponta `DATABASE_URL` para um diretório temporário por sessão,
 cria o schema e limpa as tabelas entre os testes. A suíte não toca em
-`backend/data/novamente.db`. A entrega adiciona 88 testes cobrindo banco,
-repositório, materiais, alunos, vínculos e catálogo do aluno.
+`backend/data/novamente.db`. Os testes cobrem, entre outros, banco,
+repositório, materiais, alunos, vínculos, catálogo do aluno, geração, chat e
+os scripts de medição, sempre sem rede e com provedores falsos.
 
 ## Integração com o Frontend
 
