@@ -401,6 +401,62 @@ O catálogo de materiais, alunos e vínculos é persistido em SQLite via SQLAlch
 - `material_id` é igual a `adaptacao_id` nesta fase; todo material gerado nasce com `visibilidade = "rascunho"`.
 - Excluir aluno remove vínculos em cascata; excluir material remove vínculos em cascata e tenta apagar o objeto do OCI.
 
+### Política de esquema (migrações)
+
+No MVP não há migrações. A decisão (opção B da issue #67, a confirmar com o
+Renato) é recriar o banco quando o esquema do catálogo mudar e impedir que o
+backend suba com um arquivo de outra versão.
+
+- **Escopo:** alunos, materiais e vínculos (modelos em `app/models/db.py`).
+  O `create_all` só cria tabelas que não existem e nunca altera as existentes,
+  por isso uma coluna, constraint ou índice novo não chegaria a um banco antigo.
+  Jobs e a tabela `pacotes` seguem com o `PRAGMA user_version` próprio e não
+  entram nesta verificação.
+- **O que o banco guarda:** a tabela `esquema_catalogo`, com a versão do
+  esquema e uma impressão digital (hash) das tabelas, colunas, índices e
+  constraints dos modelos.
+- **Duas proteções:**
+  - `ESQUEMA_VERSAO` (em `app/core/esquema.py`) é um número que quem mudar um
+    modelo incrementa na mesma alteração. Ele aparece na mensagem de erro.
+  - A impressão digital é calculada sozinha a partir dos modelos. Se alguém
+    mudar um modelo e esquecer de incrementar a versão, o hash diverge e a
+    subida falha do mesmo jeito.
+- **Na subida** (`repositorio.iniciar()`, logo depois do `create_all`):
+  1. Banco novo ou sem `esquema_catalogo` (criado antes desta política): o
+     backend compara as colunas, índices e constraints reais (`PRAGMA`) com os
+     modelos. Se baterem, grava versão e impressão digital e segue; se não,
+     falha.
+  2. Banco com `esquema_catalogo`: se a versão ou a impressão digital forem
+     diferentes das do código, falha.
+  3. Banco na versão atual: sobe normalmente, sem gravar nada (subir duas
+     vezes não muda o arquivo).
+- **A falha** é um `EsquemaDefasadoError` (um `RuntimeError`) com mensagem em
+  português dizendo o que divergiu e como recriar o banco. A verificação só lê
+  o catálogo e só escreve em `esquema_catalogo`; nenhum job, pacote ou
+  material é alterado ou apagado, nem quando ela falha.
+
+**Ao mudar um modelo do catálogo**, antes da release:
+
+1. Incremente `ESQUEMA_VERSAO` em `app/core/esquema.py`.
+2. Registre a mudança no PR: quem tiver um banco local precisa recriá-lo.
+
+**Como recriar o banco:**
+
+- **Dev:** pare o backend, mova (ou apague) `backend/data/novamente.db` e os
+  arquivos `novamente.db-wal` e `novamente.db-shm`, e suba de novo. As tabelas
+  são criadas do zero.
+- **OCI:** pare o container, mova ou apague o arquivo do banco no volume
+  persistente (o caminho de `DATABASE_URL`, com `-wal` e `-shm`) e suba de novo.
+  Sem dados reais antes da release, isso é aceitável.
+- **Atenção:** com `DB_PATH` e `DATABASE_URL` no mesmo arquivo (o padrão),
+  recriar o banco também apaga jobs e histórico de pacotes. Mova o arquivo em
+  vez de apagá-lo se precisar de uma cópia.
+
+**Depois da primeira release** (dados reais no volume da OCI), recriar deixa de
+ser aceitável. Nesse momento a política deve migrar para a opção A: Alembic
+com migrações versionadas, aplicadas na subida. O `ESQUEMA_VERSAO` e a tabela
+`esquema_catalogo` podem ser substituídos pela tabela `alembic_version`.
+
 ### Rotas novas
 
 Base: `/api/v1`.
