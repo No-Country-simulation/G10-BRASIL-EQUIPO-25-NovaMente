@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     app_nome: str = "NovaMente API"
     app_versao: str = "0.1.0"
     debug: bool = False
+    # Chave das rotas da empresa (cabeçalho X-API-Key). Vazia = rotas abertas.
+    # repr=False para a chave nunca aparecer ao imprimir as configurações.
+    api_key_empresa: str = Field("", repr=False)
 
     # ── Google Gemini ────────────────────────────────────────────────────────
     google_api_key: str = ""

@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
+from app.core.seguranca import exigir_chave_empresa
 from app.models import (
     AlunoAtualizacao,
     AlunoCriacao,
@@ -21,7 +22,11 @@ from app.models import (
 from app.models.db import AlunoDB, MaterialDB
 from app.services import alunos as alunos_service
 
-router = APIRouter(prefix="/alunos", tags=["alunos"])
+router = APIRouter(
+    prefix="/alunos",
+    tags=["alunos"],
+    dependencies=[Depends(exigir_chave_empresa)],
+)
 
 OrdenacaoAluno = Literal["nome:asc", "nome:desc", "criado_em:desc"]
 
