@@ -17,15 +17,23 @@ conteúdo gerado:
 - posição do ponto de falha (caractere e fração da resposta) e sinais como
   cerca de markdown, texto antes ou depois do JSON e chaves desbalanceadas.
 
+Com ``--via-pipeline``, cada geração passa por ``pipeline._gerar_conteudo`` (as
+duas tentativas, com o prazo do job em ``limites_da_geracao`` e a contagem de
+chamadas do grafo), como o redator na medição. Por tentativa, o relatório traz
+o tipo e o motivo que a linha de log do pipeline mostra, o motivo de término,
+os tokens, o timeout passado ao provedor e o tempo.
+
 Uso (no container, a partir de /app):
     python scripts/diagnosticar_resposta.py --simulado
     python scripts/diagnosticar_resposta.py --formato Quiz --documento git_versionamento.md --n 5
+    python scripts/diagnosticar_resposta.py --via-pipeline --formato Quiz --documento git_versionamento.md
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import logging
 import re
 import sys
 import time
@@ -208,6 +216,12 @@ def _metadados_do_provedor(provedor) -> tuple[str | None, int | None, int | None
     return motivo, resposta, total
 
 
+# Mesma mensagem de app/llm/nvidia.py, para o simulado mostrar o que o log real mostra.
+MSG_CORTADA_NVIDIA = (
+    "NVIDIA NIM: resposta cortada pelo limite de tokens; aumente "
+    "NVIDIA_NIM_MAX_TOKENS ou reduza o raciocínio."
+)
+
 _QUIZ_VALIDO = {
     "tipo": "quiz", "titulo": "Quiz", "introducao_contextualizada": "Revisão do material.",
     "itens": [{"pergunta": "Qual método cria?", "opcoes": ["GET", "POST"], "resposta_correta": 1,
@@ -227,7 +241,7 @@ def respostas_simuladas() -> list:
     uma_opcao["itens"][0]["opcoes"] = ["POST"]
     return [
         ("stop", valido),
-        ("length", ErroRespostaInvalida("cortada")),
+        ("length", ErroRespostaInvalida(MSG_CORTADA_NVIDIA)),
         ("stop", valido[: len(valido) // 2]),
         ("stop", valido.replace('"Revisão do material."', '"Revisão\ndo material."')),
         ("stop", "```json\n" + valido + "\n```\n\nExemplo: ```{\"a\": 1}```"),
@@ -312,6 +326,125 @@ def diagnosticar(provedor, prompt: str, formato: str, n: int, ritmo: Ritmo, relo
     return diagnosticos
 
 
+# ── Pelo caminho da geração (--via-pipeline) ──────────────────────────────────
+
+
+@dataclass
+class Tentativa:
+    tentativa: int
+    resultado: str  # "valida" ou o tipo da exceção (o mesmo nome que vai para o log)
+    motivo: str | None = None  # o motivo que a linha de log do pipeline mostra
+    motivo_fim: str | None = None
+    tokens_resposta: int | None = None
+    tokens_total: int | None = None
+    timeout_s: float | None = None  # timeout que o pipeline passou ao provedor
+    duracao_s: float | None = None
+
+
+@dataclass
+class ExecucaoPipeline:
+    execucao: int
+    resultado: str  # "ok" ou "falha"
+    erro: str | None = None  # tipo (e mensagem, se for do pipeline) do erro final
+    chamadas: int = 0
+    duracao_s: float | None = None
+    tentativas: list[Tentativa] = field(default_factory=list)
+
+
+_LOG_RESPOSTA_INVALIDA = "Resposta inválida do LLM"
+_POSICAO_NO_MOTIVO = re.compile(r" \(caractere \d+ de \d+\)$")
+
+
+class _CapturaDoLog(logging.Handler):
+    """Guarda (tipo, motivo) de cada linha "Resposta inválida do LLM" do pipeline."""
+
+    def __init__(self):
+        super().__init__(logging.WARNING)
+        self.registros: list[tuple[str, str]] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        if str(record.msg).startswith(_LOG_RESPOSTA_INVALIDA) and len(record.args or ()) == 4:
+            self.registros.append((str(record.args[2]), str(record.args[3])))
+
+
+class ProvedorAnotado:
+    """Anota cada chamada (tempo, timeout, motivo de fim, tokens) sem mudar o resultado."""
+
+    def __init__(self, base, origem, relogio=time.monotonic):
+        self.base, self.origem, self.relogio = base, origem, relogio
+        self.nome = getattr(base, "nome", "provedor")
+        self.chamadas: list[dict] = []
+
+    def gerar(self, mensagens, *, timeout_segundos: float) -> str:
+        inicio = self.relogio()
+        try:
+            return self.base.gerar(mensagens, timeout_segundos=timeout_segundos)
+        finally:
+            motivo, resposta, total = _metadados_do_provedor(self.origem)
+            self.chamadas.append({"motivo_fim": motivo, "tokens_resposta": resposta, "tokens_total": total,
+                                  "timeout_s": timeout_segundos, "duracao_s": round(self.relogio() - inicio, 2)})
+
+
+def _erro_final(exc: BaseException) -> str:
+    # As mensagens de RuntimeError do pipeline são fixas e em português; as outras, só o tipo.
+    return f"{type(exc).__name__}: {exc}" if isinstance(exc, RuntimeError) else type(exc).__name__
+
+
+def diagnosticar_via_pipeline(provedor, prompt: str, formato: str, n: int, ritmo: Ritmo,
+                              relogio=time.monotonic, avisar=lambda _e: None) -> list[ExecucaoPipeline]:
+    """Roda N gerações por ``pipeline._gerar_conteudo``, como o redator do grafo na medição.
+
+    Mesmas camadas da medição: ``_ProvedorContado`` (do grafo) sobre o provedor
+    ritmado, dentro de ``limites_da_geracao`` com o prazo do job. As retentativas
+    de falha transitória do provedor ficam dentro de uma chamada anotada.
+    """
+    from app.llm import limites_da_geracao
+    from app.services.geracao_grafo import _ProvedorContado
+
+    execucoes = []
+    for numero in range(1, n + 1):
+        anotado = ProvedorAnotado(ProvedorRitmado(provedor, ritmo), provedor, relogio)
+        contado = _ProvedorContado(anotado)
+        captura = _CapturaDoLog()
+        pipeline.logger.addHandler(captura)
+        inicio = relogio()
+        execucao = ExecucaoPipeline(numero, "ok")
+        try:
+            with limites_da_geracao(relogio() + settings.job_timeout_segundos, None):
+                pipeline._gerar_conteudo(contado, prompt, formato, avisar_revisao=lambda: None)
+        except Exception as exc:  # noqa: BLE001 - o diagnóstico registra qualquer falha
+            execucao.resultado, execucao.erro = "falha", _erro_final(exc)
+        finally:
+            pipeline.logger.removeHandler(captura)
+        execucao.duracao_s = round(relogio() - inicio, 2)
+        execucao.chamadas = contado.chamadas
+        for indice, chamada in enumerate(anotado.chamadas):
+            if indice < len(captura.registros):
+                resultado, motivo = captura.registros[indice]
+            elif execucao.resultado == "ok":
+                resultado, motivo = VALIDA, None
+            else:  # erro que o pipeline não repete (timeout, limite de uso...): sobe sem log
+                resultado, motivo = execucao.erro or OUTRO, None
+            execucao.tentativas.append(Tentativa(indice + 1, resultado, motivo, **chamada))
+        execucoes.append(execucao)
+        avisar(execucao)
+    return execucoes
+
+
+def resumo_via_pipeline(execucoes: list[ExecucaoPipeline]) -> dict:
+    # No resumo, a posição do erro de JSON sai para juntar as tentativas do mesmo tipo.
+    tentativas = Counter(
+        f"{t.resultado}: {_POSICAO_NO_MOTIVO.sub('', t.motivo)}" if t.motivo else t.resultado
+        for e in execucoes for t in e.tentativas
+    )
+    return {
+        "execucoes_ok": sum(e.resultado == "ok" for e in execucoes),
+        "execucoes_com_falha": sum(e.resultado == "falha" for e in execucoes),
+        "chamadas": sum(e.chamadas for e in execucoes),
+        "tentativas": dict(tentativas.most_common()),
+    }
+
+
 # ── Relatório ─────────────────────────────────────────────────────────────────
 
 
@@ -354,6 +487,39 @@ def montar_relatorio(diagnosticos: list[Diagnostico], config: dict, quando: date
     return "\n".join(linhas) + "\n"
 
 
+def montar_relatorio_via_pipeline(execucoes: list[ExecucaoPipeline], config: dict, quando: datetime) -> str:
+    r = resumo_via_pipeline(execucoes)
+    linhas = [
+        f"# Diagnóstico pelo caminho da geração, {quando:%Y-%m-%d %H:%M}", "",
+        f"- Provedor: {config['provedor']}; modelo: `{config['modelo']}`",
+        f"- Raciocínio: {config['raciocinio']}; max_tokens: {config['max_tokens']}; "
+        f"orçamento de raciocínio: {config['orcamento_raciocinio']}",
+        f"- Timeout por chamada: {config['timeout_s']} s; prazo do job: {config['prazo_job_s']} s; "
+        f"retentativas de falha transitória: {config['tentativas_transitorias']}",
+        f"- Formato: {config['formato']}; documento: {config['documento']}; gerações: {config['n']}; "
+        f"recuperação: lexical (k=6)",
+        "- Cada geração passa por `pipeline._gerar_conteudo` (até 2 tentativas), como o redator do grafo.",
+        "- Só metadados: nada do documento nem do conteúdo gerado.", "",
+        "## Resumo", "",
+        f"- Gerações ok: {r['execucoes_ok']}; com falha: {r['execucoes_com_falha']}; chamadas: {r['chamadas']}",
+        "", "| Tentativa (tipo: motivo do log) | Vezes |", "|---|---|",
+        *[f"| {chave} | {vezes} |" for chave, vezes in r["tentativas"].items()], "",
+        "## Tentativas", "",
+        "| Geração | Resultado | Chamadas | Tempo (s) | Tentativa | Tipo | Motivo | Motivo de fim "
+        "| Tokens (resposta / total) | Timeout (s) | Tempo da chamada (s) |",
+        "|---|---|---|---|---|---|---|---|---|---|---|",
+    ]
+    for e in execucoes:
+        resultado = e.resultado if not e.erro else f"{e.resultado} ({e.erro})"
+        for t in e.tentativas or [Tentativa(0, "—")]:
+            linhas.append(
+                f"| {e.execucao} | {resultado} | {e.chamadas} | {_v(e.duracao_s)} | {t.tentativa} | {t.resultado} "
+                f"| {_v(t.motivo)} | {_v(t.motivo_fim)} | {_v(t.tokens_resposta)} / {_v(t.tokens_total)} "
+                f"| {_v(t.timeout_s)} | {_v(t.duracao_s)} |"
+            )
+    return "\n".join(linhas) + "\n"
+
+
 def gravar(markdown: str, dados: dict, quando: datetime, pasta: Path = RELATORIOS) -> tuple[Path, Path]:
     pasta.mkdir(parents=True, exist_ok=True)
     base = pasta / f"diagnostico_resposta_{quando:%Y%m%d_%H%M%S}"
@@ -375,6 +541,8 @@ def main(argv: list[str] | None = None, *, provedor=None, pasta_relatorios: Path
     parser.add_argument("--intervalo", type=float, default=None,
                         help=f"segundos entre chamadas (padrão {INTERVALO_PADRAO_SEGUNDOS:g}; 0 no simulado)")
     parser.add_argument("--simulado", action="store_true", help="provedor falso que reproduz cada categoria")
+    parser.add_argument("--via-pipeline", action="store_true",
+                        help="cada geração pelo pipeline._gerar_conteudo (2 tentativas), como na medição")
     args = parser.parse_args(argv)
 
     disponiveis = sorted(p.name for p in EXEMPLOS.glob("*.md"))
@@ -411,14 +579,39 @@ def main(argv: list[str] | None = None, *, provedor=None, pasta_relatorios: Path
         "formato": args.formato, "documento": args.documento, "n": args.n, "intervalo_s": intervalo,
     }
     prompt = montar_prompt(carregar_documento(EXEMPLOS / args.documento), args.formato)
+    ritmo = Ritmo(intervalo, dormir=dormir, relogio=relogio)
+
+    if args.via_pipeline:
+        config.update(via_pipeline=True, timeout_s=settings.llm_timeout_segundos,
+                      prazo_job_s=settings.job_timeout_segundos, tentativas_transitorias=settings.llm_tentativas)
+
+        def avisar_execucao(e: ExecucaoPipeline) -> None:
+            passos = "; ".join(f"{t.resultado}" + (f" ({t.motivo})" if t.motivo else "") for t in e.tentativas)
+            print(f"geração {e.execucao}: {e.resultado} | {e.chamadas} chamada(s) | {_v(e.duracao_s)} s | {passos}",
+                  flush=True)
+
+        execucoes = diagnosticar_via_pipeline(provedor, prompt, args.formato, args.n, ritmo,
+                                              relogio=relogio, avisar=avisar_execucao)
+        agora = datetime.now()
+        r = resumo_via_pipeline(execucoes)
+        md, js = gravar(
+            montar_relatorio_via_pipeline(execucoes, config, agora),
+            {"quando": agora.isoformat(timespec="seconds"), "configuracao": config, "resumo": r,
+             "execucoes": [asdict(e) for e in execucoes]},
+            agora, pasta_relatorios,
+        )
+        print(f"\nGerações ok: {r['execucoes_ok']}; com falha: {r['execucoes_com_falha']}; "
+              f"chamadas: {r['chamadas']}")
+        for chave, vezes in r["tentativas"].items():
+            print(f"  {chave}: {vezes}")
+        print(f"\nRelatórios: {md} e {js}")
+        return 0
 
     def avisar(d: Diagnostico) -> None:
         print(f"chamada {d.chamada}: {d.categoria} | {d.mensagem or '—'} | tamanho {_v(d.tamanho)} "
               f"| fim {_v(d.motivo_fim)} | {_v(d.duracao_s)} s", flush=True)
 
-    diagnosticos = diagnosticar(provedor, prompt, args.formato, args.n, Ritmo(intervalo, dormir=dormir,
-                                                                               relogio=relogio),
-                                relogio=relogio, avisar=avisar)
+    diagnosticos = diagnosticar(provedor, prompt, args.formato, args.n, ritmo, relogio=relogio, avisar=avisar)
     agora = datetime.now()
     md, js = gravar(
         montar_relatorio(diagnosticos, config, agora),

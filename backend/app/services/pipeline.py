@@ -176,6 +176,9 @@ def _montar_prompt(
 # ── Parser de resposta do LLM ─────────────────────────────────────────────────
 
 
+_MSG_SEM_JSON = "LLM não retornou JSON válido."
+
+
 def _extrair_json(texto: str) -> dict:
     """Extrai o primeiro objeto JSON encontrado na resposta do LLM."""
     # Remove blocos ```json ... ```
@@ -183,7 +186,7 @@ def _extrair_json(texto: str) -> dict:
     inicio = limpo.find("{")
     fim = limpo.rfind("}") + 1
     if inicio == -1 or fim == 0:
-        raise ValueError("LLM não retornou JSON válido.")
+        raise ValueError(_MSG_SEM_JSON)
     return json.loads(limpo[inicio:fim])
 
 
@@ -299,12 +302,67 @@ def _gerar_conteudo(
             return resposta_texto, conteudo, raw.get("conceitos_chave")
         except (_RespostaInvalida, ValueError, KeyError, TypeError, ValidationError) as exc:
             logger.warning(
-                "Resposta inválida do LLM (tentativa %d de %d): %s",
+                "Resposta inválida do LLM (tentativa %d de %d): %s; %s",
                 tentativa,
                 _TENTATIVAS_RESPOSTA_INVALIDA,
                 type(exc).__name__,
+                motivo_da_resposta_invalida(exc),
             )
     raise RuntimeError(_MSG_RESPOSTA_INVALIDA)
+
+
+# Mensagens fixas dos provedores (app/llm/nvidia.py e gemini.py): não carregam
+# nada da resposta, então podem ir para o log como estão.
+_MENSAGENS_DO_PROVEDOR = frozenset({
+    "NVIDIA NIM: resposta que não é JSON.",
+    "NVIDIA NIM: resposta sem choices ou sem message.",
+    "NVIDIA NIM: resposta cortada pelo limite de tokens; aumente "
+    "NVIDIA_NIM_MAX_TOKENS ou reduza o raciocínio.",
+    "NVIDIA NIM: resposta sem texto.",
+    "NVIDIA NIM: resposta vazia.",
+    "Resposta vazia ou bloqueada.",
+})
+_SEM_TEXTO_DO_GEMINI = re.compile(r"Resposta sem texto: [A-Za-z_]\w{0,60}")  # nome do tipo da exceção
+_CAMPOS_LIDOS_DIRETO = frozenset({"titulo", "introducao_contextualizada", "itens"})
+_PARTE_DO_CAMINHO = re.compile(r"[A-Za-z_]\w{0,40}")
+
+
+def _caminho_seguro(loc) -> str:
+    """Caminho do erro de esquema só com nomes de campo e índices."""
+    return ".".join(
+        str(parte) if isinstance(parte, int) or _PARTE_DO_CAMINHO.fullmatch(str(parte)) else "?"
+        for parte in loc
+    )
+
+
+def motivo_da_resposta_invalida(exc: BaseException) -> str:
+    """Motivo da resposta inválida para o log, sem o texto do documento nem da resposta.
+
+    Sai a mensagem quando ela é uma constante do provedor ou do pipeline; nos
+    outros casos, só a categoria (com posição, campo e tipo do erro, nunca o
+    valor recebido).
+    """
+    if isinstance(exc, _RespostaInvalida):
+        causa = exc.__cause__
+        mensagem = str(causa if causa is not None else exc)
+        if mensagem in _MENSAGENS_DO_PROVEDOR or _SEM_TEXTO_DO_GEMINI.fullmatch(mensagem):
+            return mensagem
+        return f"erro do provedor sem mensagem conhecida ({type(causa or exc).__name__})"
+    if isinstance(exc, json.JSONDecodeError):
+        # O texto antes de ":" é fixo do módulo json (o resto pode citar a resposta).
+        return f"não é JSON: {exc.msg.split(':')[0]} (caractere {exc.pos} de {len(exc.doc)})"
+    if isinstance(exc, ValidationError):
+        erros = exc.errors(include_url=False, include_input=False, include_context=False)
+        detalhes = ", ".join(f"{_caminho_seguro(e['loc'])} {e['type']}" for e in erros[:5])
+        return f"fora do esquema: {len(erros)} erro(s): {detalhes}"
+    if isinstance(exc, KeyError):
+        chave = exc.args[0] if exc.args else None
+        return f"campo ausente: {chave}" if chave in _CAMPOS_LIDOS_DIRETO else "campo ausente"
+    if isinstance(exc, TypeError):
+        return "item fora do formato (não é objeto)"
+    if isinstance(exc, ValueError) and str(exc) == _MSG_SEM_JSON:
+        return _MSG_SEM_JSON
+    return "erro de formato"
 
 
 # ── Avaliação de qualidade (app/services/ancoragem.py) ───────────────────────
