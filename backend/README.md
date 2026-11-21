@@ -190,6 +190,88 @@ histórico) e no catálogo SQLAlchemy de materiais. Por padrão `DB_PATH` e
   workers (`uvicorn --workers N`), um pedido de cancelamento só alcança o job
   se cair no mesmo processo que o executa.
 
+### Backup e restauração
+
+Tudo o que importa fica num único arquivo SQLite (`DB_PATH`): jobs, histórico,
+materiais, alunos e vínculos. O **ChromaDB é descartável**: é só o índice de
+trabalho da geração, a subida o limpa sozinha e ele **não entra no backup**
+nem precisa ser restaurado.
+
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `BACKUP_DIR` | `./data/backups` | Pasta dos backups, relativa à pasta de execução (`backend/`). Criada se não existir. Já ignorada pelo git. |
+| `BACKUP_RETENCAO` | `7` | Quantos backups manter (mínimo 1). Valor menor que 1 ou não numérico impede a subida e o script. |
+
+**Gerar um backup** (com o backend rodando ou parado):
+
+```bash
+cd backend
+python -m app.scripts.backup
+# no Docker Compose:
+docker compose exec backend python -m app.scripts.backup
+```
+
+- Usa a API de backup do `sqlite3`: a cópia é consistente mesmo com o backend
+  gravando. A origem é aberta só para leitura.
+- O arquivo se chama `novamente-AAAAMMDD-HHMMSS.db` (hora UTC), é gravado
+  primeiro como temporário na mesma pasta e só ganha o nome final depois de
+  passar no `PRAGMA integrity_check` e de ter ao menos uma tabela. Fica com
+  permissão `600`, pois contém dados de alunos.
+- A retenção roda depois de um backup bem-sucedido e apaga os mais antigos
+  (pela data do nome), mantendo os `BACKUP_RETENCAO` mais recentes. Só mexe em
+  arquivos que casam exatamente com `novamente-AAAAMMDD-HHMMSS.db`; qualquer
+  outro arquivo da pasta é ignorado.
+- Códigos de saída: `0` sucesso; `1` falha (banco não encontrado, pasta de
+  backup inválida, verificação reprovada, configuração inválida); `2` backup
+  gerado, mas a retenção não conseguiu apagar algum arquivo antigo.
+- O script copia o arquivo de `DB_PATH`. Se `DATABASE_URL` apontar para
+  **outro** arquivo SQLite (fora do padrão), o catálogo não entra no backup e o
+  script avisa em stderr. Mantenha os dois no mesmo arquivo.
+- `BACKUP_DIR` no mesmo volume do banco não protege contra a perda do volume.
+  Em produção, aponte para outro volume e copie os arquivos para fora do
+  servidor. A agenda do backup e o envio ao OCI Object Storage ficam fora do
+  backend (Compose).
+
+**Restaurar um backup** (o backend precisa estar parado):
+
+```bash
+# 1. Pare o backend
+docker compose stop backend
+
+# 2. Guarde o banco atual (se existir) e traga o backup escolhido
+cd backend/data
+mv novamente.db novamente.db.antes-da-restauracao 2>/dev/null
+cp backups/novamente-AAAAMMDD-HHMMSS.db novamente.db
+
+# 3. Remova as sobras do banco antigo (arquivos do modo WAL)
+rm -f novamente.db-wal novamente.db-shm
+
+# 4. Suba o backend e confira
+cd ../..
+docker compose start backend
+curl -s http://localhost:8000/api/v1/health   # "banco": "ok"
+```
+
+Sem Docker, pare o `uvicorn`, faça os passos 2 e 3 na pasta de `DB_PATH` e suba
+de novo. Não troque o arquivo com o backend rodando: ele mantém conexões
+abertas no arquivo antigo. Os jobs que estavam em andamento no backup voltam
+como `failed`, como em qualquer reinício. Se o arquivo restaurado estiver
+inutilizável, o procedimento é reversível: volte o `.antes-da-restauracao`.
+
+**Subida segura:** antes de criar o esquema, o backend confere `DB_PATH` e o
+arquivo de `DATABASE_URL` (`sqlite:///relativo.db` ou `sqlite:////absoluto.db`).
+Com o volume vazio ou sem o arquivo, cria a pasta e o arquivo, e o esquema nasce
+na sequência. Se o caminho não for gravável, a pasta não puder ser criada, o
+caminho for uma pasta ou o arquivo não for um banco SQLite, a subida falha com
+uma mensagem em português que diz o que conferir. Dados existentes não são
+alterados nessa checagem.
+
+**Estado no `GET /api/v1/health`:** o campo `banco` vale `ok` ou
+`indisponivel`. É uma consulta curta (timeout de 1 s) nos arquivos SQLite
+configurados, sem criar nada; a resposta não traz o caminho nem a mensagem do
+erro. Como os demais campos, `indisponivel` marca `status: degraded` e o
+endpoint continua respondendo `200`.
+
 ## Qualidade do material
 
 `avaliacao_qualidade` é calculada sobre o conteúdo gerado, sem nova chamada ao
