@@ -199,10 +199,10 @@ def test_json_invalido_na_primeira_rodada_usa_a_repeticao(modelo, rag):
 
 
 def test_json_invalido_numa_revisao_entrega_o_melhor(modelo, rag, caplog):
-    modelo.roteiro = [FRACO, "sem json", "sem json", FIEL]
+    modelo.roteiro = [FRACO, "sem json", "sem json", "sem json", FIEL]
     with caplog.at_level(logging.INFO):
         pacote = _executar()
-    assert len(modelo.prompts) == 3  # rodada 1 + as duas tentativas da revisão; sem fallback
+    assert len(modelo.prompts) == 4  # rodada 1 + as três tentativas da revisão; sem fallback
     assert pacote.avaliacao_qualidade.ancoragem_fonte_score == _nota(FRACO)
     assert "motivo=falha_na_revisao:RuntimeError" in caplog.text
 

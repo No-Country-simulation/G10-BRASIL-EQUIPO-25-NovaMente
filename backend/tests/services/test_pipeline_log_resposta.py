@@ -79,7 +79,7 @@ def test_mensagens_do_provedor_nvidia_aparecem_no_log(monkeypatch, caplog, escol
         nvidia.gerar([], timeout_segundos=1)
     # Pelo caminho real: _chamar_llm embrulha o erro do provedor em _RespostaInvalida.
     linha = _gerar(caplog, erro.value)
-    assert linha == f"Resposta inválida do LLM (tentativa 1 de 2): _RespostaInvalida; {mensagem}"
+    assert linha == f"Resposta inválida do LLM (tentativa 1 de 3): _RespostaInvalida; {mensagem}"
 
 
 def test_mensagem_desconhecida_do_provedor_vira_categoria(caplog):
@@ -112,9 +112,9 @@ def test_erros_de_formato_mostram_so_a_categoria(caplog, resposta, final):
 
 def test_comportamento_nao_muda(caplog):
     caplog.set_level(logging.WARNING, logger=pipeline.logger.name)
-    with pytest.raises(RuntimeError, match="após duas tentativas"):
-        pipeline._gerar_conteudo(ProvedorFila("nada", "nada", json.dumps(QUIZ)), "p", "Quiz", lambda: None)
-    assert len(_linhas(caplog)) == 2
+    with pytest.raises(RuntimeError, match="não devolveu um conteúdo válido"):
+        pipeline._gerar_conteudo(ProvedorFila("nada", "nada", "nada", json.dumps(QUIZ)), "p", "Quiz", lambda: None)
+    assert len(_linhas(caplog)) == 3
     # Timeout continua fora da repetição por resposta inválida (e sem esta linha de log).
     caplog.clear()
     with pytest.raises(RuntimeError, match="demorou demais"):

@@ -43,7 +43,10 @@ class Settings(BaseSettings):
     nvidia_nim_temperatura: float | None = None  # vazio: padrão do modelo, como no Gemini
     # Limite da resposta, raciocínio incluído: precisa ser maior que o orçamento de raciocínio.
     nvidia_nim_max_tokens: int = Field(8192, ge=1)
-    nvidia_nim_raciocinio: str = ""  # "", "ligado" ou "desligado" (vazio: padrão do modelo)
+    # Desligado por padrão: com o raciocínio no padrão do modelo, ele consome o
+    # NVIDIA_NIM_MAX_TOKENS e o JSON do material sai cortado (finish_reason=length).
+    # Vazio também vale "desligado"; "padrao" não envia nada (vale o padrão do modelo).
+    nvidia_nim_raciocinio: str = "desligado"  # "desligado", "ligado" ou "padrao"
     nvidia_nim_orcamento_raciocinio: int | None = Field(None, ge=1)  # vazio: não envia
 
     # ── Chat sobre o material (provedor próprio, independente de LLM_PROVIDER) ──
@@ -176,10 +179,14 @@ class Settings(BaseSettings):
     @classmethod
     def _raciocinio_valido(cls, valor):
         normalizado = str(valor or "").strip().lower()
+        if not normalizado:
+            return "desligado"
+        if normalizado == "padrao":
+            return ""  # o provedor não envia o parâmetro
         if normalizado not in RACIOCINIO_VALORES:
             raise ValueError(
                 f"NVIDIA_NIM_RACIOCINIO '{valor}' inválido. "
-                "Valores válidos: vazio (padrão do modelo), ligado, desligado."
+                "Valores válidos: vazio (desligado), desligado, ligado, padrao."
             )
         return normalizado
 

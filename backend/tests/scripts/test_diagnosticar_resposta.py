@@ -102,10 +102,14 @@ def test_texto_antes_e_depois_do_json():
 
 
 def test_avisos_do_quiz_que_o_pipeline_aceita():
-    d = dr.classificar(_quiz(resposta_correta=5, opcoes=["GET", "GET"]), "Quiz", "stop")
+    d = dr.classificar(_quiz(opcoes=["GET", "GET"]), "Quiz", "stop")
     assert d.categoria == "valida"
-    assert "itens.0.resposta_correta_fora_das_opcoes" in d.sinais
     assert "itens.0.opcoes_repetidas" in d.sinais
+
+
+def test_resposta_fora_das_opcoes_e_invalida():
+    d = dr.classificar(_quiz(resposta_correta=2), "Quiz", "stop")
+    assert (d.categoria, d.caminho) == ("valor_fora_do_intervalo", "resposta_correta")
 
 
 def test_outros_formatos():
@@ -200,11 +204,13 @@ def test_via_pipeline_registra_cada_tentativa():
     assert primeira.tokens_total and segunda.tokens_resposta
 
 
-def test_via_pipeline_falha_nas_duas_tentativas():
-    (e,), _ = _via_pipeline(("stop", '{"titulo": "Quiz", "itens": [}'), ("stop", _quiz(explicacao=None)))
-    assert (e.resultado, e.chamadas) == ("falha", 2)
+def test_via_pipeline_falha_em_todas_as_tentativas():
+    (e,), _ = _via_pipeline(
+        ("stop", '{"titulo": "Quiz", "itens": [}'), ("stop", _quiz(explicacao=None)), ("stop", "sem json")
+    )
+    assert (e.resultado, e.chamadas) == ("falha", 3)
     assert e.erro == f"RuntimeError: {pipeline._MSG_RESPOSTA_INVALIDA}"
-    assert [t.resultado for t in e.tentativas] == ["JSONDecodeError", "ValidationError"]
+    assert [t.resultado for t in e.tentativas] == ["JSONDecodeError", "ValidationError", "ValueError"]
     assert e.tentativas[0].motivo.startswith("não é JSON: Expecting value")
     assert e.tentativas[1].motivo == "fora do esquema: 1 erro(s): explicacao missing"
 

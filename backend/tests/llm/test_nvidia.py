@@ -324,7 +324,7 @@ def test_configuracoes_padrao(monkeypatch):
     assert config.nvidia_nim_modelo
     assert config.nvidia_nim_temperatura is None
     assert config.nvidia_nim_max_tokens == 8192
-    assert config.nvidia_nim_raciocinio == ""
+    assert config.nvidia_nim_raciocinio == "desligado"  # raciocínio no padrão cortava o JSON
     assert config.nvidia_nim_orcamento_raciocinio is None
 
 
@@ -441,7 +441,7 @@ def test_valores_vazios_no_ambiente_viram_none(monkeypatch):
     config = Settings(_env_file=None)
     assert config.nvidia_nim_temperatura is None
     assert config.nvidia_nim_orcamento_raciocinio is None
-    assert config.nvidia_nim_raciocinio == ""
+    assert config.nvidia_nim_raciocinio == "desligado"  # vazio vale o padrão
 
 
 def test_valores_vazios_no_arquivo_env_nao_quebram(tmp_path):
@@ -453,9 +453,10 @@ def test_valores_vazios_no_arquivo_env_nao_quebram(tmp_path):
     )
     config = Settings(_env_file=arquivo)
     assert (config.nvidia_nim_temperatura, config.nvidia_nim_orcamento_raciocinio) == (None, None)
+    assert config.nvidia_nim_raciocinio == "desligado"
 
 
-@pytest.mark.parametrize("valor,esperado", [("ligado", "ligado"), (" DESLIGADO ", "desligado")])
+@pytest.mark.parametrize("valor,esperado", [("ligado", "ligado"), (" DESLIGADO ", "desligado"), ("Padrao", "")])
 def test_raciocinio_aceito(monkeypatch, valor, esperado):
     from app.core.config import Settings
 
@@ -467,7 +468,7 @@ def test_raciocinio_aceito(monkeypatch, valor, esperado):
 
 
 @pytest.mark.parametrize("variavel,valor,trecho", [
-    ("NVIDIA_NIM_RACIOCINIO", "talvez", "Valores válidos: vazio (padrão do modelo), ligado, desligado"),
+    ("NVIDIA_NIM_RACIOCINIO", "talvez", "Valores válidos: vazio (desligado), desligado, ligado, padrao"),
     ("NVIDIA_NIM_ORCAMENTO_RACIOCINIO", "0", "greater than or equal to 1"),
     ("NVIDIA_NIM_ORCAMENTO_RACIOCINIO", "muito", "integer"),
 ])

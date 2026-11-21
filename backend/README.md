@@ -61,7 +61,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | `NVIDIA_NIM_MODELO` | — | Id do modelo no catálogo da NVIDIA (default sugerido: `nvidia/nemotron-3.5-lightning-30b-a3b`; o catálogo gratuito muda com frequência) |
 | `NVIDIA_NIM_MAX_TOKENS` | — | Limite de tokens da resposta, raciocínio incluído; precisa ser maior que o orçamento de raciocínio (default: `8192`) |
 | `NVIDIA_NIM_TEMPERATURA` | — | Temperatura da geração (default: vazia, vale a do modelo) |
-| `NVIDIA_NIM_RACIOCINIO` | — | `ligado` ou `desligado` envia `chat_template_kwargs.enable_thinking`; vazio não envia (vale o padrão do modelo). Outro valor impede a subida |
+| `NVIDIA_NIM_RACIOCINIO` | `desligado` | `ligado` ou `desligado` envia `chat_template_kwargs.enable_thinking`; vazio vale `desligado`; `padrao` não envia (vale o padrão do modelo). Desligado porque, no padrão do modelo, o raciocínio consome `NVIDIA_NIM_MAX_TOKENS` e o JSON sai cortado. Outro valor impede a subida |
 | `NVIDIA_NIM_ORCAMENTO_RACIOCINIO` | — | Tokens de raciocínio (`reasoning_budget`); vazio não envia, e não vai com o raciocínio `desligado` |
 | `LLM_TENTATIVAS` | — | Chamadas ao LLM por geração em falhas transitórias, contando a primeira (default: `3`; mínimo `1`, que desliga a retentativa) |
 | `LLM_ESPERA_INICIAL_SEGUNDOS` | — | Espera antes da primeira retentativa; dobra a cada tentativa (default: `2`; mínimo `0`) |
@@ -353,6 +353,13 @@ python scripts/medir_geracao.py --recuperacao lexical --limiar 0.9
   sem texto do documento nem do conteúdo gerado e sem chaves.
 - **Limitações:** a amostra é pequena e a ancoragem é lexical; serve para
   decidir entre os modos, não como prova estatística.
+
+**Resultado da última medição (raciocínio desligado):** o grafo continua
+desligado por padrão. Em 17 jobs, 41% foram revisados, e neles a ancoragem
+subiu de 0,852 para 0,969. Mas a cópia literal do documento subiu de 0,017 para
+0,134 (no Tutorial, de 0,004 para 0,290), ou seja, parte do ganho vem de copiar
+a fonte, e a revisão custou cerca de 10 s extras por job em média. Veredito do
+script: não recomendado. Amostra pequena.
 
 ## Jobs e histórico
 

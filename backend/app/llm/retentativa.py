@@ -68,6 +68,12 @@ def limites_da_geracao(
         _limites.reset(token)
 
 
+def cabe_outra_chamada(timeout_segundos: float) -> bool:
+    """True se uma chamada inteira ainda cabe no prazo do job desta thread (ou se não há prazo)."""
+    prazo = _limites.get().prazo
+    return prazo is None or _relogio() + timeout_segundos <= prazo
+
+
 def calcular_espera(tentativa: int, espera_inicial: float, fator_jitter: float) -> float:
     """Espera depois da falha da ``tentativa`` (1, 2, ...): dobra a cada vez, com teto."""
     return min(espera_inicial * 2 ** (tentativa - 1) * fator_jitter, ESPERA_MAXIMA_SEGUNDOS)

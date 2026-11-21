@@ -37,6 +37,7 @@ from app.llm import (
     ErroTransitorio,
     Mensagem,
     ProvedorLLM,
+    cabe_outra_chamada,
     limites_da_geracao,
     obter_provedor,
 )
@@ -232,10 +233,11 @@ _MSG_CONFIGURACAO = (
     "O serviço de IA não está configurado corretamente (modelo ou chave de API). "
     "Avise a equipe."
 )
-_MSG_RESPOSTA_INVALIDA = (
-    "A IA não devolveu um conteúdo válido após duas tentativas. Tente novamente."
-)
-_TENTATIVAS_RESPOSTA_INVALIDA = 2
+_MSG_RESPOSTA_INVALIDA = "A IA não devolveu um conteúdo válido. Tente novamente."
+# Chamadas por geração quando a resposta vem fora do formato (JSON quebrado, campo
+# ausente). Uma nova tentativa só começa se ainda couber uma chamada inteira no
+# prazo do job: 3 x LLM_TIMEOUT_SEGUNDOS (360 s) passaria dos 300 s do job.
+_TENTATIVAS_RESPOSTA_INVALIDA = 3
 
 
 class _RespostaInvalida(Exception):
@@ -279,11 +281,15 @@ def _gerar_conteudo(
     formato: FormatoSaida,
     avisar_revisao: Callable[[], None],
 ) -> tuple[str, ConteudoAdaptado, object]:
-    """Gera e valida o conteúdo, com uma retentativa para resposta inválida.
+    """Gera e valida o conteúdo, repetindo a chamada quando a resposta é inválida.
 
     Devolve o texto da resposta, o conteúdo validado e o valor cru do campo
     ``conceitos_chave`` (``None`` se ausente). Esse campo não é validado aqui:
-    um valor ruim nunca torna a resposta inválida nem consome a retentativa.
+    um valor ruim nunca torna a resposta inválida nem consome uma tentativa.
+
+    São até ``_TENTATIVAS_RESPOSTA_INVALIDA`` chamadas; a partir da segunda, só
+    se uma chamada inteira (``LLM_TIMEOUT_SEGUNDOS``) ainda couber no prazo do
+    job aberto em ``limites_da_geracao``.
 
     Timeout, limite de uso e indisponibilidade não são retentados aqui: quem os
     retenta é o provedor devolvido pela fábrica (app/llm/retentativa.py).
@@ -292,6 +298,13 @@ def _gerar_conteudo(
     """
     revisao_avisada = False
     for tentativa in range(1, _TENTATIVAS_RESPOSTA_INVALIDA + 1):
+        if tentativa > 1 and not cabe_outra_chamada(settings.llm_timeout_segundos):
+            logger.warning(
+                "Geração: o prazo do job não comporta a tentativa %d de %d por resposta inválida.",
+                tentativa,
+                _TENTATIVAS_RESPOSTA_INVALIDA,
+            )
+            break
         try:
             resposta_texto = _chamar_llm(provedor, prompt)
             if not revisao_avisada:

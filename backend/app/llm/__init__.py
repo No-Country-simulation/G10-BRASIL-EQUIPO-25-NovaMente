@@ -16,7 +16,7 @@ from app.llm.erros import (
     ProvedorDesconhecido,
 )
 from app.llm.chat import ProvedorDoChat
-from app.llm.retentativa import ProvedorComRetentativa, limites_da_geracao
+from app.llm.retentativa import ProvedorComRetentativa, cabe_outra_chamada, limites_da_geracao
 from app.llm.fabrica import (
     modelo_padrao_do_chat,
     modelos_do_chat,
@@ -48,6 +48,7 @@ __all__ = [
     "ProvedorDesconhecido",
     "ProvedorDoChat",
     "ProvedorLLM",
+    "cabe_outra_chamada",
     "limites_da_geracao",
     "modelo_padrao_do_chat",
     "modelos_do_chat",

@@ -188,12 +188,12 @@ def test_resposta_vazia_depois_valida_nao_aparece_como_erro(relogio):
     assert medicao.erro is None
 
 
-def test_json_invalido_nas_duas_tentativas_e_falha(relogio):
+def test_json_invalido_em_todas_as_tentativas_e_falha(relogio):
     medicao = _medir(_ProvedorFalso(["{quebrado", "nada"]), relogio)
     assert medicao.status == cm.FALHA
     assert medicao.erro == "RespostaInvalida"
     assert medicao.ancoragem is None
-    assert medicao.chamadas == 2
+    assert medicao.chamadas == 3  # o provedor falso repete o roteiro
 
 
 def test_resposta_cortada_conta_como_cortada(relogio):
@@ -296,7 +296,7 @@ def test_fora_do_models_mas_gera_e_medido_e_fica_disponivel(relogio):
     assert informes == ["endpoint/dedicado: não listado em /models; tentando mesmo assim"]
     assert [x.status for x in medicoes] == [cm.OK, cm.FALHA, cm.OK, cm.FALHA]  # Tutorial com JSON de flashcards
     assert all(x.fora_do_catalogo for x in medicoes)
-    assert provedores["endpoint/dedicado"].chamadas == 6
+    assert provedores["endpoint/dedicado"].chamadas == 8  # Tutorial: 3 tentativas cada
     assert _situacoes(medicoes) == {"endpoint/dedicado": "disponível (fora do /models)"}
     assert "| `endpoint/dedicado` | padrao | disponível (fora do /models) | 2/4 |" in cm.tabela_markdown(
         cm.agregar(medicoes)
@@ -338,8 +338,8 @@ def test_comparar_mede_cada_variante_de_raciocinio(relogio):
         (v, d, f) for v in ("padrao", "desligado", "ligado")
         for d in ("http_apis_rest.md", "sql_consultas.md") for f in ("Flashcards", "Tutorial")
     ]
-    # Flashcards vale na 1ª; Tutorial recebe JSON de flashcards (inválido) e tenta 2 vezes.
-    assert all(p.chamadas == 2 * 1 + 2 * 2 for p in provedores.values())
+    # Flashcards vale na 1ª; Tutorial recebe JSON de flashcards (inválido) e tenta 3 vezes.
+    assert all(p.chamadas == 2 * 1 + 2 * 3 for p in provedores.values())
 
 
 def test_variante_nao_suportada_pula_o_resto_dela_e_segue(relogio):

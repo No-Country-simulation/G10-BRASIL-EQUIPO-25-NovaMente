@@ -18,8 +18,8 @@ conteúdo gerado:
   cerca de markdown, texto antes ou depois do JSON e chaves desbalanceadas.
 
 Com ``--via-pipeline``, cada geração passa por ``pipeline._gerar_conteudo`` (as
-duas tentativas, com o prazo do job em ``limites_da_geracao`` e a contagem de
-chamadas do grafo), como o redator na medição. Por tentativa, o relatório traz
+tentativas por resposta inválida, com o prazo do job em ``limites_da_geracao``
+e a contagem de chamadas do grafo), como o redator na medição. Por tentativa, o relatório traz
 o tipo e o motivo que a linha de log do pipeline mostra, o motivo de término,
 os tokens, o timeout passado ao provedor e o tempo.
 
@@ -70,7 +70,7 @@ CERCA = "```"
 # Tipos de erro do pydantic que indicam valor fora do que o esquema aceita.
 _TIPOS_FORA_DO_INTERVALO = {
     "too_short", "too_long", "string_too_short", "string_too_long",
-    "greater_than_equal", "greater_than", "less_than", "less_than_equal",
+    "greater_than_equal", "greater_than", "less_than", "less_than_equal", "resposta_fora_das_opcoes",
 }
 _TIPOS_TIPO_ERRADO = {"int_parsing", "int_type", "int_from_float", "string_type", "list_type", "dict_type",
                       "model_type"}
@@ -498,7 +498,7 @@ def montar_relatorio_via_pipeline(execucoes: list[ExecucaoPipeline], config: dic
         f"retentativas de falha transitória: {config['tentativas_transitorias']}",
         f"- Formato: {config['formato']}; documento: {config['documento']}; gerações: {config['n']}; "
         f"recuperação: lexical (k=6)",
-        "- Cada geração passa por `pipeline._gerar_conteudo` (até 2 tentativas), como o redator do grafo.",
+        "- Cada geração passa por `pipeline._gerar_conteudo` (até 3 tentativas), como o redator do grafo.",
         "- Só metadados: nada do documento nem do conteúdo gerado.", "",
         "## Resumo", "",
         f"- Gerações ok: {r['execucoes_ok']}; com falha: {r['execucoes_com_falha']}; chamadas: {r['chamadas']}",
@@ -542,7 +542,7 @@ def main(argv: list[str] | None = None, *, provedor=None, pasta_relatorios: Path
                         help=f"segundos entre chamadas (padrão {INTERVALO_PADRAO_SEGUNDOS:g}; 0 no simulado)")
     parser.add_argument("--simulado", action="store_true", help="provedor falso que reproduz cada categoria")
     parser.add_argument("--via-pipeline", action="store_true",
-                        help="cada geração pelo pipeline._gerar_conteudo (2 tentativas), como na medição")
+                        help="cada geração pelo pipeline._gerar_conteudo (até 3 tentativas), como na medição")
     args = parser.parse_args(argv)
 
     disponiveis = sorted(p.name for p in EXEMPLOS.glob("*.md"))

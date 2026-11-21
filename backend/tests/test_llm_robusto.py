@@ -202,12 +202,12 @@ def test_resposta_bloqueada_e_retentada(modelo):
     assert pacote.conteudo_adaptado.tipo == "flashcards"
 
 
-def test_resposta_vazia_duas_vezes_falha(modelo):
-    modelo.roteiro = [None, None]
-    with pytest.raises(RuntimeError, match="após duas tentativas") as erro:
+def test_resposta_vazia_nas_tres_tentativas_falha(modelo):
+    modelo.roteiro = [None, None, None]
+    with pytest.raises(RuntimeError, match="não devolveu um conteúdo válido") as erro:
         _executar()
     assert TEXTO_CRU not in str(erro.value)
-    assert len(modelo.chamadas) == 2
+    assert len(modelo.chamadas) == 3
 
 
 def test_json_invalido_depois_valido(modelo):
@@ -219,21 +219,19 @@ def test_json_invalido_depois_valido(modelo):
     assert etapas.count("revisando") == 1
 
 
-def test_json_invalido_nas_duas_tentativas(modelo):
-    modelo.roteiro = ["isto não é json", '{"a": ']
+def test_json_invalido_nas_tres_tentativas(modelo):
+    modelo.roteiro = ["isto não é json", '{"a": ', "nada"]
     with pytest.raises(RuntimeError) as erro:
         _executar()
-    assert str(erro.value) == (
-        "A IA não devolveu um conteúdo válido após duas tentativas. Tente novamente."
-    )
-    assert len(modelo.chamadas) == 2
+    assert str(erro.value) == "A IA não devolveu um conteúdo válido. Tente novamente."
+    assert len(modelo.chamadas) == 3
 
 
 def test_estrutura_sem_titulo_cai_no_mesmo_fluxo(modelo):
-    modelo.roteiro = [SEM_TITULO, SEM_TITULO]
-    with pytest.raises(RuntimeError, match="após duas tentativas"):
+    modelo.roteiro = [SEM_TITULO, SEM_TITULO, SEM_TITULO]
+    with pytest.raises(RuntimeError, match="não devolveu um conteúdo válido"):
         _executar()
-    assert len(modelo.chamadas) == 2
+    assert len(modelo.chamadas) == 3
 
 
 def test_estrutura_sem_titulo_depois_valida(modelo):
@@ -402,12 +400,12 @@ def test_worker_configuracao_nao_e_retentada(modelo, espera_da_retentativa_falsa
 
 
 def test_resposta_invalida_so_tem_a_retentativa_do_pipeline(modelo):
-    # 1ª geração: inválida (1 chamada). 2ª geração: 503 retentado e de novo inválida
-    # (2 chamadas). A camada nova não retenta a resposta inválida: 3 chamadas no total.
-    modelo.roteiro = [None, ErroIndisponivel(TEXTO_CRU), None, RESPOSTA_VALIDA]
-    with pytest.raises(RuntimeError, match="após duas tentativas"):
+    # 1ª tentativa: inválida (1 chamada). 2ª: 503 retentado e de novo inválida (2 chamadas).
+    # 3ª: inválida (1 chamada). A camada nova não retenta a resposta inválida: 4 chamadas.
+    modelo.roteiro = [None, ErroIndisponivel(TEXTO_CRU), None, None, RESPOSTA_VALIDA]
+    with pytest.raises(RuntimeError, match="não devolveu um conteúdo válido"):
         _executar()
-    assert len(modelo.chamadas) == 3
+    assert len(modelo.chamadas) == 4
 
 
 def test_worker_nao_retenta_se_o_prazo_nao_comporta(modelo, monkeypatch, espera_da_retentativa_falsa):

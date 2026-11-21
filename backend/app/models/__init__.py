@@ -9,7 +9,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic_core import PydanticCustomError
 
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
@@ -66,6 +67,20 @@ class QuizItem(BaseModel):
     opcoes: list[str] = Field(min_length=2, max_length=6)
     resposta_correta: int = Field(ge=0)
     explicacao: str
+
+    @field_validator("resposta_correta")
+    @classmethod
+    def _resposta_entre_as_opcoes(cls, valor: int, info: ValidationInfo) -> int:
+        # O schema do frontend recusa índice fora das opções e a tela quebra; aqui a
+        # resposta do modelo vira inválida e entra na nova tentativa do pipeline.
+        opcoes = info.data.get("opcoes")  # ausente se as opções já falharam
+        if opcoes is not None and valor >= len(opcoes):
+            raise PydanticCustomError(
+                "resposta_fora_das_opcoes",
+                "resposta_correta deve ser menor que o número de opções ({total})",
+                {"total": len(opcoes)},
+            )
+        return valor
 
 
 class ConteudoFlashcards(BaseModel):
