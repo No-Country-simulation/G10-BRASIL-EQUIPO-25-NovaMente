@@ -326,6 +326,163 @@ detectaria afirmações erradas e paráfrases. Mas cada geração passaria a gas
 uma segunda chamada, com mais cota e mais tempo de espera. Fica como
 alternativa futura.
 
+## Segurança do backend
+
+Proteções de linha de base para expor o backend (por exemplo, na OCI). Todas
+valem para um único processo; o contador de requisições e o teto de jobs ficam
+em memória.
+
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `CORS_ORIGINS` | `http://localhost:3000` | Origens permitidas no CORS, separadas por vírgula (`https://app.exemplo.com,https://painel.exemplo.com`). Espaços e entradas vazias são ignorados |
+| `ARQUIVO_MAX_BYTES` | `10485760` (10 MiB) | Tamanho máximo do arquivo enviado em `POST /adaptacoes/upload` |
+| `GERACAO_LIMITE_POR_MINUTO` | `6` | Gerações por minuto, por IP, em `POST /adaptacoes` e `POST /adaptacoes/upload` (inteiro, mínimo `1`) |
+| `GERACAO_MAX_JOBS_SIMULTANEOS` | `4` | Jobs de geração em andamento ao mesmo tempo (inteiro, mínimo `1`) |
+| `CONFIAR_X_FORWARDED_FOR` | `false` | Usa o `X-Forwarded-For` como IP do cliente no limite por IP. Só ligue atrás de um proxy confiável |
+
+Valores inválidos (limite menor que 1, `CORS_ORIGINS` malformada) impedem a
+subida, com a mensagem do campo.
+
+### CORS
+
+- As origens vêm de `CORS_ORIGINS`, cada uma no formato `esquema://host[:porta]`,
+  sem barra final nem caminho. Origem fora da lista não recebe os cabeçalhos
+  `Access-Control-*`, e o navegador bloqueia a leitura da resposta.
+- `*` **impede a subida**: o CORS usa credenciais (`allow_credentials=True`), e
+  liberar qualquer origem com credenciais é inseguro.
+- Métodos: `GET`, `POST`, `PUT`, `PATCH`, `DELETE` e `OPTIONS`. Cabeçalhos:
+  `Content-Type`, `Authorization`, `X-API-Key` e `Accept`. `Retry-After` fica
+  visível ao navegador.
+- O CORS é o middleware mais externo: as respostas 413 e 429 dos limites
+  abaixo também levam os cabeçalhos de CORS.
+- O frontend chama o backend por um *rewrite* do Next.js (`/api/v1/*`), então o
+  navegador não faz requisição entre origens. O CORS importa para quem chama a
+  API de outra origem (outro painel, ferramentas no navegador).
+
+### Upload
+
+O Starlette recebe o corpo multipart inteiro (e o grava em arquivo temporário)
+antes de chamar a rota. Por isso a recusa acontece antes, em um middleware:
+
+1. `Content-Length` acima de `ARQUIVO_MAX_BYTES` mais **64 KiB** de folga (campos
+   do formulário e delimitadores do multipart): `413`, sem ler o corpo.
+2. Envio sem `Content-Length` (em blocos): os bytes são contados e a leitura
+   para ao passar do limite do corpo, também com `413`.
+3. Na rota, o arquivo é lido em blocos de 64 KiB e a leitura para quando passa de
+   `ARQUIVO_MAX_BYTES`. O tamanho já conhecido do arquivo é conferido antes de
+   qualquer leitura.
+
+A resposta é a mesma de antes: `413` com `{"erro": {"codigo": "LIMITE_EXCEDIDO", ...}}`.
+Arquivo dentro do limite, extensão (`415`), tipo (`415`) e documento ilegível
+(`400`) se comportam como antes. A mensagem do 413 deixou de informar quantos
+bytes foram recebidos (a leitura para antes de saber).
+
+### Limite de gerações por IP
+
+`POST /api/v1/adaptacoes` e `POST /api/v1/adaptacoes/upload` dividem o mesmo
+limite por IP, numa janela deslizante de 1 minuto. Acima de
+`GERACAO_LIMITE_POR_MINUTO`:
+
+```json
+HTTP 429  Retry-After: 37
+{"erro": {"codigo": "LIMITE_EXCEDIDO", "mensagem": "Muitas gerações em pouco tempo. Tente novamente em 37 segundos."}}
+```
+
+- `Retry-After` é inteiro, arredondado para cima, em segundos.
+- **Só a requisição que cria um job (`202`) consome o limite.** A vaga é
+  reservada antes da rota e devolvida se a resposta não for `202` (validação
+  `422`, `413`, `415`, `400`, `503`). Erro de preenchimento não esgota o limite de
+  quem está usando o sistema. Em troca, o limite não freia quem só envia
+  requisições inválidas (que não chamam o LLM).
+- **IP do cliente:** por padrão, o IP da conexão. Com
+  `CONFIAR_X_FORWARDED_FOR=true`, a **última** entrada do `X-Forwarded-For` (a que
+  o proxy confiável acrescentou). As anteriores vêm do cliente e podem ser
+  forjadas. Se o cabeçalho não tiver um IP válido, vale o IP da conexão.
+
+> **Atenção: atrás do proxy do frontend o limite vira global.** O Next.js faz as
+> chamadas ao backend a partir do servidor, então todas as requisições chegam
+> com o IP do contêiner do frontend, e o limite por IP passa a valer para todos
+> os usuários juntos. Para limitar por usuário, o proxy do frontend deve repassar
+> o IP real em `X-Forwarded-For` e o backend deve subir com
+> `CONFIAR_X_FORWARDED_FOR=true`. **Risco:** com a variável ligada e o backend
+> alcançável sem passar pelo proxy, qualquer cliente envia um
+> `X-Forwarded-For` falso e burla o limite. Ligue somente se a porta do backend
+> estiver acessível apenas pelo proxy.
+
+### Teto de jobs simultâneos
+
+Cada geração abre uma thread. Em `criar_job`, antes de abrir a thread, o backend
+conta os jobs `queued` ou `running` que ainda não expiraram. Com
+`GERACAO_MAX_JOBS_SIMULTANEOS` jobs em andamento, a requisição é recusada, sem
+gravar job nem abrir thread:
+
+```json
+HTTP 503  Retry-After: 30
+{"erro": {"codigo": "GERACAO_OCUPADA", "mensagem": "O sistema está gerando outros materiais no momento. Tente novamente em instantes."}}
+```
+
+É `503` (e não `429`) porque a recusa é por capacidade do servidor, não por
+excesso de requisições daquele cliente; assim o frontend distingue as duas
+situações. A contagem e o registro do job usam a mesma trava, então duas
+requisições simultâneas não passam juntas pelo último lugar. Um job que termina
+(`succeeded`, `failed` ou `cancelled`) libera a vaga.
+
+### Chaves e credenciais
+
+- O código nunca grava `GOOGLE_API_KEY` nem credenciais do OCI em log ou em
+  resposta. Os adaptadores do LLM registram só o tipo e o código da exceção.
+- Como defesa extra, `app/core/redacao_logs.py` troca por `***`, em todos os logs
+  (mensagem, argumentos e traceback com as causas encadeadas), o valor de
+  `GOOGLE_API_KEY` e de toda variável de ambiente cujo nome termine em `API_KEY`,
+  `SECRET`, `TOKEN`, `PASSWORD`, `PRIVATE_KEY` ou `ACCESS_KEY` (valores com menos
+  de 8 caracteres são ignorados).
+- `tests/test_segredos_logs.py` força falhas do provedor e dos embeddings com a
+  chave dentro do texto da exceção e confere que ela não aparece nos logs, no
+  job gravado nem nas respostas (inclusive `/health`, `/oci/status` e
+  `/openapi.json`). Outro teste revisa por AST que nenhuma chamada de log recebe
+  `settings`, a chave ou o ambiente.
+- Limite conhecido: `GET /api/v1/oci/status` devolve o texto da exceção do OCI
+  em `mensagem` quando a consulta falha. Ele não carrega credenciais, mas pode
+  trazer detalhes de infraestrutura; prefira expô-lo apenas à área da empresa.
+
+### CI de segurança
+
+- `.github/workflows/seguranca.yml` (em `pull_request` e `push` para `develop` e
+  `main`, com `contents: read`):
+  - **gitleaks:** varre o histórico completo (`fetch-depth: 0`) com o binário
+    oficial em contêiner, com a versão fixa na imagem, e `--redact` para não
+    imprimir o segredo. Achado reprova o job. (Não usamos a `gitleaks-action`,
+    que exige licença em repositórios de organização.) O `.gitleaks.toml` da raiz
+    mantém as regras padrão e libera só valores fictícios de exemplos e testes
+    (`chave-ficticia...` e `fake_key_for_ci_testing`). Outro falso positivo
+    conhecido entra nesse arquivo, em `regexes`, ou em um `.gitleaksignore` com
+    a impressão digital do achado.
+  - **pip-audit** (backend) e **npm audit** (frontend): informativos
+    (`continue-on-error`). O resultado aparece no log e, no backend, no resumo
+    da execução; vulnerabilidades não reprovam o pipeline.
+- `.github/dependabot.yml`: atualização semanal de `pip` (`/backend`), `npm`
+  (`/frontend`) e `github-actions` (`/`), com no máximo 3 PRs abertos por
+  ecossistema, apontando para `develop`.
+
+### Limites conhecidos
+
+- O contador por IP e o teto de jobs são **por processo**: com vários workers do
+  uvicorn (ou várias réplicas), cada um conta à parte e o limite efetivo é
+  multiplicado. Para mais de um processo, mova o contador para um armazenamento
+  compartilhado.
+- O contador é perdido quando o processo reinicia.
+- IP atrás de proxy: veja o aviso acima.
+- O limite do corpo vale só para o upload. Os corpos JSON das demais rotas não
+  têm teto de bytes (o texto colado é limitado em caracteres só depois de lido).
+- Um job que ficar `running` sem terminar (por exemplo, o processo morreu e o
+  registro não foi atualizado) ocupa uma vaga até o TTL do job (`JOB_TTL_SEGUNDOS`,
+  30 minutos por padrão); na subida, os jobs deixados em andamento são marcados
+  como `failed`.
+- O frontend precisa reconhecer o código `GERACAO_OCUPADA` (e tratar `429` e
+  `503` com `Retry-After`) para mostrar uma mensagem amigável.
+- Autenticação e proteção das rotas da empresa, migrations e WAF/HTTPS/rede da
+  OCI estão fora deste escopo.
+
 ## Índice do Chroma (descartável)
 
 O pipeline indexa o documento no ChromaDB (em `CHROMA_DIR`) só para recuperar
