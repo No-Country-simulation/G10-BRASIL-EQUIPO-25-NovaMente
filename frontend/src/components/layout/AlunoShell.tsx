@@ -1,3 +1,4 @@
+import { RequerSessao } from '@/components/auth/RequerSessao';
 import { AlunoHeader } from './AlunoHeader';
 import { M } from '@/lib/mensagens';
 
@@ -12,7 +13,7 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
       </a>
       <AlunoHeader />
       <main id="conteudo" className="mx-auto max-w-[1280px] px-4 py-8">
-        {children}
+        <RequerSessao perfil="aluno">{children}</RequerSessao>
       </main>
     </div>
   );

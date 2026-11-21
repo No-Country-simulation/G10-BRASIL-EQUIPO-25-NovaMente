@@ -24,7 +24,7 @@ export function Publicos() {
             asChild
             className="mt-6 h-11 w-fit bg-[var(--accent)] px-5 text-[var(--accent-fg)] hover:bg-[var(--accent-hover)]"
           >
-            <Link href={ROTAS.empresaGerar}>{M.landing.publicos.empresa.cta}</Link>
+            <Link href={ROTAS.entrarComo('empresa')}>{M.landing.publicos.empresa.cta}</Link>
           </Button>
         </article>
         <article className="flex flex-col rounded-xl border border-[var(--border)] bg-[var(--surface)] p-8">
@@ -34,7 +34,7 @@ export function Publicos() {
             {M.landing.publicos.aluno.texto}
           </p>
           <Button asChild variant="outline" className="mt-6 h-11 w-fit px-5">
-            <Link href={ROTAS.aluno}>{M.landing.publicos.aluno.cta}</Link>
+            <Link href={ROTAS.entrarComo('aluno')}>{M.landing.publicos.aluno.cta}</Link>
           </Button>
         </article>
       </div>

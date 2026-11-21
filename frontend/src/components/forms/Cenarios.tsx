@@ -14,8 +14,8 @@ export function Cenarios({
   desabilitado?: boolean;
 }) {
   return (
-    <div>
-      <p className="mb-2 text-xs uppercase tracking-wide text-[var(--fg-muted)]">{M.formulario.cenarios}</p>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <p className="text-xs uppercase tracking-wide text-[var(--fg-muted)]">{M.formulario.cenarios}</p>
       <div className="flex flex-wrap gap-2">
         {CENARIOS.map((cenario) => (
           <Button

@@ -16,11 +16,15 @@ export interface TourLauncherProps {
   origem: OrigemTour;
   /** Injeta o início nos testes e no auto-start. `false` = nenhum alvo iniciou. */
   iniciar?: (origem: OrigemTour) => Promise<unknown>;
+  /** Conta logada: a conclusão do tour é guardada por conta. */
+  conta?: string;
+  /** Falso enquanto não há sessão confirmada (login ligado): não abre sozinho. */
+  autoIniciar?: boolean;
 }
 
-export function TourLauncher({ origem, iniciar }: TourLauncherProps) {
+export function TourLauncher({ origem, iniciar, conta, autoIniciar = true }: TourLauncherProps) {
   const pathname = usePathname();
-  const { iniciarTour } = useTour();
+  const { iniciarTour } = useTour(conta);
   const executar = iniciar ?? iniciarTour;
   const [iniciando, setIniciando] = useState(false);
   const jaIniciado = useRef(false);
@@ -32,12 +36,12 @@ export function TourLauncher({ origem, iniciar }: TourLauncherProps) {
     async (pontoDeEntrada: OrigemTour) => {
       try {
         const iniciado = await executar(pontoDeEntrada);
-        if (iniciado !== false) marcarConcluido();
+        if (iniciado !== false) marcarConcluido(conta);
       } catch (falha) {
         console.error('[tour] Falha ao iniciar o tour.', falha);
       }
     },
-    [executar],
+    [executar, conta],
   );
 
   useEffect(() => {
@@ -54,7 +58,7 @@ export function TourLauncher({ origem, iniciar }: TourLauncherProps) {
 
     // Auto-start apenas na primeira visita a /empresa/gerar. O cleanup cancela
     // o timer se a rota mudar antes dos 600 ms.
-    if (origem !== 'empresa' || pathname !== ROTAS.empresaGerar || !deveAutoIniciar()) {
+    if (!autoIniciar || origem !== 'empresa' || pathname !== ROTAS.empresaGerar || !deveAutoIniciar(conta)) {
       return;
     }
 
@@ -69,7 +73,7 @@ export function TourLauncher({ origem, iniciar }: TourLauncherProps) {
       cancelado = true;
       window.clearTimeout(timer);
     };
-  }, [iniciarComSeguranca, origem, pathname]);
+  }, [iniciarComSeguranca, origem, pathname, autoIniciar, conta]);
 
   const aoClicar = useCallback(async () => {
     if (iniciando) return;

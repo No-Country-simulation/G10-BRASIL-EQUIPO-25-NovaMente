@@ -8,7 +8,7 @@ test('tour auto-inicia uma vez, reinicia pelo botão e força o roteiro completo
   const dialogo = page.getByRole('dialog');
   await expect(dialogo).toBeVisible({ timeout: 5_000 });
   await expect(dialogo).toContainText('Área da empresa');
-  await expect(dialogo).toContainText('1 de 6');
+  await expect(dialogo).toContainText('1 de 5');
 
   await page.getByRole('button', { name: 'Pular tour' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);

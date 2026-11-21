@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import { MenuSessao } from '@/components/auth/MenuSessao';
+import { useAuthAtiva, useSessao } from '@/features/auth/useSessao';
 import { Logo } from './Logo';
 import { SkinSwitcher } from './SkinSwitcher';
 import { TourLauncher } from './TourLauncher';
@@ -25,10 +27,14 @@ function estaAtivo(caminho: string, href: string) {
 export function EmpresaHeader() {
   const caminho = usePathname();
   const [menuAberto, setMenuAberto] = useState(false);
+  const authAtiva = useAuthAtiva();
+  const sessao = useSessao(authAtiva);
+  // Com login, o tour abre sozinho só depois da sessão da empresa confirmada, uma vez por conta.
+  const conta = authAtiva && sessao.data?.tipo === 'empresa' ? `empresa:${sessao.data.email}` : undefined;
 
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/90 backdrop-blur">
-      <div className="mx-auto flex min-h-16 w-full max-w-[1280px] flex-wrap items-center justify-between gap-2 px-2 py-2 sm:px-4">
+      <div className="mx-auto flex min-h-16 w-full max-w-[1440px] flex-wrap items-center justify-between gap-2 px-2 py-2 sm:px-4">
         <div className="flex items-center gap-2 sm:gap-8">
           <Logo />
           <nav aria-label={M.app.navPrincipal} data-tour="empresa-nav" className="hidden gap-1 md:flex">
@@ -50,14 +56,21 @@ export function EmpresaHeader() {
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href={ROTAS.aluno}
-            className="hidden text-sm text-[var(--fg-muted)] hover:text-[var(--fg)] md:inline"
-          >
-            {M.app.areaAluno}
-          </Link>
-          <TourLauncher origem="empresa" />
+          {!authAtiva && (
+            <Link
+              href={ROTAS.aluno}
+              className="hidden text-sm text-[var(--fg-muted)] hover:text-[var(--fg)] md:inline"
+            >
+              {M.app.areaAluno}
+            </Link>
+          )}
+          <TourLauncher
+            origem="empresa"
+            conta={conta}
+            autoIniciar={!authAtiva || conta !== undefined}
+          />
           <SkinSwitcher />
+          <MenuSessao />
           <button
             type="button"
             aria-expanded={menuAberto}
@@ -92,13 +105,15 @@ export function EmpresaHeader() {
               {item.rotulo}
             </Link>
           ))}
-          <Link
-            href={ROTAS.aluno}
-            onClick={() => setMenuAberto(false)}
-            className="block rounded-md px-3 py-2 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]"
-          >
-            {M.app.areaAluno}
-          </Link>
+          {!authAtiva && (
+            <Link
+              href={ROTAS.aluno}
+              onClick={() => setMenuAberto(false)}
+              className="block rounded-md px-3 py-2 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]"
+            >
+              {M.app.areaAluno}
+            </Link>
+          )}
         </nav>
       )}
     </header>

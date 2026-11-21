@@ -20,7 +20,7 @@ export function Dropzone({ arquivo, aoSelecionar, erro, desabilitado }: Props) {
   const idErro = useId();
 
   return (
-    <div>
+    <div className="flex min-h-0 flex-1 flex-col">
       <div
         data-arrastando={arrastando}
         onDragOver={(e) => {
@@ -36,7 +36,7 @@ export function Dropzone({ arquivo, aoSelecionar, erro, desabilitado }: Props) {
           if (escolhido) aoSelecionar(escolhido);
         }}
         className={cn(
-          'flex min-h-[160px] flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-6 text-center',
+          'flex min-h-[160px] flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-6 text-center',
           'focus-within:ring-2 focus-within:ring-[var(--ring)]',
           arrastando && 'border-[var(--accent)] bg-[var(--accent-muted)]',
           erro && 'border-[var(--danger)]',

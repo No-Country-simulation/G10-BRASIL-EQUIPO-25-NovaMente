@@ -34,7 +34,7 @@ describe('useSkin', () => {
 
   it('o registro tem as três skins', () => {
     expect(Object.keys(SKINS)).toEqual(['violeta', 'ciano', 'neural']);
-    expect(SKINS.neural.nome).toBe('Neural');
+    expect(SKINS.neural.nome).toBe('Sinapse');
   });
 
   it('cai nos padrões quando skin ou modo são inválidos', async () => {

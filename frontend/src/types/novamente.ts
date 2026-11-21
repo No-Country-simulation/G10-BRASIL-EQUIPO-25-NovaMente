@@ -10,12 +10,17 @@ import type {
   ApiProblemaErroSchema,
   AtualizarVinculosInputSchema,
   CitacaoChatSchema,
+  CodigoEnviadoSchema,
+  ConfigAuthSchema,
+  DefinirSenhaAlunoInputSchema,
   EtapaJobSchema,
   HealthRespostaSchema,
   IdentificacaoAlunoItemSchema,
   IdentificacaoAlunoRespostaSchema,
   ItemCatalogoAlunoSchema,
   JobRespostaSchema,
+  LoginAlunoInputSchema,
+  LoginEmpresaInputSchema,
   MaterialAtualizacaoSchema,
   MaterialDetalheSchema,
   MaterialResumoSchema,
@@ -26,9 +31,13 @@ import type {
   PaginaAlunosSchema,
   PaginaCatalogoAlunoSchema,
   PaginaMateriaisSchema,
+  PerfilDemoSchema,
   PerguntaChatSchema,
   RemocaoMaterialRespostaSchema,
   RespostaChatSchema,
+  SessaoSchema,
+  SolicitarCodigoInputSchema,
+  VerificarCodigoInputSchema,
   VinculoMaterialSchema,
   VinculosAlunoSchema,
   perfilSchema,
@@ -90,3 +99,13 @@ export type PerguntaChat = z.input<typeof PerguntaChatSchema>;
 export type CitacaoChat = z.infer<typeof CitacaoChatSchema>;
 export type RespostaChat = z.infer<typeof RespostaChatSchema>;
 export type ModelosChat = z.infer<typeof ModelosChatSchema>;
+
+export type ConfigAuth = z.infer<typeof ConfigAuthSchema>;
+export type Sessao = z.infer<typeof SessaoSchema>;
+export type LoginEmpresaInput = z.infer<typeof LoginEmpresaInputSchema>;
+export type SolicitarCodigoInput = z.infer<typeof SolicitarCodigoInputSchema>;
+export type DefinirSenhaAlunoInput = z.infer<typeof DefinirSenhaAlunoInputSchema>;
+export type VerificarCodigoInput = z.infer<typeof VerificarCodigoInputSchema>;
+export type LoginAlunoInput = z.infer<typeof LoginAlunoInputSchema>;
+export type CodigoEnviado = z.infer<typeof CodigoEnviadoSchema>;
+export type PerfilDemo = z.infer<typeof PerfilDemoSchema>;

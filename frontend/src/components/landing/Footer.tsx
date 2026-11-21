@@ -12,13 +12,13 @@ export function Footer() {
         </div>
         <nav aria-label={M.landing.footer.navegacao} className="flex flex-col gap-2 text-sm">
           <p className="font-medium">{M.landing.footer.navegacao}</p>
-          <Link href={ROTAS.empresaGerar} className="text-[var(--fg-muted)] hover:text-[var(--fg)]">
+          <Link href={ROTAS.entrarComo('empresa')} className="text-[var(--fg-muted)] hover:text-[var(--fg)]">
             Gerar material
           </Link>
           <Link href={ROTAS.empresaHistorico} className="text-[var(--fg-muted)] hover:text-[var(--fg)]">
             Histórico
           </Link>
-          <Link href={ROTAS.aluno} className="text-[var(--fg-muted)] hover:text-[var(--fg)]">
+          <Link href={ROTAS.entrarComo('aluno')} className="text-[var(--fg-muted)] hover:text-[var(--fg)]">
             Área do aluno
           </Link>
         </nav>

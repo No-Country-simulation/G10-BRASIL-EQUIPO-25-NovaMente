@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SENHA_MAXIMO, senhaValida } from '@/lib/senha';
 
 export const LIMITES = {
   tituloMin: 3,
@@ -169,6 +170,12 @@ export const CodigoErroSchema = z.enum([
   'MATERIAL_NAO_ENCONTRADO',
   'MATERIAL_NAO_DISPONIVEL',
   'NAO_AUTORIZADO',
+  'NAO_AUTENTICADO',
+  'CREDENCIAIS_INVALIDAS',
+  'CODIGO_INVALIDO',
+  'AUTH_LIMITE_EXCEDIDO',
+  'ACESSO_NEGADO',
+  'SENHA_FRACA',
   'GERACAO_OCUPADA',
   'PERGUNTA_VAZIA',
   'PERGUNTA_LONGA',
@@ -543,3 +550,69 @@ export const ModelosChatSchema = z
     modelos: z.array(z.string().min(1)),
   })
   .strict();
+
+// ── Autenticação (sessão por cookie httpOnly; o front nunca vê o token) ──────
+
+export const ConfigAuthSchema = z
+  .object({
+    // Falso em dev/mock: as telas ficam abertas como antes do login.
+    auth_habilitada: z.boolean(),
+    demo_habilitado: z.boolean(),
+  })
+  .strict();
+
+export const SessaoSchema = z.discriminatedUnion('tipo', [
+  z
+    .object({
+      tipo: z.literal('empresa'),
+      email: z.string().min(1),
+      demo: z.boolean().optional(),
+    })
+    .strict(),
+  z
+    .object({
+      tipo: z.literal('aluno'),
+      aluno_id: z.string().min(1),
+      nome: z.string().min(1),
+      demo: z.boolean().optional(),
+    })
+    .strict(),
+]);
+
+const EmailAuthSchema = z.string().trim().min(1, 'Informe o e-mail.').email('E-mail inválido.');
+
+export const CodigoVerificacaoSchema = z.string().regex(/^\d{6}$/, 'O código tem 6 dígitos.');
+
+/** Senha nova (criação): mesma política do backend, ver `lib/senha.ts`. */
+export const SenhaNovaSchema = z
+  .string()
+  .max(SENHA_MAXIMO, `A senha pode ter no máximo ${SENHA_MAXIMO} caracteres.`)
+  .refine(senhaValida, 'A senha não atende aos requisitos.');
+
+// Etapa 1 do login (senha). Se estiver certa, o servidor envia o código por e-mail.
+export const LoginEmpresaInputSchema = z
+  .object({ email: EmailAuthSchema, senha: z.string().min(1, 'Informe a senha.') })
+  .strict();
+
+export const LoginAlunoInputSchema = LoginEmpresaInputSchema;
+
+// Etapa 2 (código enviado por e-mail), igual para empresa e aluno.
+export const VerificarCodigoInputSchema = z
+  .object({ email: EmailAuthSchema, codigo: CodigoVerificacaoSchema })
+  .strict();
+
+// Primeiro acesso / esqueci a senha do aluno.
+export const SolicitarCodigoInputSchema = z.object({ email: EmailAuthSchema }).strict();
+
+export const DefinirSenhaAlunoInputSchema = z
+  .object({ email: EmailAuthSchema, codigo: CodigoVerificacaoSchema, senha: SenhaNovaSchema })
+  .strict();
+
+export const CodigoEnviadoSchema = z
+  .object({
+    mensagem: z.string().min(1),
+    expira_em_segundos: z.number().int().min(1),
+  })
+  .strict();
+
+export const PerfilDemoSchema = z.enum(['empresa', 'aluno']);

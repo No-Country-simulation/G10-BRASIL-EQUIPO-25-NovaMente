@@ -44,16 +44,16 @@ describe('SkinSwitcher', () => {
     expect(document.documentElement.dataset.modo).toBe('dark');
   });
 
-  it('lista a skin Neural com o selo Especial e a aplica', async () => {
+  it('lista a skin Sinapse com o selo Especial e a aplica', async () => {
     render(
       <SkinProvider>
         <SkinSwitcher />
       </SkinProvider>,
     );
 
-    const neural = screen.getByRole('button', { name: /neural/i });
+    const neural = screen.getByRole('button', { name: /sinapse/i });
     expect(neural).toHaveTextContent('Especial');
-    expect(screen.getAllByRole('button', { name: /violeta|ciano|neural/i })).toHaveLength(3);
+    expect(screen.getAllByRole('button', { name: /violeta|ciano|sinapse/i })).toHaveLength(3);
 
     await userEvent.click(neural);
 

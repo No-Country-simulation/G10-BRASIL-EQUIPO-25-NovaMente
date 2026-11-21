@@ -41,11 +41,11 @@ test.describe('landing e área da empresa', () => {
     await expect(page.getByRole('heading', { level: 1 })).toContainText(/material didático/i);
     await expect(page.getByRole('link', { name: /área da empresa/i }).first()).toHaveAttribute(
       'href',
-      '/empresa/gerar',
+      '/entrar?perfil=empresa',
     );
     await expect(page.getByRole('link', { name: /sou aluno/i })).toHaveAttribute(
       'href',
-      '/aluno',
+      '/entrar?perfil=aluno',
     );
     for (const formato of [/flashcards/i, /quiz interativo/i, /tutorial/i, /resumo executivo/i]) {
       await expect(page.getByText(formato).first()).toBeVisible();

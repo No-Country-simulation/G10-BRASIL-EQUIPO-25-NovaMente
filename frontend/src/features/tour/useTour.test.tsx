@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   CHAVE_TOUR,
+  chaveTour,
   VERSAO_TOUR,
   deveAutoIniciar,
   iniciarTour,
@@ -40,9 +41,11 @@ describe('passosDoTour', () => {
 
   it('começa na área da empresa para a origem empresa', () => {
     const passos = passosDoTour('empresa');
-    expect(passos).toHaveLength(6);
+    expect(passos).toHaveLength(5);
     expect(passos[0].element).toBe('[data-tour="empresa-nav"]');
-    expect(passos[5].element).toBe('[data-tour="aluno-identificacao"]');
+    // A área do aluno é outro perfil: o tour da empresa não navega até lá.
+    expect(passos.some((passo) => passo.rota === '/aluno')).toBe(false);
+    expect(passos[4].element).toBe('[data-tour="empresa-alunos-lista"]');
   });
 
   it('reduz a origem aluno ao passo da área do aluno', () => {
@@ -123,6 +126,18 @@ describe('persistência do tour', () => {
   });
 });
 
+describe('conclusão por conta', () => {
+  it('cada conta tem a sua marca; a de outra conta não impede o tour', () => {
+    marcarConcluido('empresa:a@demo.com');
+
+    expect(deveAutoIniciar('empresa:a@demo.com')).toBe(false);
+    expect(deveAutoIniciar('empresa:b@demo.com')).toBe(true);
+    expect(deveAutoIniciar()).toBe(true);
+    expect(chaveTour('empresa:a@demo.com')).toBe(`${CHAVE_TOUR}:empresa:a@demo.com`);
+    expect(chaveTour()).toBe(CHAVE_TOUR);
+  });
+});
+
 describe('iniciarTour', () => {
   it('navega até o primeiro passo, cria o driver e avança até o fim', async () => {
     for (const seletor of [
@@ -131,7 +146,6 @@ describe('iniciarTour', () => {
       'empresa-historico-lista',
       'empresa-materiais-lista',
       'empresa-alunos-lista',
-      'aluno-identificacao',
     ]) {
       elementoDoTour(seletor);
     }
@@ -148,14 +162,14 @@ describe('iniciarTour', () => {
 
     expect(driverMock).toHaveBeenCalledTimes(1);
     const config = driverMock.mock.calls[0][0];
-    expect(config.steps).toHaveLength(6);
+    expect(config.steps).toHaveLength(5);
     expect(fakeDriver.drive).toHaveBeenCalledWith(0);
     expect(navegar).toHaveBeenCalledWith('/empresa/gerar');
 
     config.onNextClick(undefined, config.steps[0], { index: 0, driver: fakeDriver });
     await vi.waitFor(() => expect(fakeDriver.moveTo).toHaveBeenCalledWith(1));
 
-    config.onNextClick(undefined, config.steps[5], { index: 5, driver: fakeDriver });
+    config.onNextClick(undefined, config.steps[4], { index: 4, driver: fakeDriver });
     await vi.waitFor(() => expect(fakeDriver.destroy).toHaveBeenCalled());
 
     config.onDestroyed();

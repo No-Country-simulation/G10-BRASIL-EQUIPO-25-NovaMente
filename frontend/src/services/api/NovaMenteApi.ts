@@ -6,11 +6,16 @@ import type {
   AlunoCriacao,
   AlunoResumo,
   AtualizarVinculosInput,
+  CodigoEnviado,
+  ConfigAuth,
+  DefinirSenhaAlunoInput,
   FormatoExportacao,
   FormatoSaida,
   HealthResposta,
   IdentificacaoAlunoItem,
   JobResposta,
+  LoginAlunoInput,
+  LoginEmpresaInput,
   MaterialAtualizacao,
   MaterialDetalhe,
   MaterialResumo,
@@ -20,10 +25,14 @@ import type {
   PaginaAlunos,
   PaginaCatalogoAluno,
   PaginaMateriais,
+  PerfilDemo,
   PerfilDestinatario,
   PerguntaChat,
   RemocaoMaterialResposta,
   RespostaChat,
+  Sessao,
+  SolicitarCodigoInput,
+  VerificarCodigoInput,
   StatusAluno,
   VinculoMaterial,
   VinculosAluno,
@@ -100,6 +109,19 @@ export interface NovaMenteApi {
     params?: ListarCatalogoAlunoParams,
   ): Promise<PaginaCatalogoAluno>;
   obterMaterialAluno(alunoId: string, materialId: string): Promise<MaterialDetalhe>;
+
+  configAuth(): Promise<ConfigAuth>;
+  obterSessao(): Promise<Sessao>;
+  // Empresa e aluno: 1) e-mail + senha (o servidor envia o código por e-mail); 2) código.
+  loginEmpresa(input: LoginEmpresaInput): Promise<CodigoEnviado>;
+  verificarEmpresa(input: VerificarCodigoInput): Promise<Sessao>;
+  loginAluno(input: LoginAlunoInput): Promise<CodigoEnviado>;
+  verificarAluno(input: VerificarCodigoInput): Promise<Sessao>;
+  // Primeiro acesso ou esqueci a senha: código por e-mail e criação da senha.
+  solicitarCodigoPrimeiroAcesso(input: SolicitarCodigoInput): Promise<CodigoEnviado>;
+  definirSenhaAluno(input: DefinirSenhaAlunoInput): Promise<Sessao>;
+  entrarDemo(perfil: PerfilDemo): Promise<Sessao>;
+  sair(): Promise<void>;
 
   listarModelosChat(): Promise<ModelosChat>;
   perguntarAluno(alunoId: string, materialId: string, input: PerguntaChat): Promise<RespostaChat>;

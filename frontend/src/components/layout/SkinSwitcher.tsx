@@ -54,7 +54,7 @@ export function SkinSwitcher() {
             />
             <span className="sr-only sm:not-sr-only">{SKINS[id].nome}</span>
             {seloDaSkin(id) ? (
-              <span className="sr-only sm:not-sr-only sm:ml-1 sm:text-[10px] sm:font-semibold sm:uppercase sm:tracking-wide sm:opacity-80">
+              <span className="sr-only sm:not-sr-only sm:ml-1 sm:text-[10px] sm:font-semibold sm:uppercase sm:tracking-wide">
                 {seloDaSkin(id)}
               </span>
             ) : null}

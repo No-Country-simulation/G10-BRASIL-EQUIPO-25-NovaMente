@@ -26,13 +26,13 @@ export function Hero() {
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild size="lg" className="h-11 bg-[var(--accent)] px-5 text-[var(--accent-fg)] hover:bg-[var(--accent-hover)]">
-            <Link href={ROTAS.empresaGerar}>
+            <Link href={ROTAS.entrarComo('empresa')}>
               {M.landing.hero.ctaEmpresa}
               <ArrowRight aria-hidden className="ml-2 h-4 w-4" />
             </Link>
           </Button>
           <Button asChild variant="outline" size="lg" className="h-11 px-5">
-            <Link href={ROTAS.aluno}>{M.landing.hero.ctaAluno}</Link>
+            <Link href={ROTAS.entrarComo('aluno')}>{M.landing.hero.ctaAluno}</Link>
           </Button>
         </div>
       </div>

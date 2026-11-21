@@ -141,6 +141,29 @@ const ROTAS: CasoAcessibilidade[] = [
       await page.getByRole('radio').first().waitFor();
     },
   },
+  {
+    rota: '/entrar?perfil=empresa',
+    titulo: /entrar no novamente/i,
+    incluirSerios: true,
+    preparar: async (page) => {
+      await page.addInitScript(() => window.localStorage.setItem('novamente.mock.auth', '1'));
+    },
+    espera: async (page) => {
+      await page.getByLabel('E-mail da empresa').waitFor();
+    },
+  },
+  {
+    rota: '/entrar?perfil=aluno',
+    modo: 'light',
+    titulo: /entrar no novamente/i,
+    incluirSerios: true,
+    preparar: async (page) => {
+      await page.addInitScript(() => window.localStorage.setItem('novamente.mock.auth', '1'));
+    },
+    espera: async (page) => {
+      await page.getByLabel('Seu e-mail').waitFor();
+    },
+  },
 ];
 
 for (const { rota, titulo, skin, modo, incluirSerios, preparar, espera } of ROTAS) {

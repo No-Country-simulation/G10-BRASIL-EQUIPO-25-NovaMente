@@ -10,6 +10,8 @@ import { ErroApi, ErroContrato, ErroRede, lerRetryAfter, paraProblema } from './
 import {
   AdaptacaoPacoteSchema,
   AlunoResumoSchema,
+  CodigoEnviadoSchema,
+  ConfigAuthSchema,
   HealthRespostaSchema,
   IdentificacaoAlunoRespostaSchema,
   JobRespostaSchema,
@@ -23,6 +25,7 @@ import {
   PaginaMateriaisSchema,
   RemocaoMaterialRespostaSchema,
   RespostaChatSchema,
+  SessaoSchema,
   VinculoMaterialSchema,
   VinculosAlunoSchema,
 } from '@/types/schemas';
@@ -34,10 +37,15 @@ import type {
   AlunoCriacao,
   AlunoResumo,
   AtualizarVinculosInput,
+  CodigoEnviado,
+  ConfigAuth,
+  DefinirSenhaAlunoInput,
   FormatoExportacao,
   HealthResposta,
   IdentificacaoAlunoResposta,
   JobResposta,
+  LoginAlunoInput,
+  LoginEmpresaInput,
   MaterialAtualizacao,
   MaterialDetalhe,
   MaterialResumo,
@@ -47,9 +55,13 @@ import type {
   PaginaAlunos,
   PaginaCatalogoAluno,
   PaginaMateriais,
+  PerfilDemo,
   PerguntaChat,
   RemocaoMaterialResposta,
   RespostaChat,
+  Sessao,
+  SolicitarCodigoInput,
+  VerificarCodigoInput,
   StatusAluno,
   VinculoMaterial,
   VinculosAluno,
@@ -91,6 +103,18 @@ async function pedir<T>(caminho: string, schema: ZodType<T>, init?: RequestInit)
   }
   const corpo = await lerCorpo(resposta);
   return validar(schema, corpo);
+}
+
+function normalizarEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function enviarJson<T>(caminho: string, schema: ZodType<T>, corpo: unknown): Promise<T> {
+  return pedir<T>(caminho, schema, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(corpo),
+  });
 }
 
 async function pedirSemCorpo(caminho: string, init?: RequestInit): Promise<void> {
@@ -296,6 +320,55 @@ export const httpApiClient: NovaMenteApi = {
       `${urls.alunoMaterial(materialId)}${montarQuery({ aluno_id: alunoId })}`,
       MaterialDetalheSchema,
     ),
+
+  configAuth: () => pedir<ConfigAuth>(urls.authConfig, ConfigAuthSchema),
+
+  obterSessao: () => pedir<Sessao>(urls.authEu, SessaoSchema),
+
+  loginEmpresa: (input: LoginEmpresaInput) =>
+    enviarJson<CodigoEnviado>(urls.authEmpresaLogin, CodigoEnviadoSchema, {
+      email: normalizarEmail(input.email),
+      senha: input.senha,
+    }),
+
+  verificarEmpresa: (input: VerificarCodigoInput) =>
+    enviarJson<Sessao>(urls.authEmpresaVerificar, SessaoSchema, {
+      email: normalizarEmail(input.email),
+      codigo: input.codigo,
+    }),
+
+  loginAluno: (input: LoginAlunoInput) =>
+    enviarJson<CodigoEnviado>(urls.authAlunoLogin, CodigoEnviadoSchema, {
+      email: normalizarEmail(input.email),
+      senha: input.senha,
+    }),
+
+  verificarAluno: (input: VerificarCodigoInput) =>
+    enviarJson<Sessao>(urls.authAlunoVerificar, SessaoSchema, {
+      email: normalizarEmail(input.email),
+      codigo: input.codigo,
+    }),
+
+  solicitarCodigoPrimeiroAcesso: (input: SolicitarCodigoInput) =>
+    enviarJson<CodigoEnviado>(urls.authAlunoSenhaCodigo, CodigoEnviadoSchema, {
+      email: normalizarEmail(input.email),
+    }),
+
+  definirSenhaAluno: (input: DefinirSenhaAlunoInput) =>
+    enviarJson<Sessao>(urls.authAlunoSenhaDefinir, SessaoSchema, {
+      email: normalizarEmail(input.email),
+      codigo: input.codigo,
+      senha: input.senha,
+    }),
+
+  entrarDemo: (perfil: PerfilDemo) =>
+    pedir<Sessao>(urls.authDemo, SessaoSchema, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ perfil }),
+    }),
+
+  sair: () => pedirSemCorpo(urls.authSair, { method: 'POST' }),
 
   listarModelosChat: () => pedir<ModelosChat>(urls.chatModelos, ModelosChatSchema),
 

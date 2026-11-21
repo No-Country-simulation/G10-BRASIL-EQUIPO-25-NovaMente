@@ -3,7 +3,7 @@
 export const SKINS = {
   violeta: { id: 'violeta', nome: 'Violeta', cor: '#8b5cf6' },
   ciano: { id: 'ciano', nome: 'Ciano', cor: '#22d3ee' },
-  neural: { id: 'neural', nome: 'Neural', cor: '#76b900', selo: 'Especial' },
+  neural: { id: 'neural', nome: 'Sinapse', cor: '#76b900', selo: 'Especial' },
 } as const;
 
 export type SkinId = keyof typeof SKINS;

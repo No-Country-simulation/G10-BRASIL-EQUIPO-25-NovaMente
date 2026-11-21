@@ -57,9 +57,9 @@ test('mantém o modo claro na empresa e na área do aluno', async ({ page }) => 
   await expect(page.locator('.logo-para-modo-claro').first()).toBeVisible();
 });
 
-test('aplica a skin Neural com o fundo animado e volta sem ele', async ({ page }) => {
+test('aplica a skin Sinapse com o fundo animado e volta sem ele', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: /neural/i }).click();
+  await page.getByRole('button', { name: /sinapse/i }).click();
 
   await expect(page.locator('html')).toHaveAttribute('data-skin', 'neural');
   await expect(page.locator('canvas[aria-hidden="true"]')).toHaveCount(1);

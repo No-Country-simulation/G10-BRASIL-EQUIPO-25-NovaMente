@@ -8,6 +8,14 @@ import { M } from '@/lib/mensagens';
 import type { PassoTour } from './driver';
 
 export const CHAVE_TOUR = 'novamente.tour';
+
+/**
+ * Chave da conclusão. Com login, cada conta tem a sua: quem entra pela primeira
+ * vez vê o tour mesmo que outra conta já o tenha concluído neste navegador.
+ */
+export function chaveTour(conta?: string): string {
+  return conta ? `${CHAVE_TOUR}:${conta}` : CHAVE_TOUR;
+}
 export const VERSAO_TOUR = 1;
 
 export type OrigemTour = 'landing' | 'empresa' | 'aluno' | 'completo';
@@ -109,7 +117,8 @@ export function passosDoTour(
 
   switch (origem) {
     case 'empresa':
-      return passos.slice(2);
+      // Só a área da empresa: a do aluno é outro perfil (com login, outra conta).
+      return passos.slice(2, 7);
     case 'aluno':
       return passos.slice(7);
     case 'landing':
@@ -120,9 +129,9 @@ export function passosDoTour(
 }
 
 /** Auto-start só após a primeira visita e respeitando a versão do roteiro. */
-export function deveAutoIniciar(): boolean {
+export function deveAutoIniciar(conta?: string): boolean {
   if (typeof window === 'undefined') return false;
-  const bruto = window.localStorage.getItem(CHAVE_TOUR);
+  const bruto = window.localStorage.getItem(chaveTour(conta));
   if (!bruto) return true;
   try {
     const dados = JSON.parse(bruto) as { versao?: unknown };
@@ -132,10 +141,10 @@ export function deveAutoIniciar(): boolean {
   }
 }
 
-export function marcarConcluido(): void {
+export function marcarConcluido(conta?: string): void {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(
-    CHAVE_TOUR,
+    chaveTour(conta),
     JSON.stringify({ versao: VERSAO_TOUR, concluido_em: new Date().toISOString() }),
   );
 }
@@ -152,6 +161,9 @@ async function localizarPasso(
     const passo = passos[indice];
     if (window.location.pathname !== passo.rota) navegar(passo.rota);
     if (await aguardarElemento(passo.element, 2500)) return indice;
+    // A guarda de rota mandou para o login (sem sessão): não adianta seguir
+    // tentando as próximas telas protegidas.
+    if (window.location.pathname.startsWith(ROTAS.entrar)) return null;
   }
   return null;
 }
@@ -163,6 +175,7 @@ async function localizarPasso(
 export async function iniciarTour(
   origem: OrigemTour,
   navegar: (rota: string) => void,
+  conta?: string,
 ): Promise<boolean> {
   if (typeof window === 'undefined') return false;
 
@@ -172,7 +185,7 @@ export async function iniciarTour(
 
   const { criarDriver } = await import('./driver');
   const driver = await criarDriver(passos, {
-    aoEncerrar: marcarConcluido,
+    aoEncerrar: () => marcarConcluido(conta),
     aoAvancar: async (indice, instancia) => {
       const proximo = await localizarPasso(passos, indice + 1, 1, navegar);
       if (proximo === null) instancia.destroy();
@@ -189,12 +202,12 @@ export async function iniciarTour(
 }
 
 /** Versão do tour que usa o router do Next para navegar entre as telas. */
-export function useTour() {
+export function useTour(conta?: string) {
   const router = useRouter();
 
   const iniciar = useCallback(
-    (origem: OrigemTour) => iniciarTour(origem, (rota) => router.push(rota)),
-    [router],
+    (origem: OrigemTour) => iniciarTour(origem, (rota) => router.push(rota), conta),
+    [router, conta],
   );
 
   return { iniciarTour: iniciar };

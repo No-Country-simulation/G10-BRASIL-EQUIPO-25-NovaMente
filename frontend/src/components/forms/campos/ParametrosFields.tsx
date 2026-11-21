@@ -21,14 +21,15 @@ function Erro({ mensagem }: { mensagem?: string }) {
 export function PerfilField({ form, desabilitado }: Props) {
   const atual = form.watch('perfil_destinatario');
   return (
-    <fieldset>
+    <fieldset className="xl:flex xl:flex-1 xl:flex-col">
       <legend className="mb-2 text-sm font-medium">{M.formulario.campoPerfil}</legend>
-      <div className="grid gap-2 sm:grid-cols-2">
+      {/* Em telas altas os cartões crescem e ocupam o espaço livre da coluna. */}
+      <div className="grid gap-2 sm:grid-cols-2 xl:flex-1 xl:auto-rows-fr">
         {PERFIS.map((perfil) => (
           <label
             key={perfil.valor}
             className={cn(
-              'min-h-11 cursor-pointer rounded-lg border p-3 text-sm',
+              'flex min-h-11 cursor-pointer flex-col justify-center rounded-lg border p-3 text-sm [@media(max-height:780px)]:xl:px-3 [@media(max-height:780px)]:xl:py-1.5',
               'focus-within:ring-2 focus-within:ring-[var(--ring)]',
               atual === perfil.valor && 'border-[var(--accent)] bg-[var(--accent-muted)]',
             )}
@@ -40,8 +41,8 @@ export function PerfilField({ form, desabilitado }: Props) {
               disabled={desabilitado}
               {...form.register('perfil_destinatario')}
             />
-            <span className="block font-medium">{perfil.rotulo}</span>
-            <span className="block text-xs text-[var(--fg-muted)]">{perfil.descricao}</span>
+            <span className="block font-medium 2xl:text-base">{perfil.rotulo}</span>
+            <span className="block text-xs text-[var(--fg-muted)] [@media(max-height:780px)]:xl:truncate">{perfil.descricao}</span>
           </label>
         ))}
       </div>
@@ -53,14 +54,15 @@ export function PerfilField({ form, desabilitado }: Props) {
 export function FormatoField({ form, desabilitado }: Props) {
   const atual = form.watch('formato_saida');
   return (
-    <fieldset>
+    <fieldset className="xl:flex xl:flex-1 xl:flex-col">
       <legend className="mb-2 text-sm font-medium">{M.formulario.campoFormato}</legend>
-      <div className="grid gap-2 sm:grid-cols-2">
+      {/* Em telas altas os cartões crescem e ocupam o espaço livre da coluna. */}
+      <div className="grid gap-2 sm:grid-cols-2 xl:flex-1 xl:auto-rows-fr">
         {FORMATOS.map((formato) => (
           <label
             key={formato.valor}
             className={cn(
-              'min-h-11 cursor-pointer rounded-lg border p-3 text-sm',
+              'flex min-h-11 cursor-pointer flex-col justify-center rounded-lg border p-3 text-sm [@media(max-height:780px)]:xl:px-3 [@media(max-height:780px)]:xl:py-1.5',
               'focus-within:ring-2 focus-within:ring-[var(--ring)]',
               atual === formato.valor && 'border-[var(--accent)] bg-[var(--accent-muted)]',
             )}
@@ -72,7 +74,7 @@ export function FormatoField({ form, desabilitado }: Props) {
               disabled={desabilitado}
               {...form.register('formato_saida')}
             />
-            <span className="block font-medium">{formato.rotulo}</span>
+            <span className="block font-medium 2xl:text-base">{formato.rotulo}</span>
             <span className="block text-xs text-[var(--fg-muted)]">{formato.descricao}</span>
           </label>
         ))}
@@ -124,7 +126,7 @@ export function NivelField({ form, desabilitado }: Props) {
           <label
             key={nivel.valor}
             className={cn(
-              'flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded px-2 py-1.5 text-center text-sm',
+              'flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded px-1 py-1.5 text-center text-sm',
               'focus-within:ring-2 focus-within:ring-[var(--ring)]',
               atual === nivel.valor && 'bg-[var(--accent)] text-[var(--accent-fg)]',
             )}

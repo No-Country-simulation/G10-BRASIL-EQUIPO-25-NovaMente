@@ -30,7 +30,7 @@ export function LandingHeader() {
         <div className="flex items-center gap-2">
           <TourLauncher origem="landing" />
           <SkinSwitcher />
-          <Link href={ROTAS.aluno} className="inline-flex h-11 items-center px-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]">
+          <Link href={ROTAS.entrarComo('aluno')} className="inline-flex h-11 items-center px-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]">
             {M.landing.header.souAluno}
           </Link>
           <Button
@@ -38,7 +38,7 @@ export function LandingHeader() {
             size="sm"
             className="h-11 bg-[var(--accent)] px-3 text-[var(--accent-fg)] hover:bg-[var(--accent-hover)]"
           >
-            <Link href={ROTAS.empresaGerar}>{M.landing.header.areaEmpresa}</Link>
+            <Link href={ROTAS.entrarComo('empresa')}>{M.landing.header.areaEmpresa}</Link>
           </Button>
         </div>
       </div>

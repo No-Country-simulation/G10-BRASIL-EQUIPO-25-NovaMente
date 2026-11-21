@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { IngestionForm } from '@/components/forms/IngestionForm';
 import { JobProgress } from './JobProgress';
 import { Button } from '@/components/ui/button';
@@ -57,16 +57,41 @@ export function GerarView() {
     }
   }, [repetir]);
 
+  // Abaixo de xl o resultado fica embaixo do formulário: ao iniciar a geração,
+  // leva a tela até o progresso para a pessoa não precisar procurar.
+  const resultadoRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!jobId || typeof window === 'undefined') return;
+    if (window.matchMedia?.('(min-width: 1280px)').matches) return;
+    const reduzido = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    resultadoRef.current?.scrollIntoView?.({ behavior: reduzido ? 'auto' : 'smooth', block: 'start' });
+  }, [jobId]);
+
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[380px_minmax(0,1fr)]">
-      <section aria-labelledby="form-titulo" data-tour="empresa-gerar-form">
-        <h1 id="form-titulo" className="mb-4 text-xl font-semibold">
-          {M.formulario.titulo}
-        </h1>
-        <IngestionForm onCriado={aoCriar} desabilitado={Boolean(jobId) && !falhou} />
+    // Em telas largas ocupa a altura útil da janela: documento, parâmetros e
+    // progresso lado a lado, sem rolagem da página.
+    <div className="grid grid-cols-1 gap-6 xl:h-[calc(100dvh-10rem)] xl:max-h-[960px] xl:min-h-[560px] xl:grid-cols-[minmax(0,1fr)_380px]">
+      <section
+        aria-labelledby="form-titulo"
+        data-tour="empresa-gerar-form"
+        className="min-h-0 xl:flex xl:flex-col"
+      >
+        <IngestionForm
+          onCriado={aoCriar}
+          desabilitado={Boolean(jobId) && !falhou}
+          titulo={
+            <h1 id="form-titulo" className="text-xl font-semibold">
+              {M.formulario.titulo}
+            </h1>
+          }
+        />
       </section>
 
-      <section aria-label={M.job.regiaoResultado}>
+      <section
+        ref={resultadoRef}
+        aria-label={M.job.regiaoResultado}
+        className="min-h-0 scroll-mt-20 xl:overflow-y-auto"
+      >
         {erroAcao && (
           <div role="alert" className="mb-4 rounded-md border border-[var(--danger)] p-3 text-sm text-[var(--danger)]">
             {erroAcao}
@@ -91,9 +116,9 @@ export function GerarView() {
             </Button>
           </div>
         ) : jobId ? (
-          <div className="h-[320px] animate-pulse rounded-xl border bg-[var(--surface)]" aria-label={M.comum.carregando} />
+          <div className="h-[320px] animate-pulse rounded-xl border bg-[var(--surface)] xl:h-full" aria-label={M.comum.carregando} />
         ) : (
-          <div className="flex h-[320px] items-center justify-center rounded-xl border border-dashed text-sm text-[var(--fg-muted)]">
+          <div className="flex h-40 items-center justify-center rounded-xl border border-dashed p-6 text-center text-sm text-[var(--fg-muted)] xl:h-full">
             {M.job.aguardando}
           </div>
         )}

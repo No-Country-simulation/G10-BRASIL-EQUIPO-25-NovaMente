@@ -22,8 +22,8 @@ describe('LandingPage', () => {
       </SkinProvider>,
     );
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('material didático');
-    expect(screen.getByRole('link', { name: /área da empresa/i })).toHaveAttribute('href', '/empresa/gerar');
-    expect(screen.getByRole('link', { name: /sou aluno/i })).toHaveAttribute('href', '/aluno');
+    expect(screen.getByRole('link', { name: /área da empresa/i })).toHaveAttribute('href', '/entrar?perfil=empresa');
+    expect(screen.getByRole('link', { name: /sou aluno/i })).toHaveAttribute('href', '/entrar?perfil=aluno');
     for (const titulo of [/flashcards/i, /quiz/i, /tutorial/i, /resumo executivo/i]) {
       expect(screen.getAllByText(titulo).length).toBeGreaterThan(0);
     }

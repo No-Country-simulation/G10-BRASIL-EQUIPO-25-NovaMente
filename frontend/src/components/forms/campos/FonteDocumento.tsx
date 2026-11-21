@@ -28,7 +28,7 @@ export function FonteDocumento({
   const totalCaracteres = Array.from(conteudo.trim()).length;
 
   return (
-    <Tabs value={aba} onValueChange={(v) => trocarAba(v as Aba)}>
+    <Tabs value={aba} onValueChange={(v) => trocarAba(v as Aba)} className="min-h-0 flex-1">
       <TabsList className="w-full group-data-horizontal/tabs:h-12">
         <TabsTrigger value="texto" className="h-11" disabled={desabilitado}>
           {M.formulario.abaTexto}
@@ -38,18 +38,18 @@ export function FonteDocumento({
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="texto">
+      <TabsContent value="texto" className="flex min-h-0 flex-1 flex-col">
         <label htmlFor={idTexto} className="mb-2 block text-sm font-medium">
           {M.formulario.campoTexto}
         </label>
         <textarea
           id={idTexto}
-          rows={10}
+          rows={8}
           disabled={desabilitado}
           placeholder={M.formulario.placeholderTexto}
           aria-invalid={Boolean(erros.documento_conteudo)}
           aria-describedby={erros.documento_conteudo ? `${idContador} ${idErroTexto}` : idContador}
-          className="w-full rounded-md border bg-[var(--surface)] p-3 text-sm"
+          className="min-h-[180px] w-full flex-1 resize-none rounded-md border bg-[var(--surface)] p-3 text-sm xl:min-h-[120px]"
           {...form.register('documento_conteudo')}
         />
         <div className="mt-1 flex items-center justify-between gap-3">
@@ -73,7 +73,7 @@ export function FonteDocumento({
         </div>
       </TabsContent>
 
-      <TabsContent value="arquivo">
+      <TabsContent value="arquivo" className="flex min-h-0 flex-1 flex-col">
         <p className="mb-2 text-sm font-medium">{M.formulario.campoArquivo}</p>
         <Dropzone
           arquivo={arquivo}
