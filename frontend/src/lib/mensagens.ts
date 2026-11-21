@@ -142,12 +142,49 @@ export const M = {
       creditos: 'NovaMente · ONE G10 Brasil · No Country · Alura',
     },
   },
+  privacidade: {
+    banner: {
+      titulo: 'Sua privacidade em primeiro lugar',
+      texto:
+        'O NovaMente usa só o necessário para você entrar com segurança e usar a plataforma. Com a sua permissão, também guarda neste dispositivo as suas preferências: o tema e o tour guiado. Não usamos cookies de publicidade, de análise nem de rastreamento.',
+      mudarDeIdeia:
+        'Você pode mudar a escolha quando quiser, em "Preferências de cookies", no rodapé.',
+      leiaPolitica: 'Política de Privacidade e Cookies',
+      somenteNecessarios: 'Somente necessários',
+      aceitar: 'Aceitar preferências',
+      personalizar: 'Personalizar',
+      salvar: 'Salvar minhas escolhas',
+      voltar: 'Voltar',
+      cancelar: 'Cancelar',
+      painelTitulo: 'Escolha o que podemos guardar',
+      necessarios: {
+        titulo: 'Necessários',
+        selo: 'Sempre ativos',
+        descricao:
+          'Mantêm você conectado, protegem o acesso e registram esta escolha. Sem eles a plataforma não funciona.',
+      },
+      preferencias: {
+        titulo: 'Preferências',
+        descricao:
+          'Lembram o tema e se você já viu o tour guiado, para ele não aparecer de novo. Sem elas, o tema e o tour voltam ao padrão quando você fecha o navegador.',
+      },
+    },
+    rodape: {
+      politica: 'Privacidade e cookies',
+      preferencias: 'Preferências de cookies',
+    },
+    pagina: {
+      voltar: 'Voltar ao início',
+      sumario: 'Neste documento',
+    },
+  },
   tour: {
     verTour: 'Ver tour',
     proximo: 'Próximo',
     anterior: 'Anterior',
     concluir: 'Concluir',
     pular: 'Pular tour',
+    fechar: 'Fechar o tour',
     progresso: '{{current}} de {{total}}',
     passos: {
       boasVindas: {

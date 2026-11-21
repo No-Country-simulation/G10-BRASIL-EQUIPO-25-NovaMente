@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SKINS } from '@/themes/registry';
 import { useSkin } from './useSkin';
+import { limparArmazenamento, semearConsentimento } from '@/test/consentimento';
 
 describe('useSkin', () => {
   beforeEach(() => {
-    localStorage.clear();
+    limparArmazenamento();
+    semearConsentimento();
     useSkin.setState({ skin: 'violeta', modo: 'dark' });
   });
 

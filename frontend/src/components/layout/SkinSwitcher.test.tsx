@@ -4,10 +4,12 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { SkinProvider } from '@/features/theme/SkinProvider';
 import { useSkin } from '@/features/theme/useSkin';
 import { SkinSwitcher } from './SkinSwitcher';
+import { limparArmazenamento, semearConsentimento } from '@/test/consentimento';
 
 describe('SkinSwitcher', () => {
   beforeEach(() => {
-    localStorage.clear();
+    limparArmazenamento();
+    semearConsentimento();
     useSkin.setState({ skin: 'violeta', modo: 'dark' });
     document.documentElement.dataset.skin = 'violeta';
     document.documentElement.dataset.modo = 'dark';

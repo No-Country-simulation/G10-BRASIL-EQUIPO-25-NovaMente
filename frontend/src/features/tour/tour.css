@@ -52,6 +52,27 @@
   color: var(--fg-muted);
 }
 
+/* "Pular tour": texto sublinhado, sem competir com Próximo. */
+.novamente-tour .driver-popover-skip-btn {
+  min-height: 44px;
+  padding: 0 0.75rem;
+  margin-right: auto;
+  border: 0;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-shadow: none;
+  cursor: pointer;
+}
+
+.novamente-tour .driver-popover-skip-btn:hover,
+.novamente-tour .driver-popover-skip-btn:focus-visible {
+  color: var(--fg);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .driver-overlay-animated,
   .driver-popover,

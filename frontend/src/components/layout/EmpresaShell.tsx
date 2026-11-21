@@ -1,6 +1,7 @@
 import { RequerSessao } from '@/components/auth/RequerSessao';
 import { EmpresaHeader } from './EmpresaHeader';
 import { HealthBanner } from './HealthBanner';
+import { RodapePrivacidade } from '@/components/privacidade/RodapePrivacidade';
 import { M } from '@/lib/mensagens';
 
 export function EmpresaShell({ children }: { children: React.ReactNode }) {
@@ -17,6 +18,9 @@ export function EmpresaShell({ children }: { children: React.ReactNode }) {
       <main id="conteudo" className="mx-auto max-w-[1440px] px-4 py-8">
         <RequerSessao perfil="empresa">{children}</RequerSessao>
       </main>
+      <footer className="mx-auto max-w-[1440px] px-4 pb-3">
+        <RodapePrivacidade />
+      </footer>
     </div>
   );
 }

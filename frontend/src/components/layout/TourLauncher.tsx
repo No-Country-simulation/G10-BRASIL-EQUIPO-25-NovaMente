@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { useConsentimento } from '@/features/privacidade/consentimento';
 import { M } from '@/lib/mensagens';
 import { ROTAS } from '@/lib/rotas';
 import {
@@ -28,6 +29,8 @@ export function TourLauncher({ origem, iniciar, conta, autoIniciar = true }: Tou
   const executar = iniciar ?? iniciarTour;
   const [iniciando, setIniciando] = useState(false);
   const jaIniciado = useRef(false);
+  // O tour sozinho espera o usuário decidir sobre os cookies: dois avisos ao mesmo tempo atrapalham.
+  const { decidido } = useConsentimento();
 
   // Só grava a conclusão depois que o tour realmente iniciou. Uma falha no
   // import dinâmico (ou nenhum alvo disponível) não desabilita o tour para
@@ -58,7 +61,13 @@ export function TourLauncher({ origem, iniciar, conta, autoIniciar = true }: Tou
 
     // Auto-start apenas na primeira visita a /empresa/gerar. O cleanup cancela
     // o timer se a rota mudar antes dos 600 ms.
-    if (!autoIniciar || origem !== 'empresa' || pathname !== ROTAS.empresaGerar || !deveAutoIniciar(conta)) {
+    if (
+      !autoIniciar ||
+      !decidido ||
+      origem !== 'empresa' ||
+      pathname !== ROTAS.empresaGerar ||
+      !deveAutoIniciar(conta)
+    ) {
       return;
     }
 
@@ -73,7 +82,7 @@ export function TourLauncher({ origem, iniciar, conta, autoIniciar = true }: Tou
       cancelado = true;
       window.clearTimeout(timer);
     };
-  }, [iniciarComSeguranca, origem, pathname, autoIniciar, conta]);
+  }, [iniciarComSeguranca, origem, pathname, autoIniciar, decidido, conta]);
 
   const aoClicar = useCallback(async () => {
     if (iniciando) return;

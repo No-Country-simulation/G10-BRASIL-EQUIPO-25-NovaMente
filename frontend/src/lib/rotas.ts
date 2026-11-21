@@ -1,6 +1,7 @@
 export const ROTAS = {
   landing: '/',
   entrar: '/entrar',
+  privacidade: '/privacidade',
   entrarComo: (perfil: 'empresa' | 'aluno', proximo?: string) => {
     const busca = new URLSearchParams({ perfil });
     if (proximo) busca.set('proximo', proximo);

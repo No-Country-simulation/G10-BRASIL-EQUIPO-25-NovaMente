@@ -1,5 +1,6 @@
 import { RequerSessao } from '@/components/auth/RequerSessao';
 import { AlunoHeader } from './AlunoHeader';
+import { RodapePrivacidade } from '@/components/privacidade/RodapePrivacidade';
 import { M } from '@/lib/mensagens';
 
 export function AlunoShell({ children }: { children: React.ReactNode }) {
@@ -15,6 +16,9 @@ export function AlunoShell({ children }: { children: React.ReactNode }) {
       <main id="conteudo" className="mx-auto max-w-[1280px] px-4 py-8">
         <RequerSessao perfil="aluno">{children}</RequerSessao>
       </main>
+      <footer className="mx-auto max-w-[1280px] px-4 pb-3">
+        <RodapePrivacidade />
+      </footer>
     </div>
   );
 }

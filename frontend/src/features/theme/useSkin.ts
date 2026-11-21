@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import { armazenamentoDePreferencias } from '@/features/privacidade/armazenamento';
 import {
   MODO_PADRAO,
   type Modo,
@@ -42,6 +43,8 @@ export const useSkin = create<SkinState>()(
     }),
     {
       name: 'novamente.skin',
+      // O tema é uma preferência: só dura entre visitas com o consentimento de cookies.
+      storage: createJSONStorage(() => armazenamentoDePreferencias),
       version: 2,
       // v1 guardava só { skin }; adiciona o modo padrão sem perder a preferência.
       migrate: (persistido) => ({ ...(persistido as object), ...normalizarTema(persistido) }),

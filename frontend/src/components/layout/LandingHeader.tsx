@@ -27,7 +27,7 @@ export function LandingHeader() {
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <TourLauncher origem="landing" />
           <SkinSwitcher />
           <Link href={ROTAS.entrarComo('aluno')} className="inline-flex h-11 items-center px-1 text-sm text-[var(--fg-muted)] hover:text-[var(--fg)]">

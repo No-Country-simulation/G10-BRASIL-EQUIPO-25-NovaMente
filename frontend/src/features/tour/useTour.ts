@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { CHAVE_IDENTIDADE_ALUNO } from '@/features/aluno/useIdentidadeAluno';
+import { gravarPreferencia, lerPreferencia } from '@/features/privacidade/armazenamento';
 import { ROTAS } from '@/lib/rotas';
 import { M } from '@/lib/mensagens';
 import type { PassoTour } from './driver';
@@ -128,10 +129,13 @@ export function passosDoTour(
   }
 }
 
-/** Auto-start só após a primeira visita e respeitando a versão do roteiro. */
+/**
+ * Auto-start só para quem nunca concluiu nem pulou o tour (e respeitando a
+ * versão do roteiro). Quem já viu só o revê pelo botão "Ver tour".
+ */
 export function deveAutoIniciar(conta?: string): boolean {
   if (typeof window === 'undefined') return false;
-  const bruto = window.localStorage.getItem(chaveTour(conta));
+  const bruto = lerPreferencia(chaveTour(conta));
   if (!bruto) return true;
   try {
     const dados = JSON.parse(bruto) as { versao?: unknown };
@@ -141,9 +145,14 @@ export function deveAutoIniciar(conta?: string): boolean {
   }
 }
 
+/**
+ * Registra que o tour foi visto (concluído, pulado ou fechado). O registro é
+ * uma preferência: dura entre visitas só com o consentimento de cookies; sem
+ * ele, vale até fechar o navegador.
+ */
 export function marcarConcluido(conta?: string): void {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(
+  gravarPreferencia(
     chaveTour(conta),
     JSON.stringify({ versao: VERSAO_TOUR, concluido_em: new Date().toISOString() }),
   );

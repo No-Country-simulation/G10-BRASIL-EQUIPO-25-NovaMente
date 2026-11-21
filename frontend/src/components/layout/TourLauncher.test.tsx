@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TourLauncher } from './TourLauncher';
 import { CHAVE_TOUR, chaveTour } from '@/features/tour/useTour';
+import { limparArmazenamento, semearConsentimento } from '@/test/consentimento';
+import { decidirConsentimento } from '@/features/privacidade/consentimento';
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
@@ -17,7 +19,8 @@ vi.mock('next/navigation', () => ({
 }));
 
 beforeEach(() => {
-  window.localStorage.clear();
+  limparArmazenamento();
+  semearConsentimento();
   window.history.replaceState({}, '', '/');
   mocks.push.mockReset();
   mocks.replace.mockReset();
@@ -160,5 +163,72 @@ describe('TourLauncher', () => {
     expect(window.localStorage.getItem(CHAVE_TOUR)).toBeNull();
 
     consoleError.mockRestore();
+  });
+});
+
+describe('TourLauncher e a escolha de cookies', () => {
+  it('não abre sozinho enquanto o usuário não decidiu sobre os cookies', async () => {
+    window.localStorage.clear();
+    mocks.pathname = '/empresa/gerar';
+    const iniciar = vi.fn().mockResolvedValue(undefined);
+
+    render(<TourLauncher origem="empresa" iniciar={iniciar} />);
+    await new Promise((resolver) => setTimeout(resolver, 900));
+
+    expect(iniciar).not.toHaveBeenCalled();
+  });
+
+  it('abre depois que o usuário decide e não repete a cada visita', async () => {
+    window.localStorage.clear();
+    mocks.pathname = '/empresa/gerar';
+    const iniciar = vi.fn().mockResolvedValue(undefined);
+
+    const primeira = render(<TourLauncher origem="empresa" iniciar={iniciar} />);
+    await new Promise((resolver) => setTimeout(resolver, 700));
+    expect(iniciar).not.toHaveBeenCalled();
+
+    act(() => decidirConsentimento(true));
+    await waitFor(() => expect(iniciar).toHaveBeenCalledTimes(1), { timeout: 1_500 });
+    primeira.unmount();
+
+    // Outra visita: já viu, não abre de novo.
+    render(<TourLauncher origem="empresa" iniciar={iniciar} />);
+    await new Promise((resolver) => setTimeout(resolver, 900));
+    expect(iniciar).toHaveBeenCalledTimes(1);
+  });
+
+  it('recusando as preferências, o tour já visto vale só na sessão e não repete nela', async () => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+    mocks.pathname = '/empresa/gerar';
+    const iniciar = vi.fn().mockResolvedValue(undefined);
+
+    const primeira = render(<TourLauncher origem="empresa" iniciar={iniciar} />);
+    act(() => decidirConsentimento(false));
+    await waitFor(() => expect(iniciar).toHaveBeenCalledTimes(1), { timeout: 1_500 });
+    primeira.unmount();
+
+    expect(window.localStorage.getItem(CHAVE_TOUR)).toBeNull();
+    expect(window.sessionStorage.getItem(CHAVE_TOUR)).toContain('versao');
+
+    render(<TourLauncher origem="empresa" iniciar={iniciar} />);
+    await new Promise((resolver) => setTimeout(resolver, 900));
+    expect(iniciar).toHaveBeenCalledTimes(1);
+  });
+
+  it('o botão "Ver tour" revê o tour mesmo quem já o concluiu', async () => {
+    mocks.pathname = '/empresa/gerar';
+    window.localStorage.setItem(
+      CHAVE_TOUR,
+      JSON.stringify({ versao: 1, concluido_em: '2026-11-09T10:00:00Z' }),
+    );
+    const iniciar = vi.fn().mockResolvedValue(undefined);
+
+    render(<TourLauncher origem="empresa" iniciar={iniciar} />);
+    await new Promise((resolver) => setTimeout(resolver, 800));
+    expect(iniciar).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('button', { name: /ver tour/i }));
+    expect(iniciar).toHaveBeenCalledWith('empresa');
   });
 });

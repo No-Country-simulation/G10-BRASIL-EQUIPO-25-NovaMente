@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import { Providers } from './providers';
+import { BannerCookies } from '@/components/privacidade/BannerCookies';
 import { SkinProvider } from '@/features/theme/SkinProvider';
 import { SKIN_PADRAO, SKINS } from '@/themes/registry';
 import './globals.css';
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
 };
 
 // A lista de skins válidas vem do registro, para o script não ficar para trás quando entrar uma skin nova.
-const scriptTema = `try{var b=localStorage.getItem('novamente.skin');var s=b?JSON.parse(b).state:null;var v=${JSON.stringify(Object.keys(SKINS))};var skin=s&&v.indexOf(s.skin)>=0?s.skin:'${SKIN_PADRAO}';var modo=s&&s.modo==='light'?'light':'dark';document.documentElement.dataset.skin=skin;document.documentElement.dataset.modo=modo;document.documentElement.style.colorScheme=modo}catch(e){document.documentElement.dataset.skin='violeta';document.documentElement.dataset.modo='dark';document.documentElement.style.colorScheme='dark'}`;
+const scriptTema = `try{var b=localStorage.getItem('novamente.skin')||sessionStorage.getItem('novamente.skin');var s=b?JSON.parse(b).state:null;var v=${JSON.stringify(Object.keys(SKINS))};var skin=s&&v.indexOf(s.skin)>=0?s.skin:'${SKIN_PADRAO}';var modo=s&&s.modo==='light'?'light':'dark';document.documentElement.dataset.skin=skin;document.documentElement.dataset.modo=modo;document.documentElement.style.colorScheme=modo}catch(e){document.documentElement.dataset.skin='violeta';document.documentElement.dataset.modo='dark';document.documentElement.style.colorScheme='dark'}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -33,7 +34,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <Providers>
-          <SkinProvider>{children}</SkinProvider>
+          <SkinProvider>
+            <BannerCookies />
+            {children}
+          </SkinProvider>
         </Providers>
       </body>
     </html>

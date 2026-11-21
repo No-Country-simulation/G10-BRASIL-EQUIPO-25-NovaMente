@@ -70,7 +70,7 @@ export function GerarView() {
   return (
     // Em telas largas ocupa a altura útil da janela: documento, parâmetros e
     // progresso lado a lado, sem rolagem da página.
-    <div className="grid grid-cols-1 gap-6 xl:h-[calc(100dvh-10rem)] xl:max-h-[960px] xl:min-h-[560px] xl:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="grid grid-cols-1 gap-6 xl:h-[calc(100dvh-13.5rem)] xl:max-h-[960px] xl:min-h-[560px] xl:grid-cols-[minmax(0,1fr)_380px]">
       <section
         aria-labelledby="form-titulo"
         data-tour="empresa-gerar-form"

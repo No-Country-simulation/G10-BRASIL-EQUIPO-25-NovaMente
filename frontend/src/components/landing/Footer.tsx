@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { M } from '@/lib/mensagens';
 import { ROTAS } from '@/lib/rotas';
+import { RodapePrivacidade } from '@/components/privacidade/RodapePrivacidade';
 
 export function Footer() {
   return (
@@ -26,6 +27,7 @@ export function Footer() {
       <div className="border-t border-[var(--border)]">
         <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 text-xs text-[var(--fg-muted)] sm:px-6 md:flex-row md:items-center md:justify-between">
           <p>{M.landing.footer.creditos}</p>
+          <RodapePrivacidade />
           <p>{M.landing.footer.aviso}</p>
         </div>
       </div>

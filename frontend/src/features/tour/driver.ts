@@ -90,7 +90,7 @@ export async function criarDriver(
     nextBtnText: M.tour.proximo,
     prevBtnText: M.tour.anterior,
     doneBtnText: M.tour.concluir,
-    closeBtnLabel: M.tour.pular,
+    closeBtnLabel: M.tour.fechar,
     overlayOpacity: 0.6,
     stagePadding: 8,
     stageRadius: 8,
@@ -104,6 +104,16 @@ export async function criarDriver(
     },
     onPrevClick: (_elemento, _passo, contexto) => {
       void opcoes.aoVoltar?.(contexto.index ?? 0, contexto.driver);
+    },
+    // Botão "Pular tour" visível em todos os passos, menos no último (que já tem "Concluir").
+    onPopoverRender: (popover, { driver: instancia, state }) => {
+      if ((state.activeIndex ?? 0) >= passos.length - 1) return;
+      const pular = document.createElement('button');
+      pular.type = 'button';
+      pular.className = 'driver-popover-skip-btn';
+      pular.textContent = M.tour.pular;
+      pular.addEventListener('click', () => instancia.destroy());
+      popover.footerButtons.prepend(pular);
     },
     onDestroyed: () => opcoes.aoEncerrar?.(),
   };

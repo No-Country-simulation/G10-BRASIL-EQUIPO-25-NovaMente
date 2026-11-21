@@ -10,6 +10,7 @@ import {
 } from './useTour';
 import { aguardarElemento, filtrarPassosDisponiveis } from './driver';
 import { CHAVE_IDENTIDADE_ALUNO } from '@/features/aluno/useIdentidadeAluno';
+import { limparArmazenamento, semearConsentimento } from '@/test/consentimento';
 
 const driverMock = vi.hoisted(() => vi.fn());
 
@@ -22,7 +23,8 @@ function elementoDoTour(seletor: string) {
 }
 
 beforeEach(() => {
-  window.localStorage.clear();
+  limparArmazenamento();
+  semearConsentimento();
   document.body.innerHTML = '';
   driverMock.mockReset();
 });
@@ -190,3 +192,53 @@ describe('iniciarTour', () => {
     expect(config.steps[0].element).toBe('[data-tour="aluno-catalogo"]');
   });
 });
+
+describe('botão Pular tour', () => {
+  async function configDoDriver() {
+    elementoDoTour('empresa-nav');
+    elementoDoTour('empresa-gerar-form');
+    elementoDoTour('empresa-historico-lista');
+    elementoDoTour('empresa-materiais-lista');
+    elementoDoTour('empresa-alunos-lista');
+    const instancia = { drive: vi.fn(), moveTo: vi.fn(), destroy: vi.fn() };
+    driverMock.mockReturnValue(instancia);
+    await iniciarTour('empresa', vi.fn());
+    return { config: driverMock.mock.calls[0][0], instancia };
+  }
+
+  function popoverFalso() {
+    return { footerButtons: document.createElement('div') };
+  }
+
+  it('aparece nos passos intermediários e encerra o tour', async () => {
+    const { config, instancia } = await configDoDriver();
+    const popover = popoverFalso();
+
+    config.onPopoverRender(popover, { driver: instancia, state: { activeIndex: 1 } });
+
+    const pular = popover.footerButtons.querySelector('button');
+    expect(pular).toHaveTextContent('Pular tour');
+    pular!.click();
+    expect(instancia.destroy).toHaveBeenCalled();
+  });
+
+  it('não aparece no último passo, que já tem "Concluir"', async () => {
+    const { config, instancia } = await configDoDriver();
+    const popover = popoverFalso();
+
+    config.onPopoverRender(popover, { driver: instancia, state: { activeIndex: 4 } });
+
+    expect(popover.footerButtons.querySelector('button')).toBeNull();
+  });
+
+  it('pular ou fechar registra o tour como visto, para não abrir sozinho de novo', async () => {
+    const { config } = await configDoDriver();
+    expect(deveAutoIniciar()).toBe(true);
+
+    config.onDestroyed();
+
+    expect(deveAutoIniciar()).toBe(false);
+    expect(config.closeBtnLabel).toBe('Fechar o tour');
+  });
+});
+
