@@ -58,13 +58,26 @@ app = FastAPI(
 )
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
-# Em produção, restrinja allow_origins ao domínio do frontend.
+# Origens em CORS_ORIGINS (padrão: http://localhost:3000), sem "*": há credenciais.
+# O add_middleware põe o último registrado por fora. Por isso os limites de
+# upload e de gerações vêm antes e o CORS por último: assim o 413 e o 429 desses
+# limites também saem com os cabeçalhos de CORS e o navegador consegue lê-los.
+from app.core.limite_corpo import LimiteCorpoUploadMiddleware  # noqa: E402
+from app.core.limite_geracao import LimiteGeracaoMiddleware  # noqa: E402
+from app.core.redacao_logs import instalar_redacao_de_segredos  # noqa: E402
+
+# Chaves e credenciais não saem nos logs, nem dentro do texto de uma exceção.
+instalar_redacao_de_segredos()
+
+app.add_middleware(LimiteCorpoUploadMiddleware)
+app.add_middleware(LimiteGeracaoMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=settings.cors_origins_lista,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-API-Key", "Accept"],
+    expose_headers=["Retry-After"],
 )
 
 # ── Rotas ─────────────────────────────────────────────────────────────────────
@@ -95,7 +108,10 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
                 "mensagem": str(detail),
             }
         }
-    return JSONResponse(status_code=exc.status_code, content=content)
+    # Repassa os cabeçalhos da exceção (por exemplo Retry-After no 429).
+    return JSONResponse(
+        status_code=exc.status_code, content=content, headers=getattr(exc, "headers", None)
+    )
 
 
 @app.exception_handler(RequestValidationError)
