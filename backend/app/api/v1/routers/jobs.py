@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.core.seguranca import exigir_chave_empresa
 from app.models import JobResposta
 from app.services import repositorio
 from app.workers import job_worker
@@ -28,7 +29,11 @@ def obter_job(job_id: str) -> JobResposta:
     return job
 
 
-@router.delete("/{job_id}", response_model=JobResposta)
+@router.delete(
+    "/{job_id}",
+    response_model=JobResposta,
+    dependencies=[Depends(exigir_chave_empresa)],
+)
 def cancelar_job(job_id: str) -> JobResposta:
     """Cancela um job em andamento."""
     job = repositorio.obter_job(job_id)

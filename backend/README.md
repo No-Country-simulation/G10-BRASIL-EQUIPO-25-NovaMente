@@ -574,6 +574,51 @@ Não existe `POST /materiais`: a criação continua em `POST /adaptacoes` e `POS
 O guia completo de alterações, schema, erros e checklist de handoff está em
 [`docs/backend-alteracoes-2026-11-09.md`](../docs/backend-alteracoes-2026-11-09.md).
 
+## Proteção das rotas da empresa
+
+O backend não tem sistema de usuários. As rotas da empresa, que expõem dados de
+alunos (nome e e-mail) e permitem alterar o catálogo, podem ser protegidas por
+uma chave compartilhada, enviada no cabeçalho `X-API-Key`.
+
+| Variável | Obrigatória | Descrição |
+|---|---|---|
+| `API_KEY_EMPRESA` | — | Chave das rotas da empresa. Vazia ou só espaços = não configurada (rotas abertas) |
+
+- **Com a variável definida**, `X-API-Key` ausente ou diferente responde `401` com
+  o envelope `{"erro": {"codigo": "NAO_AUTORIZADO", "mensagem": "..."}}`. A resposta é a
+  mesma nos dois casos e nunca traz a chave. A comparação é em tempo constante
+  (`hmac.compare_digest`).
+- **Sem a variável** (dev local e testes), tudo responde como antes e o backend
+  registra um aviso no log, uma única vez, na primeira requisição a uma rota protegida.
+- A chave é lida do ambiente (ou do `.env`, que está fora do git), nunca é logada
+  e não deve ser commitada. O `.env.example` traz a variável sem valor.
+- Em deploy público, defina a chave **antes** de expor o backend.
+
+Rotas que exigem a chave:
+
+| Grupo | Rotas |
+|---|---|
+| Alunos e vínculos | todas de `/alunos` e `/alunos/{id}/materiais` (inclusive os `GET`) |
+| Materiais | todas de `/materiais` (inclusive os `GET`) |
+| Adaptações | `POST /adaptacoes` e `POST /adaptacoes/upload` |
+| Jobs | `DELETE /jobs/{id}` |
+
+Continuam sem chave: `/aluno/*` (área do aluno), `/health`, `/oci/status`,
+`GET /adaptacoes`, `GET /adaptacoes/{id}` (e `/download` e `/exportacao`),
+`GET /jobs/{id}` e a documentação (`/docs`, `/redoc`, `/openapi.json`). As requisições
+`OPTIONS` do CORS não são bloqueadas.
+
+Exemplo (chave fictícia):
+
+```bash
+API_KEY_EMPRESA=chave-ficticia-de-exemplo uvicorn app.main:app --port 8000
+
+curl -i http://localhost:8000/api/v1/alunos                                   # 401
+curl -i -H "X-API-Key: chave-ficticia-de-exemplo" http://localhost:8000/api/v1/alunos   # 200
+```
+
+No Swagger UI (`/docs`), use o botão **Authorize** para informar a chave.
+
 ## Documentação Interativa
 
 Com o servidor rodando, acesse:

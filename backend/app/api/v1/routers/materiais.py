@@ -12,6 +12,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
+from app.core.seguranca import exigir_chave_empresa
 from app.models import (
     FormatoSaida,
     MaterialAtualizacao,
@@ -26,7 +27,11 @@ from app.models.db import MaterialDB
 from app.services import materiais as materiais_service
 from app.services.oci import remover_objeto
 
-router = APIRouter(prefix="/materiais", tags=["materiais"])
+router = APIRouter(
+    prefix="/materiais",
+    tags=["materiais"],
+    dependencies=[Depends(exigir_chave_empresa)],
+)
 
 OrdenacaoMaterial = Literal[
     "criado_em:desc", "criado_em:asc", "ancoragem:desc", "titulo:asc"
