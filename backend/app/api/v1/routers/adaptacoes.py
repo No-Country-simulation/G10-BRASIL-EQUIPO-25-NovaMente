@@ -152,19 +152,30 @@ async def criar_por_arquivo(
             },
         )
 
-    # Ler conteúdo e validar tamanho
-    conteudo_bytes = await arquivo.read()
-    tamanho = len(conteudo_bytes)
-    if tamanho > settings.arquivo_max_bytes:
+    # Ler conteúdo e validar tamanho. O corpo já passou pelo limite do middleware
+    # (Content-Length); aqui o arquivo é lido em blocos e a leitura para ao
+    # passar do limite, sem trazer o restante para a memória.
+    from app.core.limite_corpo import (
+        ArquivoGrandeDemais,
+        ler_arquivo_limitado,
+        mensagem_limite_arquivo,
+    )
+
+    try:
+        if arquivo.size is not None and arquivo.size > settings.arquivo_max_bytes:
+            raise ArquivoGrandeDemais()
+        conteudo_bytes = await ler_arquivo_limitado(arquivo, settings.arquivo_max_bytes)
+    except ArquivoGrandeDemais:
         raise HTTPException(
             status_code=413,
             detail={
                 "erro": {
                     "codigo": "LIMITE_EXCEDIDO",
-                    "mensagem": f"Arquivo excede o limite de 10 MiB ({tamanho} bytes recebidos).",
+                    "mensagem": mensagem_limite_arquivo(),
                 }
             },
-        )
+        ) from None
+    tamanho = len(conteudo_bytes)
 
     # Extrair texto
     try:
