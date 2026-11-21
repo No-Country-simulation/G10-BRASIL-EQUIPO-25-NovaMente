@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.auth.guardas import exigir_empresa
+from app.auth.guardas import exigir_empresa, exigir_empresa_com_chave
 from app.models import JobResposta
 from app.services import repositorio
 from app.workers import job_worker
 
-# Rotas da empresa: com o login ligado, exigem sessão de empresa.
+# Rotas da empresa: com o login ligado, sessão de empresa ou X-API-Key
+# (app/auth/guardas.py). As escritas também exigem a chave com o login desligado.
 router = APIRouter(
     prefix="/jobs", tags=["jobs"], dependencies=[Depends(exigir_empresa)]
 )
@@ -32,7 +33,11 @@ def obter_job(job_id: str) -> JobResposta:
     return job
 
 
-@router.delete("/{job_id}", response_model=JobResposta)
+@router.delete(
+    "/{job_id}",
+    response_model=JobResposta,
+    dependencies=[Depends(exigir_empresa_com_chave)],
+)
 def cancelar_job(job_id: str) -> JobResposta:
     """Cancela um job em andamento."""
     job = repositorio.obter_job(job_id)

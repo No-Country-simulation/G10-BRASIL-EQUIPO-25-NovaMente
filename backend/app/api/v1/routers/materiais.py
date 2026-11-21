@@ -11,7 +11,7 @@ from pydantic import ValidationError
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
-from app.auth.guardas import exigir_empresa
+from app.auth.guardas import exigir_empresa_com_chave
 from app.core.db import get_db
 from app.models import (
     FormatoSaida,
@@ -28,9 +28,11 @@ from app.services import materiais as materiais_service
 from app.services.contexto_chat import invalidar_material
 from app.services.oci import remover_objeto
 
-# Rotas da empresa: com o login ligado, exigem sessão de empresa.
+# Rotas da empresa: sessão de empresa ou X-API-Key (app/auth/guardas.py).
 router = APIRouter(
-    prefix="/materiais", tags=["materiais"], dependencies=[Depends(exigir_empresa)]
+    prefix="/materiais",
+    tags=["materiais"],
+    dependencies=[Depends(exigir_empresa_com_chave)],
 )
 
 OrdenacaoMaterial = Literal[

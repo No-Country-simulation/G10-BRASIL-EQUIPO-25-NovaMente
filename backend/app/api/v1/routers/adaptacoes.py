@@ -11,7 +11,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, Response
 
-from app.auth.guardas import exigir_empresa
+from app.auth.guardas import exigir_empresa, exigir_empresa_com_chave
 from app.core.config import settings
 from app.core.erros import NovaMenteError
 from app.models import (
@@ -35,7 +35,8 @@ from app.services.exportacao import (
 from app.services.extracao import extrair_texto_markdown, extrair_texto_pdf
 from app.workers.job_worker import criar_job
 
-# Rotas da empresa: com o login ligado, exigem sessão de empresa.
+# Rotas da empresa: com o login ligado, sessão de empresa ou X-API-Key
+# (app/auth/guardas.py). As escritas também exigem a chave com o login desligado.
 router = APIRouter(
     prefix="/adaptacoes", tags=["adaptacoes"], dependencies=[Depends(exigir_empresa)]
 )
@@ -93,7 +94,7 @@ _EXTENSOES_ACEITAS = {".pdf", ".md", ".txt"}
 # ── POST /adaptacoes ─────────────────────────────────────────────────────────
 
 
-@router.post("", status_code=202)
+@router.post("", status_code=202, dependencies=[Depends(exigir_empresa_com_chave)])
 def criar_por_texto(body: AdaptacaoInput) -> Response:
     """Cria um job de adaptação a partir de texto colado (JSON)."""
     job = criar_job(
@@ -117,7 +118,9 @@ def criar_por_texto(body: AdaptacaoInput) -> Response:
 # ── POST /adaptacoes/upload ──────────────────────────────────────────────────
 
 
-@router.post("/upload", status_code=202)
+@router.post(
+    "/upload", status_code=202, dependencies=[Depends(exigir_empresa_com_chave)]
+)
 async def criar_por_arquivo(
     arquivo: UploadFile = File(...),
     documento_titulo: str = Form(..., min_length=3, max_length=150),
@@ -156,19 +159,30 @@ async def criar_por_arquivo(
             },
         )
 
-    # Ler conteúdo e validar tamanho
-    conteudo_bytes = await arquivo.read()
-    tamanho = len(conteudo_bytes)
-    if tamanho > settings.arquivo_max_bytes:
+    # Ler conteúdo e validar tamanho. O corpo já passou pelo limite do middleware
+    # (Content-Length); aqui o arquivo é lido em blocos e a leitura para ao
+    # passar do limite, sem trazer o restante para a memória.
+    from app.core.limite_corpo import (
+        ArquivoGrandeDemais,
+        ler_arquivo_limitado,
+        mensagem_limite_arquivo,
+    )
+
+    try:
+        if arquivo.size is not None and arquivo.size > settings.arquivo_max_bytes:
+            raise ArquivoGrandeDemais()
+        conteudo_bytes = await ler_arquivo_limitado(arquivo, settings.arquivo_max_bytes)
+    except ArquivoGrandeDemais:
         raise HTTPException(
             status_code=413,
             detail={
                 "erro": {
                     "codigo": "LIMITE_EXCEDIDO",
-                    "mensagem": f"Arquivo excede o limite de 10 MiB ({tamanho} bytes recebidos).",
+                    "mensagem": mensagem_limite_arquivo(),
                 }
             },
-        )
+        ) from None
+    tamanho = len(conteudo_bytes)
 
     # Extrair texto
     try:

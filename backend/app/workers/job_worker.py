@@ -13,6 +13,7 @@ import time
 import uuid
 from datetime import datetime, timezone
 
+from fastapi import HTTPException
 from pydantic import ValidationError
 
 from app.core.config import settings
@@ -233,6 +234,23 @@ def _marcar_falha(job_id: str, mensagem: str, request_id: str | None = None) -> 
     )
 
 
+# Trava que torna atômico "contar os jobs em andamento + registrar o novo".
+_criacao_lock = threading.Lock()
+
+# Segundos sugeridos no Retry-After quando o teto de jobs simultâneos é atingido.
+RETRY_AFTER_OCUPADO_SEGUNDOS = 30
+
+
+def _contar_em_andamento() -> int:
+    """Jobs ``queued`` ou ``running`` que ainda não expiraram."""
+    total = 0
+    for job_id in repositorio.jobs_em_andamento():
+        job = repositorio.obter_job(job_id)  # purga os expirados e devolve None para eles
+        if job is not None and job.status in ("queued", "running"):
+            total += 1
+    return total
+
+
 def criar_job(
     titulo: str,
     texto: str,
@@ -244,7 +262,11 @@ def criar_job(
     nicho: NichoSetor,
     nivel: NivelDetalhe,
 ) -> JobResposta:
-    """Cria o job (status queued) e dispara a thread. Retorna imediatamente."""
+    """Cria o job (status queued) e dispara a thread. Retorna imediatamente.
+
+    Com ``geracao_max_jobs_simultaneos`` jobs em andamento, recusa com 503
+    ``GERACAO_OCUPADA`` e ``Retry-After``, sem abrir thread nem gravar o job.
+    """
     from ulid import ULID  # type: ignore
 
     job_id = str(ULID())
@@ -260,7 +282,28 @@ def criar_job(
         iniciado_em=agora,
         atualizado_em=agora,
     )
-    repositorio.salvar_job(job, settings.job_ttl_segundos)
+    # A contagem e o registro do job ficam sob a mesma trava: duas requisições
+    # simultâneas não passam juntas pelo último lugar livre.
+    with _criacao_lock:
+        if _contar_em_andamento() >= settings.geracao_max_jobs_simultaneos:
+            logger.warning(
+                "Teto de %s jobs simultâneos atingido; geração recusada.",
+                settings.geracao_max_jobs_simultaneos,
+            )
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "erro": {
+                        "codigo": "GERACAO_OCUPADA",
+                        "mensagem": (
+                            "O sistema está gerando outros materiais no momento. "
+                            "Tente novamente em instantes."
+                        ),
+                    }
+                },
+                headers={"Retry-After": str(RETRY_AFTER_OCUPADO_SEGUNDOS)},
+            )
+        repositorio.salvar_job(job, settings.job_ttl_segundos)
 
     t = threading.Thread(
         target=_executar,

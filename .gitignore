@@ -225,6 +225,7 @@ __marimo__/
 .env.*
 !.env.example
 backend/data/chroma/
+backend/data/backups/
 backend/data/*.db
 backend/data/*.db-wal
 backend/data/*.db-shm

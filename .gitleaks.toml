@@ -1,0 +1,14 @@
+# Configuração do gitleaks usada pelo workflow de segurança.
+# Mantém as regras padrão e libera só os valores fictícios que aparecem em
+# exemplos de documentação e nos testes. Segredos reais continuam sendo barrados.
+title = "NovaMente"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Valores fictícios de exemplos e testes"
+regexes = [
+  '''chave-ficticia[\w-]*''',
+  '''fake_key_for_ci_testing''',
+]

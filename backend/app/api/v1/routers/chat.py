@@ -27,7 +27,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.v1.routers.aluno import _obter_aluno_ativo
-from app.auth.guardas import aluno_da_requisicao, exigir_empresa, exigir_sessao
+from app.auth.guardas import aluno_da_requisicao, exigir_empresa_com_chave, exigir_sessao
 from app.core.config import settings
 from app.core.db import get_db
 from app.core.limite_taxa import LimiteDeTaxa, segundos_para_cabecalho
@@ -174,7 +174,7 @@ def chat_do_aluno(
     response_model=RespostaChatSaida,
     responses=_RESPOSTAS_DE_ERRO,
     summary="Pergunta da empresa sobre um material, em qualquer visibilidade",
-    dependencies=[Depends(exigir_empresa)],
+    dependencies=[Depends(exigir_empresa_com_chave)],
 )
 def chat_da_empresa(
     material_id: str, corpo: PerguntaChat, db: Session = Depends(get_db)

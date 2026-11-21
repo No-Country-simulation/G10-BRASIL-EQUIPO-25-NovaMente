@@ -28,6 +28,7 @@ from app.auth.configuracao import validar_configuracao_auth
 from app.auth.router import router as auth_router
 from app.core.config import settings
 from app.core.db import Base, engine
+from app.core.preparo_banco import preparar_banco
 from app.llm import validar_provedor_chat_configurado, validar_provedor_configurado
 from app.services import limpeza_indice, repositorio
 
@@ -37,14 +38,17 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    Base.metadata.create_all(bind=engine)
+    # Configuração primeiro: um erro aqui impede a subida antes de tocar no banco.
     # LLM_PROVIDER desconhecido impede a subida; a chave só é exigida na geração.
     validar_provedor_configurado()
     # O mesmo para o chat (CHAT_LLM_PROVIDER e CHAT_LLM_RACIOCINIO), também sem exigir chave.
     validar_provedor_chat_configurado()
     # Login ligado sem segredo, e-mail ou hash da empresa (ou SMTP incompleto) impede a subida.
     validar_configuracao_auth()
-    # Prepara o SQLite e marca como failed os jobs que o processo anterior deixou em andamento.
+    preparar_banco()  # pasta e arquivo do SQLite graváveis; falha com mensagem clara
+    Base.metadata.create_all(bind=engine)
+    # Confere o esquema do catálogo (app/core/esquema.py), prepara o SQLite e marca
+    # como failed os jobs que o processo anterior deixou em andamento.
     repositorio.iniciar()
     limpeza_indice.varrer_indices_orfaos()  # best-effort: nunca impede a subida
     yield
@@ -63,13 +67,26 @@ app = FastAPI(
 )
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
-# Em produção, restrinja allow_origins ao domínio do frontend.
+# Origens em CORS_ORIGINS (padrão: http://localhost:3000), sem "*": há credenciais.
+# O add_middleware põe o último registrado por fora. Por isso os limites de
+# upload e de gerações vêm antes e o CORS por último: assim o 413 e o 429 desses
+# limites também saem com os cabeçalhos de CORS e o navegador consegue lê-los.
+from app.core.limite_corpo import LimiteCorpoUploadMiddleware  # noqa: E402
+from app.core.limite_geracao import LimiteGeracaoMiddleware  # noqa: E402
+from app.core.redacao_logs import instalar_redacao_de_segredos  # noqa: E402
+
+# Chaves e credenciais não saem nos logs, nem dentro do texto de uma exceção.
+instalar_redacao_de_segredos()
+
+app.add_middleware(LimiteCorpoUploadMiddleware)
+app.add_middleware(LimiteGeracaoMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=settings.cors_origins_lista,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-API-Key", "Accept"],
+    expose_headers=["Retry-After"],
 )
 
 # ── Rotas ─────────────────────────────────────────────────────────────────────

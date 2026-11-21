@@ -7,7 +7,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
-from app.auth.guardas import exigir_empresa
+from app.auth.guardas import exigir_empresa_com_chave
 from app.core.db import get_db
 from app.models import (
     AlunoAtualizacao,
@@ -22,9 +22,11 @@ from app.models import (
 from app.models.db import AlunoDB, MaterialDB
 from app.services import alunos as alunos_service
 
-# Rotas da empresa: com o login ligado, exigem sessão de empresa.
+# Rotas da empresa: sessão de empresa ou X-API-Key (app/auth/guardas.py).
 router = APIRouter(
-    prefix="/alunos", tags=["alunos"], dependencies=[Depends(exigir_empresa)]
+    prefix="/alunos",
+    tags=["alunos"],
+    dependencies=[Depends(exigir_empresa_com_chave)],
 )
 
 OrdenacaoAluno = Literal["nome:asc", "nome:desc", "criado_em:desc"]

@@ -26,18 +26,19 @@ def test_desligada_ignora_cabecalho_forjado():
     assert cliente.ip_do_cliente(_requisicao("1.2.3.4")) == IP_CONEXAO
 
 
-def test_ligada_usa_o_primeiro_ip(confiar):
-    assert cliente.ip_do_cliente(_requisicao("203.0.113.5, 10.0.0.1, 172.16.0.1")) == "203.0.113.5"
+def test_ligada_usa_o_ultimo_ip(confiar):
+    # A última entrada é a do proxy confiável; as anteriores vêm do cliente.
+    assert cliente.ip_do_cliente(_requisicao("1.2.3.4, 10.0.0.1, 203.0.113.5")) == "203.0.113.5"
     assert cliente.ip_do_cliente(_requisicao("  198.51.100.2  ")) == "198.51.100.2"
 
 
-@pytest.mark.parametrize("xff", ["nao-e-ip", "", " , 1.2.3.4", "999.1.1.1", "1.2.3.4:8080"])
+@pytest.mark.parametrize("xff", ["nao-e-ip", "", " , ", "999.1.1.1", "1.2.3.4:8080", "1.2.3.4, "])
 def test_ligada_valor_invalido_ou_lista_vazia_cai_para_a_conexao(confiar, xff):
     assert cliente.ip_do_cliente(_requisicao(xff)) == IP_CONEXAO
 
 
 def test_ligada_aceita_ipv6(confiar):
-    assert cliente.ip_do_cliente(_requisicao("2001:db8::1, 10.0.0.1")) == "2001:db8::1"
+    assert cliente.ip_do_cliente(_requisicao("10.0.0.1, 2001:db8::1")) == "2001:db8::1"
 
 
 def test_ligada_sem_cabecalho_usa_a_conexao(confiar):

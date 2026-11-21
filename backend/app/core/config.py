@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     app_nome: str = "NovaMente API"
     app_versao: str = "0.1.0"
     debug: bool = False
+    # Chave das rotas da empresa (cabeçalho X-API-Key). Vazia = rotas abertas.
+    # repr=False para a chave nunca aparecer ao imprimir as configurações.
+    api_key_empresa: str = Field("", repr=False)
 
     # ── Google Gemini ────────────────────────────────────────────────────────
     google_api_key: str = ""
@@ -94,6 +97,10 @@ class Settings(BaseSettings):
 
     # ── Jobs e histórico (SQLite) ────────────────────────────────────────────
     db_path: str = "./data/novamente.db"  # mesmo arquivo do catálogo; em produção, use um volume
+    # Backup do SQLite (app/services/backup.py). Caminhos relativos valem a partir
+    # da pasta de execução (backend/). BACKUP_RETENCAO fora do intervalo impede a subida.
+    backup_dir: str = Field("./data/backups", min_length=1)
+    backup_retencao: int = Field(7, ge=1)  # quantidade de backups mantidos na pasta
     job_ttl_segundos: int = 1800  # 30 minutos
     job_timeout_segundos: int = 300  # 5 minutos (igual ao frontend)
     llm_timeout_segundos: int = 120  # por chamada ao Gemini
@@ -122,9 +129,19 @@ class Settings(BaseSettings):
     smtp_usuario: str = ""
     smtp_senha: SecretStr = SecretStr("")
     email_remetente: str = ""
-    # IP real do cliente vindo do proxy (app/core/cliente.py). Só ligue quando o primeiro
-    # salto é o Caddy, que substitui o X-Forwarded-For enviado pelo cliente, e a porta
-    # 8000 do backend não está exposta; senão o cabeçalho pode ser forjado.
+
+    # ── Segurança de entrada (CORS e limites de uso) ─────────────────────────
+    # Origens permitidas no CORS, separadas por vírgula. Cada uma no formato
+    # esquema://host[:porta], sem barra final. "*" é recusado: o CORS usa credenciais.
+    cors_origins: str = "http://localhost:3000"
+    # Gerações (POST /adaptacoes e /adaptacoes/upload) por minuto, por IP de cliente.
+    geracao_limite_por_minuto: int = Field(6, ge=1)
+    # Jobs de geração em andamento (queued ou running) ao mesmo tempo, no processo.
+    geracao_max_jobs_simultaneos: int = Field(4, ge=1)
+    # Usa o X-Forwarded-For como IP do cliente (app/core/cliente.py), nos limites do
+    # login e das gerações. Só ligue atrás de um proxy confiável (o Caddy) que
+    # sobrescreva o cabeçalho do cliente, com a porta 8000 do backend fechada;
+    # senão qualquer cliente forja o IP e burla os limites.
     confiar_x_forwarded_for: bool = False
 
     @field_validator("nvidia_nim_temperatura", "nvidia_nim_orcamento_raciocinio", mode="before")
@@ -235,6 +252,33 @@ class Settings(BaseSettings):
                 "Valores válidos: vazio (desligado), desligado, ligado, padrao."
             )
         return normalizado
+
+    @field_validator("cors_origins")
+    @classmethod
+    def _validar_cors_origins(cls, valor: str) -> str:
+        import re
+
+        origens = [item.strip() for item in valor.split(",") if item.strip()]
+        if not origens:
+            raise ValueError("CORS_ORIGINS não pode ficar vazia; informe ao menos uma origem.")
+        for origem in origens:
+            if origem == "*":
+                raise ValueError(
+                    "CORS_ORIGINS não aceita '*': o CORS usa credenciais, e "
+                    "liberar qualquer origem com credenciais é inseguro. "
+                    "Liste as origens, como https://app.exemplo.com."
+                )
+            if not re.fullmatch(r"https?://[^/\s,]+", origem):
+                raise ValueError(
+                    f"CORS_ORIGINS tem uma origem inválida: '{origem}'. Use "
+                    "esquema://host[:porta], sem caminho nem barra final."
+                )
+        return ",".join(origens)
+
+    @property
+    def cors_origins_lista(self) -> list[str]:
+        """Origens do CORS já separadas, sem espaços nem entradas vazias."""
+        return [item for item in self.cors_origins.split(",") if item]
 
 
 settings = Settings()

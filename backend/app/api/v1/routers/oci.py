@@ -8,7 +8,8 @@ from app.auth.guardas import exigir_empresa
 from app.models import OciStatus
 from app.services import oci as oci_service
 
-# Rotas da empresa: com o login ligado, exigem sessão de empresa.
+# Rotas da empresa: com o login ligado, sessão de empresa ou X-API-Key
+# (app/auth/guardas.py). Com o login desligado, abertas.
 router = APIRouter(
     prefix="/oci", tags=["oci"], dependencies=[Depends(exigir_empresa)]
 )

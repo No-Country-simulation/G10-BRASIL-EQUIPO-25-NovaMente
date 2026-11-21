@@ -229,6 +229,7 @@ class HealthResposta(BaseModel):
     versao: str
     oci: Literal["ok", "indisponivel"]
     llm: Literal["ok", "indisponivel"]
+    banco: Literal["ok", "indisponivel"]
     verificado_em: str
 
 
