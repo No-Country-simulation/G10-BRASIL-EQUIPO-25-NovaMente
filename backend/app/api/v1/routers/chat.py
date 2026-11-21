@@ -7,6 +7,10 @@
   visibilidade, sem credencial, como as outras rotas de materiais.
 - ``GET /chat/modelos``: modelos aceitos pelo chat (sem rede).
 
+Com o login ligado (``AUTH_HABILITADA=true``): a rota do aluno exige sessão de
+aluno e usa o aluno dela (o ``aluno_id`` da query é ignorado), a da empresa
+exige sessão de empresa e a lista de modelos aceita qualquer sessão.
+
 As rotas são ``def``: o serviço bloqueia (rede e CPU) e roda no pool de
 threads. Pergunta, histórico, resposta e texto do material não vão para o log
 nem para as mensagens de erro; os erros do provedor viram mensagens fixas.
@@ -19,10 +23,11 @@ import uuid
 from dataclasses import asdict
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.v1.routers.aluno import _obter_aluno_ativo
+from app.auth.guardas import aluno_da_requisicao, exigir_empresa, exigir_sessao
 from app.core.config import settings
 from app.core.db import get_db
 from app.core.limite_taxa import LimiteDeTaxa, segundos_para_cabecalho
@@ -151,7 +156,7 @@ _RESPOSTAS_DE_ERRO = {
 def chat_do_aluno(
     material_id: str,
     corpo: PerguntaChat,
-    aluno_id: Annotated[str, Query(min_length=1)],
+    aluno_id: Annotated[str, Depends(aluno_da_requisicao)],
     db: Session = Depends(get_db),
 ) -> RespostaChatSaida:
     _obter_aluno_ativo(db, aluno_id)
@@ -169,6 +174,7 @@ def chat_do_aluno(
     response_model=RespostaChatSaida,
     responses=_RESPOSTAS_DE_ERRO,
     summary="Pergunta da empresa sobre um material, em qualquer visibilidade",
+    dependencies=[Depends(exigir_empresa)],
 )
 def chat_da_empresa(
     material_id: str, corpo: PerguntaChat, db: Session = Depends(get_db)
@@ -182,7 +188,12 @@ def chat_da_empresa(
 # ── GET /chat/modelos ─────────────────────────────────────────────────────────
 
 
-@router.get("/chat/modelos", response_model=ModelosChat, summary="Modelos aceitos pelo chat")
+@router.get(
+    "/chat/modelos",
+    response_model=ModelosChat,
+    summary="Modelos aceitos pelo chat",
+    dependencies=[Depends(exigir_sessao)],
+)
 def listar_modelos() -> ModelosChat:
     modelos = modelos_do_chat()
     return ModelosChat(padrao=modelo_padrao_do_chat() or (modelos[0] if modelos else ""), modelos=modelos)

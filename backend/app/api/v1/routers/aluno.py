@@ -1,4 +1,9 @@
-"""Router da área do aluno — identificação e catálogo somente leitura."""
+"""Router da área do aluno — identificação e catálogo somente leitura.
+
+Com o login ligado (``AUTH_HABILITADA=true``), as rotas de materiais usam o
+aluno da sessão e ignoram o ``aluno_id`` da query; a identificação pública
+responde 404. Desligado, tudo segue como antes.
+"""
 
 from __future__ import annotations
 
@@ -9,6 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
+from app.auth.guardas import aluno_da_requisicao, so_sem_login
 from app.core.db import get_db
 from app.models import (
     FormatoSaida,
@@ -88,7 +94,11 @@ def _obter_aluno_ativo(db: Session, aluno_id: str) -> AlunoDB:
 # ── GET /aluno/identificacao ──────────────────────────────────────────────────
 
 
-@router.get("/identificacao", response_model=IdentificacaoAlunoResposta)
+@router.get(
+    "/identificacao",
+    response_model=IdentificacaoAlunoResposta,
+    dependencies=[Depends(so_sem_login)],
+)
 def identificacao(db: Session = Depends(get_db)) -> IdentificacaoAlunoResposta:
     """Lista os alunos ativos para identificação na área do aluno."""
     return alunos_service.identificacao_de_alunos(db)
@@ -99,7 +109,7 @@ def identificacao(db: Session = Depends(get_db)) -> IdentificacaoAlunoResposta:
 
 @router.get("/materiais", response_model=PaginaCatalogoAluno)
 def listar_materiais(
-    aluno_id: Annotated[str, Query(min_length=1)],
+    aluno_id: Annotated[str, Depends(aluno_da_requisicao)],
     db: Session = Depends(get_db),
     pagina: Annotated[int, Query(ge=1)] = 1,
     tamanho_pagina: Annotated[int, Query(ge=1, le=50)] = 12,
@@ -128,7 +138,7 @@ def listar_materiais(
 @router.get("/materiais/{material_id}", response_model=MaterialDetalhe)
 def obter_material(
     material_id: str,
-    aluno_id: Annotated[str, Query(min_length=1)],
+    aluno_id: Annotated[str, Depends(aluno_da_requisicao)],
     db: Session = Depends(get_db),
 ) -> MaterialDetalhe:
     """Detalhe apenas se publicado e vinculado; demais casos → 404 unificado."""

@@ -74,6 +74,20 @@ class LimiteDeTaxa:
                 self._chaves.popitem(last=False)
             return None
 
+    def espera(self, chave: str) -> float | None:
+        """Como ``registrar``, mas sem contar: ``None`` se a próxima seria aceita,
+        senão os segundos até ser. Serve para barrar antes de fazer o trabalho e
+        contar só o que falhou (por exemplo, senhas erradas)."""
+        with self._trava:
+            agora = self.relogio()
+            instantes = self._chaves.get(chave)
+            if not instantes:
+                return None
+            validos = [t for t in instantes if t > agora - self.janela]
+            if len(validos) < self._limite_atual():
+                return None
+            return max(0.0, validos[0] + self.janela - agora)
+
     def limpar(self) -> None:
         with self._trava:
             self._chaves.clear()

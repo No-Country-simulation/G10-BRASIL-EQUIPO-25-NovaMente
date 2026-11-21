@@ -26,6 +26,35 @@ class AlunoDB(Base):
     owner_id: Mapped[str | None] = mapped_column(Text, nullable=True)
     criado_em: Mapped[str] = mapped_column(Text, nullable=False)
     atualizado_em: Mapped[str] = mapped_column(Text, nullable=False)
+    # Hash scrypt da senha (app/auth/senhas.py); vazio até o primeiro acesso.
+    # Nenhum schema de resposta lê esta coluna.
+    senha_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class CodigoLoginDB(Base):
+    """Código de 6 dígitos enviado por e-mail (login em duas etapas e definição de senha).
+
+    Só o HMAC do código fica gravado. ``usado_em`` preenchido marca o código
+    como consumido; ``tentativas`` conta os erros (5 invalidam o código).
+    """
+
+    __tablename__ = "codigos_login"
+    __table_args__ = (
+        CheckConstraint("perfil IN ('empresa','aluno')", name="ck_codigos_login_perfil"),
+        CheckConstraint("proposito IN ('login','senha')", name="ck_codigos_login_proposito"),
+        Index("ix_codigos_login_busca", "email", "perfil", "proposito"),
+        Index("ix_codigos_login_expira", "expira_em"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    perfil: Mapped[str] = mapped_column(Text, nullable=False)
+    proposito: Mapped[str] = mapped_column(Text, nullable=False)
+    email: Mapped[str] = mapped_column(Text, nullable=False)  # minúsculo, sem espaços
+    codigo_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    criado_em: Mapped[str] = mapped_column(Text, nullable=False)
+    expira_em: Mapped[str] = mapped_column(Text, nullable=False)
+    tentativas: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    usado_em: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class MaterialDB(Base):

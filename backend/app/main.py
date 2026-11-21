@@ -24,6 +24,8 @@ from app.api.v1.routers import (
     materiais,
     oci,
 )
+from app.auth.configuracao import validar_configuracao_auth
+from app.auth.router import router as auth_router
 from app.core.config import settings
 from app.core.db import Base, engine
 from app.llm import validar_provedor_chat_configurado, validar_provedor_configurado
@@ -40,6 +42,8 @@ async def lifespan(_app: FastAPI):
     validar_provedor_configurado()
     # O mesmo para o chat (CHAT_LLM_PROVIDER e CHAT_LLM_RACIOCINIO), também sem exigir chave.
     validar_provedor_chat_configurado()
+    # Login ligado sem segredo, e-mail ou hash da empresa (ou SMTP incompleto) impede a subida.
+    validar_configuracao_auth()
     # Prepara o SQLite e marca como failed os jobs que o processo anterior deixou em andamento.
     repositorio.iniciar()
     limpeza_indice.varrer_indices_orfaos()  # best-effort: nunca impede a subida
@@ -78,6 +82,7 @@ app.include_router(jobs.router, prefix=_V1)
 app.include_router(materiais.router, prefix=_V1)
 app.include_router(oci.router, prefix=_V1)
 app.include_router(health.router, prefix=_V1)
+app.include_router(auth_router, prefix=_V1)
 
 
 # ── Handlers de erro globais ──────────────────────────────────────────────────

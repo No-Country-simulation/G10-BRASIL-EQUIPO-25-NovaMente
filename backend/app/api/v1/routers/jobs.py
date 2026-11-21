@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.auth.guardas import exigir_empresa
 from app.models import JobResposta
 from app.services import repositorio
 from app.workers import job_worker
 
-router = APIRouter(prefix="/jobs", tags=["jobs"])
+# Rotas da empresa: com o login ligado, exigem sessão de empresa.
+router = APIRouter(
+    prefix="/jobs", tags=["jobs"], dependencies=[Depends(exigir_empresa)]
+)
 
 
 @router.get("/{job_id}", response_model=JobResposta)

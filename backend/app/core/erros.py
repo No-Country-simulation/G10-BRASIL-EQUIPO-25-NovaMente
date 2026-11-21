@@ -14,6 +14,14 @@ CodigoErro = Literal[
     "FORMATO_DESCONHECIDO",
     "OCI_INDISPONIVEL",
     "INTERNO",
+    # Login (app/auth)
+    "NAO_AUTENTICADO",
+    "CREDENCIAIS_INVALIDAS",
+    "CODIGO_INVALIDO",
+    "ACESSO_NEGADO",
+    "SENHA_FRACA",
+    "AUTH_LIMITE_EXCEDIDO",
+    "EMAIL_INDISPONIVEL",
 ]
 
 

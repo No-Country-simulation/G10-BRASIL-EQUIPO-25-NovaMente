@@ -155,6 +155,15 @@ O backend padroniza todas as falhas utilizando um formato consistente de respost
 * `OCI_INDISPONIVEL`: Falha de conexão persistente com o Object Storage (503).
 * `INTERNO`: Erro genérico de servidor com rastreio de `request_id` (500).
 
+Login (`/api/v1/auth` e guardas das rotas, só com `AUTH_HABILITADA=true`):
+* `NAO_AUTENTICADO`: Sem sessão válida, ou aluno da sessão apagado ou inativo (401).
+* `CREDENCIAIS_INVALIDAS`: E-mail ou senha incorretos, a mesma resposta para qualquer motivo (401).
+* `CODIGO_INVALIDO`: Código de verificação errado, vencido ou já usado (401).
+* `ACESSO_NEGADO`: Sessão do outro perfil (empresa em rota do aluno ou o contrário) (403).
+* `SENHA_FRACA`: A senha não atende à política; `campos.senha` diz o que falta (422).
+* `AUTH_LIMITE_EXCEDIDO`: Tentativas demais no login, com `Retry-After` em segundos (429).
+* `EMAIL_INDISPONIVEL`: O código não pôde ser enviado por e-mail (503).
+
 ---
 
 ## 6. Pipeline de RAG e Execução Assíncrona

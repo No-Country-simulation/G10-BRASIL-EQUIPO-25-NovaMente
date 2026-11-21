@@ -107,6 +107,26 @@ class Settings(BaseSettings):
     texto_max_caracteres: int = 50_000
     arquivo_max_bytes: int = 10 * 1024 * 1024  # 10 MiB
 
+    # ── Login (app/auth) ─────────────────────────────────────────────────────
+    # Desligado, as rotas continuam abertas como antes e só /auth/config responde.
+    # Ligado, a subida confere o restante (app/auth/configuracao.py).
+    auth_habilitada: bool = False
+    demo_habilitado: bool = False  # POST /auth/demo (sessões de demonstração, sem código)
+    sessao_segredo: SecretStr = SecretStr("")  # assina o cookie e os códigos; mínimo 32 caracteres
+    sessao_cookie_seguro: bool = False  # true em produção, com HTTPS
+    empresa_email: str = ""
+    empresa_senha_hash: SecretStr = SecretStr("")  # gerado por scripts/gerar_hash_senha.py
+    email_modo: str = "console"  # "console" (só desenvolvimento: o código vai para o log) ou "smtp"
+    smtp_host: str = ""
+    smtp_porta: int = Field(587, ge=1, le=65535)  # STARTTLS
+    smtp_usuario: str = ""
+    smtp_senha: SecretStr = SecretStr("")
+    email_remetente: str = ""
+    # IP real do cliente vindo do proxy (app/core/cliente.py). Só ligue quando o primeiro
+    # salto é o Caddy, que substitui o X-Forwarded-For enviado pelo cliente, e a porta
+    # 8000 do backend não está exposta; senão o cabeçalho pode ser forjado.
+    confiar_x_forwarded_for: bool = False
+
     @field_validator("nvidia_nim_temperatura", "nvidia_nim_orcamento_raciocinio", mode="before")
     @classmethod
     def _vazio_e_none(cls, valor):
@@ -131,6 +151,12 @@ class Settings(BaseSettings):
         "grafo_max_revisoes",
         "grafo_limiar_ancoragem",
         "grafo_max_simultaneos",
+        "auth_habilitada",
+        "demo_habilitado",
+        "sessao_cookie_seguro",
+        "email_modo",
+        "smtp_porta",
+        "confiar_x_forwarded_for",
         mode="before",
     )
     @classmethod
@@ -163,6 +189,26 @@ class Settings(BaseSettings):
             if self.chat_modelos_permitidos == MODELOS_PERMITIDOS_CHAT:
                 self.chat_modelos_permitidos = ""
         return self
+
+    @field_validator("empresa_email", "smtp_host", "smtp_usuario", "email_remetente")
+    @classmethod
+    def _texto_sem_espacos(cls, valor: str) -> str:
+        return valor.strip()
+
+    @field_validator("empresa_email")
+    @classmethod
+    def _email_minusculo(cls, valor: str) -> str:
+        return valor.lower()
+
+    @field_validator("email_modo")
+    @classmethod
+    def _modo_de_email_valido(cls, valor: str) -> str:
+        normalizado = str(valor).strip().lower()
+        if normalizado not in ("console", "smtp"):
+            raise ValueError(
+                f"EMAIL_MODO '{valor}' inválido. Valores válidos: vazio (console), console, smtp."
+            )
+        return normalizado
 
     @field_validator("chat_llm_raciocinio")
     @classmethod

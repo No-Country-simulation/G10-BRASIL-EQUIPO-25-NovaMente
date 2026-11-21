@@ -7,6 +7,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
+from app.auth.guardas import exigir_empresa
 from app.core.db import get_db
 from app.models import (
     AlunoAtualizacao,
@@ -21,7 +22,10 @@ from app.models import (
 from app.models.db import AlunoDB, MaterialDB
 from app.services import alunos as alunos_service
 
-router = APIRouter(prefix="/alunos", tags=["alunos"])
+# Rotas da empresa: com o login ligado, exigem sessão de empresa.
+router = APIRouter(
+    prefix="/alunos", tags=["alunos"], dependencies=[Depends(exigir_empresa)]
+)
 
 OrdenacaoAluno = Literal["nome:asc", "nome:desc", "criado_em:desc"]
 

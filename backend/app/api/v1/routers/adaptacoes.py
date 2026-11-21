@@ -8,9 +8,10 @@ import uuid
 from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, Response
 
+from app.auth.guardas import exigir_empresa
 from app.core.config import settings
 from app.core.erros import NovaMenteError
 from app.models import (
@@ -34,7 +35,10 @@ from app.services.exportacao import (
 from app.services.extracao import extrair_texto_markdown, extrair_texto_pdf
 from app.workers.job_worker import criar_job
 
-router = APIRouter(prefix="/adaptacoes", tags=["adaptacoes"])
+# Rotas da empresa: com o login ligado, exigem sessão de empresa.
+router = APIRouter(
+    prefix="/adaptacoes", tags=["adaptacoes"], dependencies=[Depends(exigir_empresa)]
+)
 logger = logging.getLogger(__name__)
 
 

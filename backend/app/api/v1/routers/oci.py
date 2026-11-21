@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.auth.guardas import exigir_empresa
 from app.models import OciStatus
 from app.services import oci as oci_service
 
-router = APIRouter(prefix="/oci", tags=["oci"])
+# Rotas da empresa: com o login ligado, exigem sessão de empresa.
+router = APIRouter(
+    prefix="/oci", tags=["oci"], dependencies=[Depends(exigir_empresa)]
+)
 
 
 @router.get("/status", response_model=OciStatus)
