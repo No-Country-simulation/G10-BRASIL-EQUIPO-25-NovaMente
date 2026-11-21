@@ -14,13 +14,16 @@ import type {
   MaterialAtualizacao,
   MaterialDetalhe,
   MaterialResumo,
+  ModelosChat,
   OciStatus,
   PaginaAdaptacoes,
   PaginaAlunos,
   PaginaCatalogoAluno,
   PaginaMateriais,
   PerfilDestinatario,
+  PerguntaChat,
   RemocaoMaterialResposta,
+  RespostaChat,
   StatusAluno,
   VinculoMaterial,
   VinculosAluno,
@@ -97,4 +100,8 @@ export interface NovaMenteApi {
     params?: ListarCatalogoAlunoParams,
   ): Promise<PaginaCatalogoAluno>;
   obterMaterialAluno(alunoId: string, materialId: string): Promise<MaterialDetalhe>;
+
+  listarModelosChat(): Promise<ModelosChat>;
+  perguntarAluno(alunoId: string, materialId: string, input: PerguntaChat): Promise<RespostaChat>;
+  perguntarEmpresa(materialId: string, input: PerguntaChat): Promise<RespostaChat>;
 }

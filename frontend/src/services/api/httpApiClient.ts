@@ -6,7 +6,7 @@ import type {
   NovaMenteApi,
 } from './NovaMenteApi';
 import { montarQuery, urls } from './endpoints';
-import { ErroApi, ErroContrato, ErroRede, paraProblema } from './erros';
+import { ErroApi, ErroContrato, ErroRede, lerRetryAfter, paraProblema } from './erros';
 import {
   AdaptacaoPacoteSchema,
   AlunoResumoSchema,
@@ -15,12 +15,14 @@ import {
   JobRespostaSchema,
   MaterialDetalheSchema,
   MaterialResumoSchema,
+  ModelosChatSchema,
   OciStatusSchema,
   PaginaAdaptacoesSchema,
   PaginaAlunosSchema,
   PaginaCatalogoAlunoSchema,
   PaginaMateriaisSchema,
   RemocaoMaterialRespostaSchema,
+  RespostaChatSchema,
   VinculoMaterialSchema,
   VinculosAlunoSchema,
 } from '@/types/schemas';
@@ -39,12 +41,15 @@ import type {
   MaterialAtualizacao,
   MaterialDetalhe,
   MaterialResumo,
+  ModelosChat,
   OciStatus,
   PaginaAdaptacoes,
   PaginaAlunos,
   PaginaCatalogoAluno,
   PaginaMateriais,
+  PerguntaChat,
   RemocaoMaterialResposta,
+  RespostaChat,
   StatusAluno,
   VinculoMaterial,
   VinculosAluno,
@@ -78,7 +83,11 @@ async function pedir<T>(caminho: string, schema: ZodType<T>, init?: RequestInit)
     throw new ErroRede();
   }
   if (!resposta.ok) {
-    throw new ErroApi(paraProblema(resposta.status, await lerCorpo(resposta)), resposta.status);
+    throw new ErroApi(
+      paraProblema(resposta.status, await lerCorpo(resposta)),
+      resposta.status,
+      lerRetryAfter(resposta),
+    );
   }
   const corpo = await lerCorpo(resposta);
   return validar(schema, corpo);
@@ -92,7 +101,11 @@ async function pedirSemCorpo(caminho: string, init?: RequestInit): Promise<void>
     throw new ErroRede();
   }
   if (!resposta.ok) {
-    throw new ErroApi(paraProblema(resposta.status, await lerCorpo(resposta)), resposta.status);
+    throw new ErroApi(
+      paraProblema(resposta.status, await lerCorpo(resposta)),
+      resposta.status,
+      lerRetryAfter(resposta),
+    );
   }
 }
 
@@ -120,7 +133,11 @@ async function pedirArquivo(caminho: string): Promise<Blob> {
     throw new ErroRede();
   }
   if (!resposta.ok) {
-    throw new ErroApi(paraProblema(resposta.status, await lerCorpo(resposta)), resposta.status);
+    throw new ErroApi(
+      paraProblema(resposta.status, await lerCorpo(resposta)),
+      resposta.status,
+      lerRetryAfter(resposta),
+    );
   }
   return resposta.blob();
 }
@@ -279,4 +296,24 @@ export const httpApiClient: NovaMenteApi = {
       `${urls.alunoMaterial(materialId)}${montarQuery({ aluno_id: alunoId })}`,
       MaterialDetalheSchema,
     ),
+
+  listarModelosChat: () => pedir<ModelosChat>(urls.chatModelos, ModelosChatSchema),
+
+  perguntarAluno: (alunoId, materialId, input: PerguntaChat) =>
+    pedir<RespostaChat>(
+      `${urls.chatAluno(materialId)}${montarQuery({ aluno_id: alunoId })}`,
+      RespostaChatSchema,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      },
+    ),
+
+  perguntarEmpresa: (materialId, input: PerguntaChat) =>
+    pedir<RespostaChat>(urls.chatEmpresa(materialId), RespostaChatSchema, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    }),
 };

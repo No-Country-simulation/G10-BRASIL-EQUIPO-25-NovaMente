@@ -6,7 +6,7 @@ import { IngestionForm } from '@/components/forms/IngestionForm';
 import { JobProgress } from './JobProgress';
 import { Button } from '@/components/ui/button';
 import { useApi } from '@/services/api/ApiProvider';
-import { mensagemDoErro } from '@/services/api/erros';
+import { mensagemComEspera, mensagemDoErro } from '@/services/api/erros';
 import { useAdaptationJob } from '@/features/jobs/useAdaptationJob';
 import { M } from '@/lib/mensagens';
 import { ROTAS } from '@/lib/rotas';
@@ -53,7 +53,7 @@ export function GerarView() {
       const novo = await repetir?.();
       if (novo) setJobId(novo.job_id);
     } catch (falha) {
-      setErroAcao(mensagemDoErro(falha));
+      setErroAcao(mensagemComEspera(falha));
     }
   }, [repetir]);
 

@@ -20,6 +20,11 @@ export const urls = {
     `${BASE}/aluno/materiais/${encodeURIComponent(materialId)}`,
   materiais: `${BASE}/materiais`,
   material: (id: string) => `${BASE}/materiais/${encodeURIComponent(id)}`,
+  chatModelos: `${BASE}/chat/modelos`,
+  chatAluno: (materialId: string) =>
+    `${BASE}/aluno/materiais/${encodeURIComponent(materialId)}/chat`,
+  chatEmpresa: (materialId: string) =>
+    `${BASE}/materiais/${encodeURIComponent(materialId)}/chat`,
 };
 
 export function montarQuery(params: Record<string, string | number | undefined>): string {

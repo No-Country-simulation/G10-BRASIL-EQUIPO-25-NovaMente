@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { ChatMaterial } from '@/components/chat/ChatMaterial';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ContentRenderer } from './ContentRenderer';
@@ -166,6 +167,9 @@ export function ResultadoView({
             {pacote.conteudo_adaptado.introducao_contextualizada}
           </p>
           <ContentRenderer conteudo={pacote.conteudo_adaptado} />
+          <div className="mt-8">
+            <ChatMaterial alvo={{ tipo: 'empresa', materialId: material.material_id }} />
+          </div>
         </div>
         <OCIPanel armazenamento={pacote.armazenamento_oci} avaliacao={pacote.avaliacao_qualidade} oci={oci} />
       </div>

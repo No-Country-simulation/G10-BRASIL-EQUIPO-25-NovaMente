@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GerarView } from './GerarView';
 import { ApiProvider } from '@/services/api/ApiProvider';
+import { ErroApi } from '@/services/api/erros';
 import type { NovaMenteApi } from '@/services/api/NovaMenteApi';
 import type { AdaptacaoPacote, JobResposta } from '@/types/novamente';
 
@@ -63,6 +64,24 @@ async function preencherEEnviar() {
 
 describe('GerarView', () => {
   beforeEach(() => push.mockReset());
+
+  it('mostra a espera do Retry-After quando o servidor está ocupado (503)', async () => {
+    const criarPorTexto = vi.fn().mockRejectedValue(
+      new ErroApi(
+        { erro: { codigo: 'GERACAO_OCUPADA', mensagem: 'Há gerações demais em andamento.' } },
+        503,
+        30,
+      ),
+    );
+    montar({ criarPorTexto, obterJob: vi.fn() });
+
+    await preencherEEnviar();
+
+    expect(
+      await screen.findByText('Há gerações demais em andamento. Tente novamente em 30 s.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /gerar material/i })).toBeEnabled();
+  });
 
   it('reabilita o formulário quando o job falha', async () => {
     const criarPorTexto = vi.fn().mockResolvedValue(job({ job_id: 'j1' }));

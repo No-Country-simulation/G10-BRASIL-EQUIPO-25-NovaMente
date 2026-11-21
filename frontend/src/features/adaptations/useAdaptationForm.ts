@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { ErroApi, mensagemDoErro } from '@/services/api/erros';
+import { ErroApi, mensagemComEspera } from '@/services/api/erros';
 import { LIMITES } from '@/types/schemas';
 import { M } from '@/lib/mensagens';
 import type {
@@ -129,7 +129,7 @@ export function useAdaptationForm(
           form.setError('arquivo', { type: 'server', message: erro.problema.erro.mensagem });
         }
       }
-      setErroGeral(mensagemDoErro(erro));
+      setErroGeral(mensagemComEspera(erro));
     },
     [form],
   );

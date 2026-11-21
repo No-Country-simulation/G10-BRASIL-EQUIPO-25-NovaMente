@@ -111,6 +111,29 @@ describe('ResultadoView', () => {
     expect(screen.getByText('98%')).toBeInTheDocument();
   }, 15_000);
 
+  it('mostra o chat do material e pergunta pela rota da empresa', async () => {
+    const perguntarEmpresa = vi.fn().mockResolvedValue({
+      resposta: 'Resposta do material.',
+      citacoes: [],
+      base: 'pacote',
+      recusou: false,
+      fundamentada: true,
+      ancoragem: 0.9,
+      modelo: 'google/gemma-4-31b-it',
+      trechos_usados: 1,
+    });
+    renderizar({ perguntarEmpresa });
+
+    expect(await screen.findByRole('heading', { name: new RegExp(M.chat.titulo) })).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText(M.chat.campo), 'Pergunta{Enter}');
+
+    expect(await screen.findByText('Resposta do material.')).toBeInTheDocument();
+    expect(perguntarEmpresa).toHaveBeenCalledWith(
+      pacote.adaptacao_id,
+      expect.objectContaining({ pergunta: 'Pergunta' }),
+    );
+  });
+
   it('mostra a visibilidade do material e permite publicar', async () => {
     const atualizar = vi
       .fn()

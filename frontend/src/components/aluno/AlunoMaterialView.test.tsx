@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AlunoMaterialView } from './AlunoMaterialView';
 import { CHAVE_IDENTIDADE_ALUNO } from '@/features/aluno/useIdentidadeAluno';
@@ -108,6 +109,31 @@ describe('AlunoMaterialView', () => {
     expect(screen.getByRole('link', { name: M.aluno.material.voltarCatalogo })).toHaveAttribute(
       'href',
       '/aluno',
+    );
+  }, 15_000);
+
+  it('mostra o chat do material e pergunta como o aluno identificado', async () => {
+    identificar();
+    const perguntarAluno = vi.fn().mockResolvedValue({
+      resposta: 'VCN é uma rede privada. [P1]',
+      citacoes: [{ id: 'P1', origem: 'pacote', excerto: 'VCN: rede privada.' }],
+      base: 'pacote',
+      recusou: false,
+      fundamentada: true,
+      ancoragem: 0.9,
+      modelo: 'google/gemma-4-31b-it',
+      trechos_usados: 1,
+    });
+    renderMaterial({ perguntarAluno });
+
+    expect(await screen.findByRole('heading', { name: new RegExp(M.chat.titulo) })).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText(M.chat.campo), 'O que é VCN?{Enter}');
+
+    expect(await screen.findByText(/VCN é uma rede privada/)).toBeInTheDocument();
+    expect(perguntarAluno).toHaveBeenCalledWith(
+      'A1',
+      'M1',
+      expect.objectContaining({ pergunta: 'O que é VCN?' }),
     );
   }, 15_000);
 

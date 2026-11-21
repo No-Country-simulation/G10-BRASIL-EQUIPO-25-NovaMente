@@ -9,6 +9,7 @@ import type {
   AlunoResumoSchema,
   ApiProblemaErroSchema,
   AtualizarVinculosInputSchema,
+  CitacaoChatSchema,
   EtapaJobSchema,
   HealthRespostaSchema,
   IdentificacaoAlunoItemSchema,
@@ -18,12 +19,16 @@ import type {
   MaterialAtualizacaoSchema,
   MaterialDetalheSchema,
   MaterialResumoSchema,
+  MensagemChatSchema,
+  ModelosChatSchema,
   OciStatusSchema,
   PaginaAdaptacoesSchema,
   PaginaAlunosSchema,
   PaginaCatalogoAlunoSchema,
   PaginaMateriaisSchema,
+  PerguntaChatSchema,
   RemocaoMaterialRespostaSchema,
+  RespostaChatSchema,
   VinculoMaterialSchema,
   VinculosAlunoSchema,
   perfilSchema,
@@ -79,3 +84,9 @@ export type IdentificacaoAlunoItem = z.infer<typeof IdentificacaoAlunoItemSchema
 export type IdentificacaoAlunoResposta = z.infer<typeof IdentificacaoAlunoRespostaSchema>;
 export type ItemCatalogoAluno = z.infer<typeof ItemCatalogoAlunoSchema>;
 export type PaginaCatalogoAluno = z.infer<typeof PaginaCatalogoAlunoSchema>;
+
+export type MensagemChat = z.infer<typeof MensagemChatSchema>;
+export type PerguntaChat = z.input<typeof PerguntaChatSchema>;
+export type CitacaoChat = z.infer<typeof CitacaoChatSchema>;
+export type RespostaChat = z.infer<typeof RespostaChatSchema>;
+export type ModelosChat = z.infer<typeof ModelosChatSchema>;

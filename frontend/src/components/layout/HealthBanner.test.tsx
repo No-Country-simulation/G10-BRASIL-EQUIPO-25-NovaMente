@@ -47,6 +47,21 @@ describe('HealthBanner', () => {
     expect(banner.textContent).toMatch(/oci: indisponivel/i);
   });
 
+  it('inclui o banco no banner quando ele está indisponível', async () => {
+    renderizar(
+      vi.fn().mockResolvedValue({
+        status: 'degraded',
+        versao: '0.1.0',
+        oci: 'ok',
+        llm: 'ok',
+        banco: 'indisponivel',
+        verificado_em: '2026-10-21T14:00:00Z',
+      }),
+    );
+    const banner = await screen.findByRole('status');
+    expect(banner.textContent).toMatch(/banco: indisponivel/i);
+  });
+
   it('não quebra a página quando a consulta de saúde falha', async () => {
     const health = renderizar(vi.fn().mockRejectedValue(new Error('rede fora')));
     await waitFor(() => expect(health).toHaveBeenCalledOnce());

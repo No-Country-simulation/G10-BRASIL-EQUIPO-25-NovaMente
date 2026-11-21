@@ -8,6 +8,10 @@ export const LIMITES = {
   arquivoMaxBytes: 10 * 1024 * 1024,
   paginaPadrao: 12,
   paginaMax: 50,
+  // Espelham CHAT_MAX_PERGUNTA_CARACTERES / CHAT_MAX_MENSAGENS_HISTORICO do backend.
+  chatPerguntaMax: 1000,
+  chatConteudoMax: 2000,
+  chatHistoricoMax: 10,
 } as const;
 
 export const EXTENSOES_ACEITAS = ['.pdf', '.md', '.txt'] as const;
@@ -164,6 +168,18 @@ export const CodigoErroSchema = z.enum([
   'EMAIL_JA_CADASTRADO',
   'MATERIAL_NAO_ENCONTRADO',
   'MATERIAL_NAO_DISPONIVEL',
+  'NAO_AUTORIZADO',
+  'GERACAO_OCUPADA',
+  'PERGUNTA_VAZIA',
+  'PERGUNTA_LONGA',
+  'PERGUNTA_INVALIDA',
+  'CHAT_MODELO_NAO_PERMITIDO',
+  'CHAT_LIMITE_EXCEDIDO',
+  'CHAT_PROVEDOR_OCUPADO',
+  'CHAT_RESPOSTA_VAZIA',
+  'CHAT_RESPOSTA_INVALIDA',
+  'CHAT_TEMPO_ESGOTADO',
+  'CHAT_INDISPONIVEL',
   'INTERNO',
 ]);
 
@@ -172,6 +188,8 @@ export const ApiProblemaErroSchema = z
     codigo: CodigoErroSchema,
     mensagem: z.string().min(1),
     campos: z.record(z.string(), z.string()).nullable().optional(),
+    // Dados extras de alguns erros (ex.: modelos permitidos no chat).
+    detalhes: z.record(z.string(), z.unknown()).nullable().optional(),
     request_id: z.string().min(1).nullable().optional(),
   })
   .strict();
@@ -475,6 +493,53 @@ export const HealthRespostaSchema = z
     versao: z.string().min(1),
     oci: z.enum(['ok', 'indisponivel']),
     llm: z.enum(['ok', 'indisponivel']),
+    // Opcional: versões do backend anteriores à checagem do banco não enviam.
+    banco: z.enum(['ok', 'indisponivel']).optional(),
     verificado_em: dataIso,
+  })
+  .strict();
+
+export const PapelChatSchema = z.enum(['user', 'assistant']);
+
+export const MensagemChatSchema = z
+  .object({
+    papel: PapelChatSchema,
+    conteudo: z.string().min(1).max(LIMITES.chatConteudoMax),
+  })
+  .strict();
+
+export const PerguntaChatSchema = z
+  .object({
+    pergunta: z.string().trim().min(1).max(LIMITES.chatPerguntaMax),
+    historico: z.array(MensagemChatSchema).max(LIMITES.chatHistoricoMax).default([]),
+    modelo: z.string().min(1).nullable().optional(),
+  })
+  .strict();
+
+export const CitacaoChatSchema = z
+  .object({
+    id: z.string().min(1),
+    origem: z.enum(['documento', 'pacote']),
+    excerto: z.string(),
+  })
+  .strict();
+
+export const RespostaChatSchema = z
+  .object({
+    resposta: z.string().min(1),
+    citacoes: z.array(CitacaoChatSchema),
+    base: z.enum(['documento_e_pacote', 'pacote']),
+    recusou: z.boolean(),
+    fundamentada: z.boolean(),
+    ancoragem: z.number().min(0).max(1).nullable(),
+    modelo: z.string(),
+    trechos_usados: z.number().int().min(0),
+  })
+  .strict();
+
+export const ModelosChatSchema = z
+  .object({
+    padrao: z.string().min(1),
+    modelos: z.array(z.string().min(1)),
   })
   .strict();

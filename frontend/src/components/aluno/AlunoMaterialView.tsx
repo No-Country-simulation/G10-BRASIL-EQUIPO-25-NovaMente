@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ChatMaterial } from '@/components/chat/ChatMaterial';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ContentRenderer } from '@/components/views/ContentRenderer';
 import { useIdentidadeAluno } from '@/features/aluno/useIdentidadeAluno';
@@ -126,6 +127,10 @@ export function AlunoMaterialView({ materialId }: AlunoMaterialViewProps) {
         </p>
         <ContentRenderer conteudo={pacote.conteudo_adaptado} />
       </div>
+
+      <ChatMaterial
+        alvo={{ tipo: 'aluno', alunoId: aluno.aluno_id, materialId: material.material_id }}
+      />
     </div>
   );
 }
