@@ -8,11 +8,12 @@ import uuid
 from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, Response
 
 from app.core.config import settings
 from app.core.erros import NovaMenteError
+from app.core.seguranca import exigir_chave_empresa
 from app.models import (
     AdaptacaoInput,
     AdaptacaoPacote,
@@ -89,7 +90,7 @@ _EXTENSOES_ACEITAS = {".pdf", ".md", ".txt"}
 # ── POST /adaptacoes ─────────────────────────────────────────────────────────
 
 
-@router.post("", status_code=202)
+@router.post("", status_code=202, dependencies=[Depends(exigir_chave_empresa)])
 def criar_por_texto(body: AdaptacaoInput) -> Response:
     """Cria um job de adaptação a partir de texto colado (JSON)."""
     job = criar_job(
@@ -113,7 +114,9 @@ def criar_por_texto(body: AdaptacaoInput) -> Response:
 # ── POST /adaptacoes/upload ──────────────────────────────────────────────────
 
 
-@router.post("/upload", status_code=202)
+@router.post(
+    "/upload", status_code=202, dependencies=[Depends(exigir_chave_empresa)]
+)
 async def criar_por_arquivo(
     arquivo: UploadFile = File(...),
     documento_titulo: str = Form(..., min_length=3, max_length=150),

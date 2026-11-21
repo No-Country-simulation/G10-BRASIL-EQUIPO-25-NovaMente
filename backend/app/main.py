@@ -25,6 +25,7 @@ from app.api.v1.routers import (
 )
 from app.core.config import settings
 from app.core.db import Base, engine
+from app.core.preparo_banco import preparar_banco
 from app.llm import validar_provedor_configurado
 from app.services import limpeza_indice, repositorio
 
@@ -34,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    preparar_banco()  # pasta e arquivo do SQLite graváveis; falha com mensagem clara
     Base.metadata.create_all(bind=engine)
     # LLM_PROVIDER desconhecido impede a subida; a chave só é exigida na geração.
     validar_provedor_configurado()
