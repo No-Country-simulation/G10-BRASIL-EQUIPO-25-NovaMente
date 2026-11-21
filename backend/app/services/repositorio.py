@@ -22,7 +22,8 @@ from pathlib import Path
 
 from sqlalchemy import select
 
-from app.core.db import SessionLocal
+from app.core.db import SessionLocal, engine
+from app.core.esquema import verificar_esquema_catalogo
 from app.models import AdaptacaoPacote, AdaptacaoResumo, ErroJob, JobResposta
 from app.models.db import MaterialDB
 from app.services.materiais import material_de_pacote, resumo_de_adaptacao
@@ -257,12 +258,15 @@ def _pacote_do_json_estrito(
 def iniciar() -> None:
     """Prepara o banco na subida do backend.
 
-    Garante esquema e migrações, apaga jobs expirados e marca como ``failed``
-    (código INTERNO) os jobs ``queued`` ou ``running`` que o processo anterior
-    deixou para trás.
+    Antes de tocar nos jobs, confere o esquema do catálogo e levanta
+    ``EsquemaDefasadoError`` se o banco for de outra versão (ver
+    ``app.core.esquema``). Em seguida garante esquema e migrações, apaga jobs
+    expirados e marca como ``failed`` (código INTERNO) os jobs ``queued`` ou
+    ``running`` que o processo anterior deixou para trás.
     """
     from app.core.config import settings
 
+    verificar_esquema_catalogo(engine)
     _purgar()
     with _conectar() as conexao, _lock, conexao:
         pendentes = conexao.execute(
