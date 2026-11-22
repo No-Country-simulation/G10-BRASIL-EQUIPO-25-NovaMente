@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout do Código (histórico completo)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -46,7 +46,7 @@ jobs:
 
     steps:
       - name: Checkout do Código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configurar Python 3.11
         uses: actions/setup-python@v5
@@ -75,7 +75,7 @@ jobs:
 
     steps:
       - name: Checkout do Código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configurar Node.js (v20)
         uses: actions/setup-node@v4
