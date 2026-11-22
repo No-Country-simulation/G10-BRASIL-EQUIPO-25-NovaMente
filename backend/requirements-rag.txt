@@ -1,6 +1,6 @@
 # Dependências do módulo RAG (backend/app/rag). Fonte única: requirements.txt
 # inclui este arquivo com -r.
-langchain-core==1.7.6             # interface Embeddings
+langchain-core==1.8.3             # interface Embeddings
 langchain-text-splitters==1.1.3   # chunking
 chromadb==1.5.9                   # vector store
 google-genai==2.33.0              # SDK Gemini: geração (app/llm) e embeddings
