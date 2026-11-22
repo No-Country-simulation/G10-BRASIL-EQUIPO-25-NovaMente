@@ -1,0 +1,111 @@
+{
+  "adaptacao_id": "01M7BMZE08RM7P15201Y0839E8",
+  "status": "sucesso",
+  "criado_em": "2026-11-13T23:48:08.328031+00:00",
+  "documento": {
+    "titulo": "Introdução a APIs REST com HTTP",
+    "origem": "texto",
+    "nome_arquivo": null,
+    "tamanho_bytes": null
+  },
+  "metadados": {
+    "perfil_aplicado": "Desenvolvedor",
+    "formato_gerado": "Quiz",
+    "nivel_detalhe_aplicado": "Tecnico",
+    "nicho_setor_aplicado": "Geral",
+    "tempo_estimado_estudo_minutos": 8,
+    "conceitos_chave": [
+      "Introdução",
+      "APIs",
+      "REST",
+      "HTTP",
+      "Texto",
+      "NovaMente",
+      "Cada",
+      "Métodos"
+    ]
+  },
+  "conteudo_adaptado": {
+    "tipo": "quiz",
+    "titulo": "Avaliação de Conhecimentos: APIs REST e HTTP",
+    "introducao_contextualizada": "Teste seus conhecimentos técnicos sobre os fundamentos de protocolos HTTP, semântica de métodos REST, códigos de status e boas práticas de arquitetura de APIs, com base na documentação técnica fornecida.",
+    "itens": [
+      {
+        "pergunta": "Qual característica fundamental do protocolo HTTP é descrita no texto em relação ao armazenamento de estado entre requisições?",
+        "opcoes": [
+          "O HTTP guarda o estado da sessão em memória no servidor por até 30 minutos.",
+          "O protocolo é stateless (não guarda estado), exigindo que cada mensagem carregue todas as informações necessárias, como autenticação.",
+          "O estado é mantido automaticamente no lado do cliente através de cookies persistentes obrigatórios.",
+          "O protocolo mantém estado apenas durante requisições do tipo POST e PUT."
+        ],
+        "resposta_correta": 1,
+        "explicacao": "O HTTP é um protocolo sem estado (stateless), o que significa que cada requisição é independente e deve conter todo o contexto necessário para que o servidor a processe."
+      },
+      {
+        "pergunta": "Dentre os métodos HTTP listados, qual deles NÃO possui a propriedade de idempotência?",
+        "opcoes": [
+          "GET",
+          "PUT",
+          "POST",
+          "DELETE"
+        ],
+        "resposta_correta": 2,
+        "explicacao": "O método POST não é idempotente, pois executar a mesma requisição POST múltiplas vezes pode resultar na criação de múltiplos recursos no servidor. Já GET, PUT e DELETE são idempotentes."
+      },
+      {
+        "pergunta": "Qual é a diferença semântica entre os métodos PUT e PATCH em uma API REST?",
+        "opcoes": [
+          "PUT substitui um recurso inteiro, enquanto PATCH altera apenas alguns campos específicos.",
+          "PUT cria um novo recurso e PATCH remove um recurso existente.",
+          "PUT é utilizado para paginação e PATCH para filtragem de dados.",
+          "Não há diferença prática; ambos são utilizados para atualizações parciais."
+        ],
+        "resposta_correta": 0,
+        "explicacao": "Enquanto o PUT realiza a substituição integral do recurso, o PATCH é projetado para aplicar modificações parciais, alterando apenas os campos enviados na requisição."
+      },
+      {
+        "pergunta": "Ao projetar endpoints seguindo as boas práticas de REST, como as URLs e as ações devem ser estruturadas?",
+        "opcoes": [
+          "Usando verbos no singular na URL para indicar a ação, como /criarUsuario.",
+          "Utilizando substantivos no plural para representar recursos, deixando a ação por conta do método HTTP.",
+          "Misturando verbos e substantivos no plural, como /pedidos/deletar/42.",
+          "Utilizando parâmetros de query string para definir tanto o recurso quanto a ação executada."
+        ],
+        "resposta_correta": 1,
+        "explicacao": "Boas práticas de REST ditam que as URLs devem representar recursos usando substantivos no plural (ex: /usuarios), enquanto a semântica da operação é definida pelo método HTTP (GET, POST, etc.)."
+      },
+      {
+        "pergunta": "Qual código de status HTTP da família 2xx deve ser retornado especificamente quando um novo recurso é criado com sucesso?",
+        "opcoes": [
+          "200",
+          "201",
+          "204",
+          "301"
+        ],
+        "resposta_correta": 1,
+        "explicacao": "O código de status 201 (Created) indica que a requisição foi bem-sucedida e resultou na criação de um novo recurso no servidor."
+      },
+      {
+        "pergunta": "Um cliente faz uma requisição para uma API e recebe o código de status 401. Qual é o diagnóstico correto para esse erro?",
+        "opcoes": [
+          "Erro interno no servidor (Internal Server Error).",
+          "O recurso solicitado não foi encontrado.",
+          "Falta de autenticação na requisição.",
+          "O usuário possui autenticação válida, mas não tem permissão para acessar o recurso."
+        ],
+        "resposta_correta": 2,
+        "explicacao": "O código 401 indica que a requisição carece de credenciais de autenticação válidas. A falta de permissão (autorização) é representada pelo código 403."
+      }
+    ]
+  },
+  "avaliacao_qualidade": {
+    "ancoragem_fonte_score": 0.5299,
+    "clareza_pedagogica": "Alta",
+    "observacoes": null
+  },
+  "armazenamento_oci": {
+    "bucket": "novamente-conteudos-educativos",
+    "objeto_id": "novamente-introducao-a-apis-rest-com-http-desenvolvedor-quiz-01M7BMZE.json",
+    "status_upload": "falha"
+  }
+}

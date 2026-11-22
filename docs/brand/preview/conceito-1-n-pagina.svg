@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="titulo">
+  <title id="titulo">Conceito 1 — N de páginas dobradas</title>
+  <defs>
+    <linearGradient id="grad1" x1="130" y1="130" x2="390" y2="390" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <linearGradient id="fold1" x1="152" y1="148" x2="216" y2="216" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#EDE9FE"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <radialGradient id="halo1" cx="0.5" cy="0.44" r="0.56">
+      <stop offset="0" stop-color="#8B5CF6" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#0B0B12" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="96" fill="#0B0B12"/>
+  <rect width="512" height="512" rx="96" fill="url(#halo1)"/>
+
+  <!-- haste esquerda: página com canto dobrado -->
+  <path d="M152 148h46l14 14v202h-60z" fill="url(#grad1)"/>
+  <path d="M198 148l14 14h-14z" fill="url(#fold1)"/>
+
+  <!-- diagonal do N -->
+  <path d="M212 148h54l96 216h-54z" fill="url(#grad1)"/>
+
+  <!-- haste direita -->
+  <path d="M302 148h60v216h-60z" fill="url(#grad1)" opacity="0.9"/>
+  <path d="M351 160v190" stroke="#EDE9FE" stroke-width="4" stroke-linecap="round" opacity="0.28"/>
+
+  <!-- detalhe de página -->
+  <path d="M168 312h30" stroke="#0B0B12" stroke-width="7" stroke-linecap="round" opacity="0.35"/>
+  <path d="M168 332h30" stroke="#0B0B12" stroke-width="7" stroke-linecap="round" opacity="0.22"/>
+</svg>

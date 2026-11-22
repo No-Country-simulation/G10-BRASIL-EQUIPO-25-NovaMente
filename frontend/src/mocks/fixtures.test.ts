@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { AdaptacaoPacoteSchema } from '@/types/schemas';
+import { AdaptacaoPacoteSchema, MaterialResumoSchema } from '@/types/schemas';
 import flashcards from './fixtures/flashcards-vcn-iniciante.json';
+import materiais from './fixtures/materiais.json';
 import quiz from './fixtures/quiz-vcn-desenvolvedor.json';
 import tutorial from './fixtures/tutorial-vcn-lider.json';
 import resumo from './fixtures/resumo-vcn-gestor.json';
@@ -15,6 +16,17 @@ describe('fixtures de demonstração', () => {
     const resultado = AdaptacaoPacoteSchema.safeParse(fixture);
     expect(resultado.success, resultado.success ? '' : JSON.stringify(resultado.error.issues)).toBe(true);
   });
+
+  it.each(materiais.map((material) => [material.material_id, material]))(
+    'material %s respeita o contrato MaterialResumo',
+    (_id, material) => {
+      const resultado = MaterialResumoSchema.safeParse(material);
+      expect(
+        resultado.success,
+        resultado.success ? '' : JSON.stringify(resultado.error.issues),
+      ).toBe(true);
+    },
+  );
 
   it('cobre os quatro formatos', () => {
     const formatos = [flashcards, quiz, tutorial, resumo].map(

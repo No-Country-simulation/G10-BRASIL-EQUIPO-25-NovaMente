@@ -167,6 +167,58 @@ describe('IngestionForm', () => {
     expect(screen.getByText('Dados inválidos')).toBeInTheDocument();
   });
 
+  describe('resumo de erros', () => {
+    const resumo = () => screen.queryByText('Corrija os campos destacados.');
+
+    it('não aparece antes de qualquer envio', async () => {
+      renderizar();
+      await userEvent.type(titulo(), 'VC');
+      await userEvent.tab();
+      expect(await screen.findByText('Informe um título de 3 a 150 caracteres.')).toBeInTheDocument();
+      expect(resumo()).not.toBeInTheDocument();
+    });
+
+    it('aparece ao enviar vazio, junto dos erros dos campos', async () => {
+      const { criarPorTexto } = renderizar();
+      await userEvent.click(screen.getByRole('button', { name: /gerar material/i }));
+
+      expect(await screen.findByText('Corrija os campos destacados.')).toHaveAttribute('role', 'alert');
+      expect(screen.getByText('Informe um título de 3 a 150 caracteres.')).toBeInTheDocument();
+      expect(screen.getByText('Mínimo de 200 caracteres.')).toBeInTheDocument();
+      expect(screen.getAllByText('Corrija os campos destacados.')).toHaveLength(1);
+      expect(criarPorTexto).not.toHaveBeenCalled();
+    });
+
+    it('some quando os campos são corrigidos', async () => {
+      renderizar(vi.fn().mockReturnValue(new Promise(() => {})));
+      await userEvent.click(screen.getByRole('button', { name: /gerar material/i }));
+      expect(await screen.findByText('Corrija os campos destacados.')).toBeInTheDocument();
+
+      await userEvent.type(titulo(), 'Introdução à VCN');
+      fireEvent.change(texto(), { target: { value: 'a'.repeat(200) } });
+
+      await waitFor(() => expect(resumo()).not.toBeInTheDocument());
+      expect(screen.queryByText('Informe um título de 3 a 150 caracteres.')).not.toBeInTheDocument();
+      expect(screen.queryByText('Mínimo de 200 caracteres.')).not.toBeInTheDocument();
+    });
+
+    it('aparece em 422 com campos vindos do servidor', async () => {
+      const criarPorTexto = vi.fn().mockRejectedValue(
+        new ErroApi(
+          { erro: { codigo: 'VALIDACAO', mensagem: 'Dados inválidos', campos: { documento_titulo: 'Título já usado.' } } },
+          422,
+        ),
+      );
+      renderizar(criarPorTexto);
+      await userEvent.type(titulo(), 'Introdução à VCN');
+      fireEvent.change(texto(), { target: { value: 'a'.repeat(200) } });
+      await userEvent.click(screen.getByRole('button', { name: /gerar material/i }));
+
+      expect(await screen.findByText('Título já usado.')).toBeInTheDocument();
+      expect(screen.getByText('Corrija os campos destacados.')).toBeInTheDocument();
+    });
+  });
+
   it('conta caracteres, não bytes, no contador', async () => {
     renderizar();
     fireEvent.change(texto(), { target: { value: '😀'.repeat(50) } });

@@ -159,6 +159,11 @@ export const CodigoErroSchema = z.enum([
   'FORMATO_INCOMPATIVEL',
   'FORMATO_DESCONHECIDO',
   'OCI_INDISPONIVEL',
+  'ALUNO_NAO_ENCONTRADO',
+  'ALUNO_INATIVO',
+  'EMAIL_JA_CADASTRADO',
+  'MATERIAL_NAO_ENCONTRADO',
+  'MATERIAL_NAO_DISPONIVEL',
   'INTERNO',
 ]);
 
@@ -270,6 +275,184 @@ export const PaginaAdaptacoesSchema = z
     tamanho_pagina: z.number().int().min(1).max(LIMITES.paginaMax),
     total: z.number().int().min(0),
     total_paginas: z.number().int().min(0),
+  })
+  .strict();
+
+export const statusAlunoSchema = z.enum(['ativo', 'inativo']);
+
+export const nomeAlunoSchema = z
+  .string()
+  .trim()
+  .min(3, 'Mínimo de 3 caracteres')
+  .max(120, 'Máximo de 120 caracteres');
+
+export const emailAlunoSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .email('E-mail inválido')
+  .max(254, 'Máximo de 254 caracteres');
+
+export const AlunoCriacaoSchema = z
+  .object({
+    nome: nomeAlunoSchema,
+    email: emailAlunoSchema,
+    status: statusAlunoSchema.optional(),
+  })
+  .strict();
+
+export const AlunoAtualizacaoSchema = z
+  .object({
+    nome: nomeAlunoSchema.optional(),
+    email: emailAlunoSchema.optional(),
+    status: statusAlunoSchema.optional(),
+  })
+  .strict()
+  .superRefine((dados, ctx) => {
+    if (dados.nome === undefined && dados.email === undefined && dados.status === undefined) {
+      ctx.addIssue({ code: 'custom', message: 'Informe ao menos um campo para atualizar.' });
+    }
+  });
+
+export const AlunoResumoSchema = z
+  .object({
+    aluno_id: z.string().min(1),
+    nome: z.string().min(1),
+    email: z.string().min(1),
+    status: statusAlunoSchema,
+    total_materiais: z.number().int().min(0),
+    criado_em: dataIso,
+    atualizado_em: dataIso,
+  })
+  .strict();
+
+export const PaginaAlunosSchema = z
+  .object({
+    itens: z.array(AlunoResumoSchema),
+    pagina: z.number().int().min(1),
+    tamanho_pagina: z.number().int().min(1).max(LIMITES.paginaMax),
+    total: z.number().int().min(0),
+    total_paginas: z.number().int().min(0),
+  })
+  .strict();
+
+export const visibilidadeMaterialSchema = z.enum(['rascunho', 'publicado']);
+
+export const VinculoMaterialSchema = z
+  .object({
+    material_id: z.string().min(1),
+    titulo: z.string().min(1),
+    formato: formatoSaidaSchema,
+    perfil: perfilSchema,
+    visibilidade: visibilidadeMaterialSchema,
+    vinculado_em: dataIso,
+  })
+  .strict();
+
+export const VinculosAlunoSchema = z
+  .object({
+    aluno_id: z.string().min(1),
+    itens: z.array(VinculoMaterialSchema),
+  })
+  .strict();
+
+export const AtualizarVinculosInputSchema = z
+  .object({
+    material_ids: z.array(z.string().min(1)).max(500),
+  })
+  .strict();
+
+export const MaterialAtualizacaoSchema = z
+  .object({
+    titulo: tituloSchema.optional(),
+    visibilidade: visibilidadeMaterialSchema.optional(),
+  })
+  .strict()
+  .superRefine((dados, ctx) => {
+    if (dados.titulo === undefined && dados.visibilidade === undefined) {
+      ctx.addIssue({ code: 'custom', message: 'Informe ao menos um campo para atualizar.' });
+    }
+  });
+
+export const MaterialResumoSchema = z
+  .object({
+    material_id: z.string().min(1),
+    adaptacao_id: z.string().min(1),
+    titulo: z.string().min(1),
+    documento_titulo: z.string().min(1),
+    perfil: perfilSchema,
+    formato: formatoSaidaSchema,
+    nivel: nivelDetalheSchema,
+    nicho: nichoSchema,
+    visibilidade: visibilidadeMaterialSchema,
+    tempo_estimado_estudo_minutos: z.number().int().min(1),
+    ancoragem_fonte_score: z.number().min(0).max(1),
+    status_upload: z.enum(['concluido', 'falha']),
+    criado_em: dataIso,
+    atualizado_em: dataIso,
+  })
+  .strict();
+
+export const MaterialDetalheSchema = z
+  .object({
+    material: MaterialResumoSchema,
+    pacote: AdaptacaoPacoteSchema,
+  })
+  .strict();
+
+export const PaginaMateriaisSchema = z
+  .object({
+    itens: z.array(MaterialResumoSchema),
+    pagina: z.number().int().min(1),
+    tamanho_pagina: z.number().int().min(1).max(LIMITES.paginaMax),
+    total: z.number().int().min(0),
+    total_paginas: z.number().int().min(0),
+  })
+  .strict();
+
+export const IdentificacaoAlunoItemSchema = z
+  .object({
+    aluno_id: z.string().min(1),
+    nome: z.string().min(1),
+  })
+  .strict();
+
+export const IdentificacaoAlunoRespostaSchema = z
+  .object({
+    itens: z.array(IdentificacaoAlunoItemSchema),
+  })
+  .strict();
+
+export const ItemCatalogoAlunoSchema = z
+  .object({
+    material_id: z.string().min(1),
+    titulo: z.string().min(1),
+    documento_titulo: z.string().min(1),
+    formato: formatoSaidaSchema,
+    perfil: perfilSchema,
+    nivel: nivelDetalheSchema,
+    tempo_estimado_estudo_minutos: z.number().int().min(1),
+    criado_em: dataIso,
+    conceitos_chave: z.array(z.string().min(1)).max(6),
+  })
+  .strict();
+
+export const PaginaCatalogoAlunoSchema = z
+  .object({
+    itens: z.array(ItemCatalogoAlunoSchema),
+    pagina: z.number().int().min(1),
+    tamanho_pagina: z.number().int().min(1).max(LIMITES.paginaMax),
+    total: z.number().int().min(0),
+    total_paginas: z.number().int().min(0),
+  })
+  .strict();
+
+export const RemocaoMaterialRespostaSchema = z
+  .object({
+    material_id: z.string().min(1),
+    removido: z.literal(true),
+    oci_removido: z.boolean(),
+    aviso: z.string().min(1).nullable().optional(),
   })
   .strict();
 

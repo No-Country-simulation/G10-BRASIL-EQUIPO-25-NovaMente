@@ -214,4 +214,40 @@ class HealthResposta(BaseModel):
     versao: str
     oci: Literal["ok", "indisponivel"]
     llm: Literal["ok", "indisponivel"]
+    banco: Literal["ok", "indisponivel"]
     verificado_em: str
+
+
+# ── Materiais (empresa) ───────────────────────────────────────────────────────
+# Importado no fim para reexportar os schemas sem ciclo de importação.
+
+from app.models.materiais import (  # noqa: E402
+    MaterialAtualizacao,
+    MaterialDetalhe,
+    MaterialResumo,
+    PaginaMateriais,
+    RemocaoMaterialResposta,
+    VisibilidadeMaterial,
+)
+
+# ── Alunos (empresa) ─────────────────────────────────────────────────────────
+
+from app.models.alunos import (  # noqa: E402
+    AlunoAtualizacao,
+    AlunoCriacao,
+    AlunoResumo,
+    AtualizarVinculosInput,
+    PaginaAlunos,
+    StatusAluno,
+    VinculoMaterial,
+    VinculosAluno,
+)
+
+# ── Área do aluno (somente leitura) ───────────────────────────────────────────
+
+from app.models.aluno_catalogo import (  # noqa: E402
+    IdentificacaoAlunoItem,
+    IdentificacaoAlunoResposta,
+    ItemCatalogoAluno,
+    PaginaCatalogoAluno,
+)

@@ -8,7 +8,7 @@ O módulo RAG (`backend/app/rag/`) garante que o conteúdo gerado pelo NovaMente
 flowchart LR
     A[Texto do documento] --> B[Chunking<br/>1000 caracteres, overlap 150]
     B --> C[Embeddings<br/>gemini-embedding-001]
-    C --> D[(ChromaDB<br/>1 collection por documento)]
+    C --> D[(ChromaDB<br/>collection única, linhas por documento)]
     Q[Consulta] --> E[Embedding da consulta]
     E --> D
     D --> F[Top-k trechos<br/>com relevância]
@@ -19,7 +19,7 @@ flowchart LR
 |---|---|---|
 | Chunking | Quebra o texto por parágrafo, linha, frase e palavra, nessa ordem de preferência, com sobreposição para não perder contexto na fronteira | `chunking.py` |
 | Embeddings | Gera vetores de 3072 dimensões com `gemini-embedding-001` (`RETRIEVAL_DOCUMENT` na indexação, `RETRIEVAL_QUERY` na consulta), em lotes de 50, com nova tentativa em caso de erro 429 | `embeddings.py` |
-| Armazenamento | Guarda os vetores no ChromaDB, uma collection por documento (`doc_<id>_<hash>`), com métrica cosseno | `armazenamento.py` |
+| Armazenamento | Guarda os vetores no ChromaDB numa collection única (`novamente_trechos`), uma linha por trecho com o `documento_id` nos metadados, com métrica cosseno; a busca filtra pelo documento | `armazenamento.py` |
 | Serviço | Expõe as duas funções usadas pela API | `servico.py` |
 
 Os valores (tamanho do chunk, overlap, limites de texto, `k` padrão) ficam em `config.py`.
@@ -49,6 +49,8 @@ for t in trechos:
 
 **Erros:** `ValueError` quando a entrada é inválida (a API devolve HTTP 422) e `LookupError` quando o documento não foi indexado (HTTP 404).
 
+Falhas do serviço de embeddings, na indexação e na consulta, viram `RuntimeError` com mensagem em português, sem o texto técnico (que vai só para o log). Cada chamada tem timeout de 30 s (`EMBEDDING_TIMEOUT_SEGUNDOS` em `config.py`). Limite de taxa (429), indisponibilidade (5xx), timeout e erro de conexão têm até 3 tentativas, com espera exponencial e variação aleatória. Erros de configuração (400, 401, 403, 404: chave inválida ou modelo inexistente) falham na hora.
+
 **Relevância:** é `1 - distância cosseno`, limitada entre 0 e 1. Ela mede a proximidade vetorial entre o trecho e a consulta. Não é o `ancoragem_fonte_score` final, que combina essa distância com o LLM-as-a-judge e fica na camada de integração (veja *Pendências*).
 
 ### Configuração
@@ -58,7 +60,7 @@ for t in trechos:
 | `GOOGLE_API_KEY` | Chave do Gemini, lida do ambiente. Nunca vai para o código nem para o repositório |
 | `CHROMA_DIR` | Pasta do banco vetorial. Padrão: `/data/chroma`, fora do repositório |
 
-Dependências do módulo: `backend/requirements-rag.txt`.
+Dependências do módulo: `backend/requirements-rag.txt` (incluído por `backend/requirements.txt`). Para rodar os testes, instale `backend/requirements-dev.txt`.
 
 ### Como testar
 

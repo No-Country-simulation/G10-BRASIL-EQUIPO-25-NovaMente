@@ -23,10 +23,12 @@ TASK_TYPE_CONSULTA = "RETRIEVAL_QUERY"
 EMBEDDING_LOTE = 50
 EMBEDDING_TENTATIVAS = 3
 EMBEDDING_ESPERA_INICIAL = 2.0  # segundos, dobra a cada tentativa
+EMBEDDING_JITTER = 0.2  # variação aleatória de ±20% em cada espera
+EMBEDDING_TIMEOUT_SEGUNDOS = 30  # por chamada ao serviço de embeddings
 
-# Vector store
+# Vector store: uma collection para todos os documentos (linhas filtradas por documento_id)
 METRICA = "cosine"
-PREFIXO_COLLECTION = "doc_"
+NOME_COLLECTION = "novamente_trechos"
 
 # Recuperação
 K_PADRAO = 4

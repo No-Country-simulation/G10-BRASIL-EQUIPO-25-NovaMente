@@ -11,11 +11,13 @@ em memória, nada é gravado em disco.
 import math
 import os
 import sys
+from pathlib import Path
 
-import chromadb
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-MODELO = "models/gemini-embedding-001"
+import chromadb  # noqa: E402
+
+from app.rag.embeddings import criar_embeddings_gemini  # noqa: E402
 
 
 def cosseno(a: list[float], b: list[float]) -> float:
@@ -39,7 +41,7 @@ def verificar_chroma() -> None:
 def verificar_gemini() -> None:
     if not os.getenv("GOOGLE_API_KEY"):
         sys.exit("GOOGLE_API_KEY não definida no ambiente.")
-    emb = GoogleGenerativeAIEmbeddings(model=MODELO)
+    emb = criar_embeddings_gemini()  # mesmo cliente do módulo RAG (gemini-embedding-001)
     docs = [
         "O código HTTP 404 indica que o recurso não foi encontrado no servidor.",
         "A fotossíntese converte luz em energia química nas plantas.",

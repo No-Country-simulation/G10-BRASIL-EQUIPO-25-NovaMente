@@ -22,6 +22,8 @@ export function IngestionForm({
   const idTitulo = useId();
   const idErroTitulo = useId();
   const erros = form.formState.errors;
+  // Derivado do formState: some sozinho quando os erros (inclusive os do servidor) somem.
+  const mostrarResumoErros = form.formState.submitCount > 0 && Object.keys(erros).length > 0;
 
   return (
     <form onSubmit={enviar} noValidate aria-label={M.formulario.titulo} className="space-y-6">
@@ -65,6 +67,12 @@ export function IngestionForm({
         <NichoField form={form} desabilitado={desabilitado} />
         <NivelField form={form} desabilitado={desabilitado} />
       </div>
+
+      {mostrarResumoErros && (
+        <div role="alert" className="rounded-md border border-[var(--danger)] p-3 text-sm text-[var(--danger)]">
+          {M.formulario.resumoErros}
+        </div>
+      )}
 
       <Button type="submit" disabled={enviando || desabilitado} className="h-11 w-full">
         {enviando ? M.formulario.enviando : M.formulario.enviar}

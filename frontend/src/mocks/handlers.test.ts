@@ -124,9 +124,9 @@ describe('handlers de adaptação', () => {
     expect(soQuiz.itens.every((i) => i.formato_gerado === 'Quiz')).toBe(true);
   });
 
-  it('exporta csv só para flashcards', async () => {
+  it.each(['Quiz', 'Tutorial', 'ResumoExecutivo'] as const)('exporta csv só para flashcards (409 em %s)', async (formato) => {
     configurarDuracaoJob(10);
-    const criado = await httpApiClient.criarPorTexto({ ...entrada, formato_saida: 'ResumoExecutivo' });
+    const criado = await httpApiClient.criarPorTexto({ ...entrada, formato_saida: formato });
     await new Promise((r) => setTimeout(r, 30));
     const job = await httpApiClient.obterJob(criado.job_id);
     await expect(httpApiClient.exportar(job.adaptacao_id!, 'csv')).rejects.toMatchObject({ status: 409 });
@@ -178,19 +178,122 @@ describe('handlers de adaptação', () => {
     );
   });
 
-  it('escapa aspas duplas no CSV de flashcards', async () => {
-    const pacote = structuredClone(flashcardsFixture) as unknown as AdaptacaoPacote;
-    if (pacote.conteudo_adaptado.tipo === 'flashcards') {
-      pacote.conteudo_adaptado.itens[0].frente = 'O que é "VCN"?';
+  describe('CSV de flashcards no formato Anki', () => {
+    type Cartao = { frente: string; verso: string; dica_didatica?: string | null };
+
+    async function exportarCsv(itens: Cartao[], id: string) {
+      const pacote = structuredClone(flashcardsFixture) as unknown as AdaptacaoPacote;
+      if (pacote.conteudo_adaptado.tipo === 'flashcards') pacote.conteudo_adaptado.itens = itens;
+      pacote.adaptacao_id = id;
+      registrarPacote(pacote);
+      const resposta = await fetch(`/api/v1/adaptacoes/${id}/exportacao?formato=csv`);
+      return { resposta, csv: await resposta.text() };
     }
-    pacote.adaptacao_id = '01JCSVTESTE0000000000001';
-    registrarPacote(pacote);
 
-    const resposta = await fetch(`/api/v1/adaptacoes/${pacote.adaptacao_id}/exportacao?formato=csv`);
-    const csv = await resposta.text();
+    // Mesmos cartões e mesmo texto esperado do backend (gerar_csv).
+    const CARTOES: Cartao[] = [
+      { frente: 'O que faz o método GET?', verso: 'Busca um recurso sem alterá-lo.', dica_didatica: 'Pense em leitura.' },
+      { frente: 'O que é o método "POST"?', verso: 'Cria um recurso novo; os dados vão no corpo.', dica_didatica: null },
+      {
+        frente: 'O que indica o código 404?',
+        verso: 'Recurso não encontrado (erro do cliente).',
+        dica_didatica: 'Família 4xx = erro de quem pediu.',
+      },
+      {
+        frente: 'Como se escreve uma tag <br> e o símbolo &?',
+        verso: 'Em HTML: &lt;br&gt; e &amp;amp;',
+        dica_didatica: 'Texto com < > & é escapado.',
+      },
+    ];
+    const ESPERADO =
+      '#separator:Semicolon\n' +
+      '#html:true\n' +
+      '"O que faz o método GET?";"Busca um recurso sem alterá-lo.<br><br><small><b>Dica:</b> <i>Pense em leitura.</i></small>"\n' +
+      '"O que é o método ""POST""?";"Cria um recurso novo; os dados vão no corpo."\n' +
+      '"O que indica o código 404?";"Recurso não encontrado (erro do cliente).<br><br><small><b>Dica:</b> <i>Família 4xx = erro de quem pediu.</i></small>"\n' +
+      '"Como se escreve uma tag &lt;br&gt; e o símbolo &amp;?";"Em HTML: &amp;lt;br&amp;gt; e &amp;amp;amp;<br><br><small><b>Dica:</b> <i>Texto com &lt; &gt; &amp; é escapado.</i></small>"\n';
 
-    expect(csv.startsWith('frente;verso;dica')).toBe(true);
-    expect(csv).toContain('"O que é ""VCN""?"');
-    expect(resposta.headers.get('Content-Disposition')).toContain('.csv"');
+    // Leitor CSV mínimo para `;` com campos entre aspas e `""` como escape.
+    function lerCsv(texto: string): string[][] {
+      return texto
+        .split('\n')
+        .filter((linha) => linha !== '' && !linha.startsWith('#'))
+        .map((linha) => {
+          const campos: string[] = [];
+          let atual = '';
+          let entreAspas = false;
+          for (let i = 0; i < linha.length; i += 1) {
+            const c = linha[i];
+            if (entreAspas && c === '"' && linha[i + 1] === '"') {
+              atual += '"';
+              i += 1;
+            } else if (c === '"') {
+              entreAspas = !entreAspas;
+            } else if (c === ';' && !entreAspas) {
+              campos.push(atual);
+              atual = '';
+            } else {
+              atual += c;
+            }
+          }
+          campos.push(atual);
+          return campos;
+        });
+    }
+
+    it('gera exatamente o mesmo texto do backend', async () => {
+      const { resposta, csv } = await exportarCsv(CARTOES, '01JCSVTESTE0000000000001');
+      expect(resposta.status).toBe(200);
+      expect(csv).toBe(ESPERADO);
+      expect(resposta.headers.get('Content-Type')).toBe('text/csv; charset=utf-8');
+      expect(resposta.headers.get('Content-Disposition')).toContain('.csv"');
+    });
+
+    it('não tem linha de cabeçalho', async () => {
+      const { csv } = await exportarCsv(CARTOES, '01JCSVTESTE0000000000002');
+      expect(csv.split('\n').some((linha) => linha.startsWith('frente'))).toBe(false);
+    });
+
+    it('cartão sem dica não ganha rodapé no verso', async () => {
+      const { csv } = await exportarCsv(CARTOES, '01JCSVTESTE0000000000003');
+      const [, versoSemDica] = lerCsv(csv)[1];
+      expect(versoSemDica).toBe('Cria um recurso novo; os dados vão no corpo.');
+      expect(versoSemDica).not.toContain('<br>');
+      expect(versoSemDica).not.toContain('Dica');
+    });
+
+    it('escapa HTML do conteúdo', async () => {
+      const perigoso = '<script>alert(1)</script> P&D';
+      const { csv } = await exportarCsv(
+        [
+          { frente: perigoso, verso: perigoso, dica_didatica: perigoso },
+          ...CARTOES.slice(0, 2),
+        ],
+        '01JCSVTESTE0000000000004',
+      );
+      expect(csv).not.toContain('<script>');
+      expect(csv.split('&lt;script&gt;alert(1)&lt;/script&gt; P&amp;D')).toHaveLength(4);
+    });
+
+    it('lido de volta, cada cartão vira uma linha de duas colunas', async () => {
+      const { csv } = await exportarCsv(CARTOES, '01JCSVTESTE0000000000005');
+      const linhas = lerCsv(csv);
+      expect(linhas).toHaveLength(CARTOES.length);
+      linhas.forEach((colunas, i) => {
+        expect(colunas).toHaveLength(2);
+        expect(colunas[1].startsWith(
+          CARTOES[i].verso.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'),
+        )).toBe(true);
+      });
+      expect(linhas[1][0]).toBe('O que é o método "POST"?');
+    });
+
+    it('usa os cartões da fixture sem perder nenhum', async () => {
+      const fixture = flashcardsFixture as unknown as AdaptacaoPacote;
+      const itens = fixture.conteudo_adaptado.tipo === 'flashcards' ? fixture.conteudo_adaptado.itens : [];
+      const { csv } = await exportarCsv(structuredClone(itens), '01JCSVTESTE0000000000006');
+      expect(csv.startsWith('#separator:Semicolon\n#html:true\n')).toBe(true);
+      expect(lerCsv(csv)).toHaveLength(itens.length);
+    });
   });
 });

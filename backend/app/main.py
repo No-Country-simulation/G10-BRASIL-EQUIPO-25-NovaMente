@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -12,13 +13,40 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api.v1.routers import adaptacoes, health, jobs, oci
+import app.models.db  # noqa: F401  # registra os modelos no metadata
+from app.api.v1.routers import (
+    adaptacoes,
+    aluno,
+    alunos,
+    health,
+    jobs,
+    materiais,
+    oci,
+)
 from app.core.config import settings
+from app.core.db import Base, engine
+from app.core.preparo_banco import preparar_banco
+from app.llm import validar_provedor_configurado
+from app.services import limpeza_indice, repositorio
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    preparar_banco()  # pasta e arquivo do SQLite graváveis; falha com mensagem clara
+    Base.metadata.create_all(bind=engine)
+    # LLM_PROVIDER desconhecido impede a subida; a chave só é exigida na geração.
+    validar_provedor_configurado()
+    # Prepara o SQLite e marca como failed os jobs que o processo anterior deixou em andamento.
+    repositorio.iniciar()
+    limpeza_indice.varrer_indices_orfaos()  # best-effort: nunca impede a subida
+    yield
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title=settings.app_nome,
     version=settings.app_versao,
     docs_url="/docs",
@@ -30,19 +58,35 @@ app = FastAPI(
 )
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
-# Em produção, restrinja allow_origins ao domínio do frontend.
+# Origens em CORS_ORIGINS (padrão: http://localhost:3000), sem "*": há credenciais.
+# O add_middleware põe o último registrado por fora. Por isso os limites de
+# upload e de gerações vêm antes e o CORS por último: assim o 413 e o 429 desses
+# limites também saem com os cabeçalhos de CORS e o navegador consegue lê-los.
+from app.core.limite_corpo import LimiteCorpoUploadMiddleware  # noqa: E402
+from app.core.limite_geracao import LimiteGeracaoMiddleware  # noqa: E402
+from app.core.redacao_logs import instalar_redacao_de_segredos  # noqa: E402
+
+# Chaves e credenciais não saem nos logs, nem dentro do texto de uma exceção.
+instalar_redacao_de_segredos()
+
+app.add_middleware(LimiteCorpoUploadMiddleware)
+app.add_middleware(LimiteGeracaoMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=settings.cors_origins_lista,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-API-Key", "Accept"],
+    expose_headers=["Retry-After"],
 )
 
 # ── Rotas ─────────────────────────────────────────────────────────────────────
 _V1 = "/api/v1"
 app.include_router(adaptacoes.router, prefix=_V1)
+app.include_router(aluno.router, prefix=_V1)
+app.include_router(alunos.router, prefix=_V1)
 app.include_router(jobs.router, prefix=_V1)
+app.include_router(materiais.router, prefix=_V1)
 app.include_router(oci.router, prefix=_V1)
 app.include_router(health.router, prefix=_V1)
 
@@ -64,7 +108,10 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
                 "mensagem": str(detail),
             }
         }
-    return JSONResponse(status_code=exc.status_code, content=content)
+    # Repassa os cabeçalhos da exceção (por exemplo Retry-After no 429).
+    return JSONResponse(
+        status_code=exc.status_code, content=content, headers=getattr(exc, "headers", None)
+    )
 
 
 @app.exception_handler(RequestValidationError)

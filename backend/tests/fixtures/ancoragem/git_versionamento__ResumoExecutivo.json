@@ -1,0 +1,44 @@
+{
+  "adaptacao_id": "01M7BN0CWT49QDEW954G2T2HZ0",
+  "status": "sucesso",
+  "criado_em": "2026-11-13T23:48:39.962160+00:00",
+  "documento": {
+    "titulo": "Controle de versão com Git",
+    "origem": "texto",
+    "nome_arquivo": null,
+    "tamanho_bytes": null
+  },
+  "metadados": {
+    "perfil_aplicado": "Desenvolvedor",
+    "formato_gerado": "ResumoExecutivo",
+    "nivel_detalhe_aplicado": "Tecnico",
+    "nicho_setor_aplicado": "Geral",
+    "tempo_estimado_estudo_minutos": 4,
+    "conceitos_chave": [
+      "Controle",
+      "Git",
+      "Texto",
+      "NovaMente",
+      "Por",
+      "Com",
+      "Commits",
+      "Um"
+    ]
+  },
+  "conteudo_adaptado": {
+    "tipo": "markdown",
+    "titulo": "Resumo Técnico: Controle de Versão com Git",
+    "introducao_contextualizada": "Para desenvolvedores juniores e plenos, o domínio do Git é fundamental para garantir a rastreabilidade do código, a integridade do histórico distribuído e a colaboração assíncrona eficiente em ambientes de desenvolvimento modernos.",
+    "itens": "## Pontos-chave\n- **Histórico Distribuído:** Cada desenvolvedor possui uma cópia completa do repositório, permitindo o registro detalhado de alterações e reversão segura de estados instáveis.\n- **Gestão de Commits:** O fluxo utiliza a área de preparação (`git add`) para snapshots granulares, exigindo mensagens concisas e descritivas para facilitar code reviews.\n- **Isolamento com Branches:** O desenvolvimento de novas funcionalidades e correções ocorre em linhas independentes, preservando a estabilidade da branch principal.\n- **Estratégias de Integração:** O `merge` preserva o histórico divergente criando commits de junção, enquanto o `rebase` reaplica commits linearmente. Conflitos exigem resolução manual.\n- **Colaboração via Remotos:** Operações de `push` e `pull` sincronizam o estado local com repositórios remotos (GitHub/GitLab), antecedidas obrigatoriamente por Pull Requests para validação por pares.\n\n## Conclusão\nA adoção rigorosa do fluxo baseado em branches, commits atômicos e Pull Requests assegura a qualidade do software e mitiga riscos de sobrescrita de código em equipes distribuídas."
+  },
+  "avaliacao_qualidade": {
+    "ancoragem_fonte_score": 0.4266,
+    "clareza_pedagogica": "Media",
+    "observacoes": null
+  },
+  "armazenamento_oci": {
+    "bucket": "novamente-conteudos-educativos",
+    "objeto_id": "novamente-controle-de-versao-com-git-desenvolvedor-resumoexecutivo-01M7BN0C.json",
+    "status_upload": "falha"
+  }
+}

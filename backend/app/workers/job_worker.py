@@ -9,8 +9,12 @@ from __future__ import annotations
 
 import logging
 import threading
+import time
 import uuid
 from datetime import datetime, timezone
+
+from fastapi import HTTPException
+from pydantic import ValidationError
 
 from app.core.config import settings
 from app.core.erros import NovaMenteError
@@ -25,9 +29,14 @@ from app.models import (
     PerfilDestinatario,
     OrigemDocumento,
 )
-from app.services import repositorio
+from app.services import limpeza_indice, repositorio
 
 logger = logging.getLogger(__name__)
+
+
+class PrazoExcedido(Exception):
+    """O job ultrapassou ``settings.job_timeout_segundos``."""
+
 
 # ── Controle de cancelamento ──────────────────────────────────────────────────
 _cancelamentos: set[str] = set()
@@ -79,14 +88,15 @@ def _executar(
         etapa: EtapaJob | None = None,
         pct: int | None = None,
         msg: str | None = None,
-        concluir_etapa: bool = False,
     ) -> None:
         job = repositorio.obter_job(job_id)
         if job is None:
             return
         concluidas = list(job.etapas_concluidas)
-        if concluir_etapa and etapa and etapa not in concluidas:
-            concluidas.append(etapa)
+        # Ao entrar numa etapa nova, a anterior passa a constar como concluída.
+        anterior = job.etapa_atual
+        if etapa and anterior and etapa != anterior and anterior not in concluidas:
+            concluidas.append(anterior)
         novo = job.model_copy(
             update={
                 k: v
@@ -103,9 +113,17 @@ def _executar(
         )
         repositorio.salvar_job(novo, settings.job_ttl_segundos)
 
-    def on_progresso(etapa: EtapaJob, pct: int, msg: str = "") -> None:
+    # Instante monotônico em que o job expira; também limita as retentativas do LLM.
+    prazo = time.monotonic() + settings.job_timeout_segundos
+
+    def verificar_cancelamento() -> None:
         if _cancelado(job_id):
             raise InterruptedError("Cancelado pelo usuário.")
+
+    def on_progresso(etapa: EtapaJob, pct: int, msg: str = "") -> None:
+        verificar_cancelamento()
+        if time.monotonic() > prazo:
+            raise PrazoExcedido("Prazo total do job excedido.")
         _atualizar(status="running", etapa=etapa, pct=pct, msg=msg)
 
     try:
@@ -129,6 +147,8 @@ def _executar(
             nicho=nicho,
             nivel=nivel,
             on_progresso=on_progresso,
+            prazo=prazo,
+            verificar_interrupcao=verificar_cancelamento,
         )
 
         # Persiste o pacote
@@ -168,28 +188,67 @@ def _executar(
                 settings.job_ttl_segundos,
             )
 
+    except PrazoExcedido:
+        _limpar_cancelamento(job_id)
+        logger.warning("Job %s excedeu o prazo de %ss", job_id, settings.job_timeout_segundos)
+        minutos = f"{settings.job_timeout_segundos / 60:g}".replace(".", ",")
+        _marcar_falha(job_id, f"A geração excedeu o tempo limite de {minutos} minutos.")
+
     except Exception as exc:
         _limpar_cancelamento(job_id)
-        logger.exception("Erro no job %s", job_id)
-        job = repositorio.obter_job(job_id)
-        if job:
-            request_id = str(uuid.uuid4())
-            repositorio.salvar_job(
-                job.model_copy(
-                    update={
-                        "status": "failed",
-                        "etapa_atual": None,
-                        "mensagem": str(exc),
-                        "atualizado_em": _agora(),
-                        "erro": ErroJob(
-                            codigo="INTERNO",
-                            mensagem=str(exc),
-                            request_id=request_id,
-                        ),
-                    }
+        request_id = str(uuid.uuid4())
+        logger.exception("Erro no job %s (request_id=%s)", job_id, request_id)
+        # ValueError/RuntimeError trazem mensagens nossas, já em português;
+        # ValidationError (subclasse de ValueError) traz texto técnico do pydantic.
+        if isinstance(exc, (ValueError, RuntimeError)) and not isinstance(exc, ValidationError):
+            mensagem = str(exc)
+        else:
+            mensagem = "Erro interno ao gerar o material."
+        _marcar_falha(job_id, mensagem, request_id)
+
+    finally:
+        # O estado final já está salvo; o índice só servia a este job (best-effort).
+        limpeza_indice.remover_indice(documento_id)
+
+
+def _marcar_falha(job_id: str, mensagem: str, request_id: str | None = None) -> None:
+    """Marca o job como ``failed`` com código INTERNO."""
+    job = repositorio.obter_job(job_id)
+    if job is None:
+        return
+    repositorio.salvar_job(
+        job.model_copy(
+            update={
+                "status": "failed",
+                "etapa_atual": None,
+                "mensagem": mensagem,
+                "atualizado_em": _agora(),
+                "erro": ErroJob(
+                    codigo="INTERNO",
+                    mensagem=mensagem,
+                    request_id=request_id or str(uuid.uuid4()),
                 ),
-                settings.job_ttl_segundos,
-            )
+            }
+        ),
+        settings.job_ttl_segundos,
+    )
+
+
+# Trava que torna atômico "contar os jobs em andamento + registrar o novo".
+_criacao_lock = threading.Lock()
+
+# Segundos sugeridos no Retry-After quando o teto de jobs simultâneos é atingido.
+RETRY_AFTER_OCUPADO_SEGUNDOS = 30
+
+
+def _contar_em_andamento() -> int:
+    """Jobs ``queued`` ou ``running`` que ainda não expiraram."""
+    total = 0
+    for job_id in repositorio.jobs_em_andamento():
+        job = repositorio.obter_job(job_id)  # purga os expirados e devolve None para eles
+        if job is not None and job.status in ("queued", "running"):
+            total += 1
+    return total
 
 
 def criar_job(
@@ -203,7 +262,11 @@ def criar_job(
     nicho: NichoSetor,
     nivel: NivelDetalhe,
 ) -> JobResposta:
-    """Cria o job (status queued) e dispara a thread. Retorna imediatamente."""
+    """Cria o job (status queued) e dispara a thread. Retorna imediatamente.
+
+    Com ``geracao_max_jobs_simultaneos`` jobs em andamento, recusa com 503
+    ``GERACAO_OCUPADA`` e ``Retry-After``, sem abrir thread nem gravar o job.
+    """
     from ulid import ULID  # type: ignore
 
     job_id = str(ULID())
@@ -219,7 +282,28 @@ def criar_job(
         iniciado_em=agora,
         atualizado_em=agora,
     )
-    repositorio.salvar_job(job, settings.job_ttl_segundos)
+    # A contagem e o registro do job ficam sob a mesma trava: duas requisições
+    # simultâneas não passam juntas pelo último lugar livre.
+    with _criacao_lock:
+        if _contar_em_andamento() >= settings.geracao_max_jobs_simultaneos:
+            logger.warning(
+                "Teto de %s jobs simultâneos atingido; geração recusada.",
+                settings.geracao_max_jobs_simultaneos,
+            )
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "erro": {
+                        "codigo": "GERACAO_OCUPADA",
+                        "mensagem": (
+                            "O sistema está gerando outros materiais no momento. "
+                            "Tente novamente em instantes."
+                        ),
+                    }
+                },
+                headers={"Retry-After": str(RETRY_AFTER_OCUPADO_SEGUNDOS)},
+            )
+        repositorio.salvar_job(job, settings.job_ttl_segundos)
 
     t = threading.Thread(
         target=_executar,
