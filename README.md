@@ -263,6 +263,11 @@ npm test
 ```
 
 
+### Licença
+
+Este projeto foi desenvolvido para fins educacionais e de avaliação no âmbito do Hackathon ONE G10 (Oracle Next Education & Alura) sob a licença MIT.
+
+
 
 
 
