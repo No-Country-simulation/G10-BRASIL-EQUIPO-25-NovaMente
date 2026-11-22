@@ -31,4 +31,4 @@ anyio==4.16.0
 
 # ── Exportação ───────────────────────────────────────────────────────────────
 markdown-it-py==3.0.0         # MD → HTML para gerar PDF
-weasyprint==63.0              # HTML → PDF
+weasyprint==70.0              # HTML → PDF
