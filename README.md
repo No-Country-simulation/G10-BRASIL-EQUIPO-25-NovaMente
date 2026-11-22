@@ -82,30 +82,217 @@ O repositório está organizado como um monorepo contendo os módulos de backend
 
 ```text
 .
-├── Makefile                # Atalhos de desenvolvimento (venv, backend, frontend)
-├── backend/
-│   ├── app/
-│   │   ├── api/v1/         # Rotas e endpoints REST da API
-│   │   ├── core/           # Configurações globais, erros e engine SQLite
-│   │   ├── models/         # Schemas Pydantic v2 e modelos ORM
-│   │   ├── rag/            # Lógica de pipeline RAG, embeddings e ChromaDB
-│   │   ├── services/       # OCI, extração, jobs, repositório, catálogo e alunos
-│   │   └── main.py         # Ponto de entrada da aplicação FastAPI
-│   ├── data/exemplos/      # Fixtures e textos de demonstração
-│   │   └── novamente.db    # Banco SQLite local (gitignored, criado em runtime)
-│   ├── tests/              # Testes unitários e de integração (pytest)
-│   └── requirements.txt    # Dependências Python do backend
-├── frontend/
-│   ├── src/
-│   │   ├── app/            # Rotas: landing, /empresa/* e /aluno/*
-│   │   ├── components/     # UI, landing, empresa, aluno e visualizadores
-│   │   ├── features/       # Hooks e regras de negócio encapsuladas
-│   │   ├── services/       # Cliente de API e adaptadores de transporte
-│   │   ├── types/          # Schemas Zod e tipos globais
-│   │   └── mocks/          # Handlers e fixtures do MSW
-│   ├── e2e/                # Playwright: fluxos, tour, responsivo e axe
-│   └── package.json        # Dependências Node.js do frontend
-└── docs/                   # Documentação técnica e especificações do projeto
+└── no-country-simulation-g10-brasil-equipo-25-novamente/
+    ├── README.md                                  # Visão geral, arquitetura, setup e uso do projeto
+    ├── backend/                                   # Serviço API FastAPI, pipeline RAG e workers
+    │   ├── README.md                              # Documentação específica do backend
+    │   ├── requirements-rag.txt                   # Dependências específicas do pipeline RAG
+    │   ├── requirements.txt                       # Dependências principais do backend Python
+    │   ├── .env.example                           # Modelo de variáveis de ambiente do backend
+    │   ├── app/                                   # Código-fonte da aplicação backend
+    │   │   ├── __init__.py                        # Inicializador do pacote app
+    │   │   ├── main.py                            # Entrada da API FastAPI e configuração de rotas/middlewares
+    │   │   ├── api/                               # Camada HTTP / endpoints da API
+    │   │   │   ├── __init__.py                    # Inicializador do pacote api
+    │   │   │   └── v1/                            # Versão 1 da API REST
+    │   │   │       ├── __init__.py                # Inicializador do pacote v1
+    │   │   │       └── routers/                   # Agrupamento de rotas por domínio
+    │   │   │           ├── __init__.py            # Inicializador do pacote routers
+    │   │   │           ├── adaptacoes.py          # Endpoints de geração, consulta e exportação de adaptações
+    │   │   │           ├── health.py              # Endpoint de health check da API
+    │   │   │           ├── jobs.py                # Endpoints de acompanhamento de jobs assíncronos
+    │   │   │           └── oci.py                 # Endpoints de status/integração com OCI Object Storage
+    │   │   ├── core/                              # Configurações centrais e tratamento de exceções
+    │   │   │   ├── config.py                      # Leitura e validação de configurações/variáveis de ambiente
+    │   │   │   └── erros.py                       # Exceções de domínio e respostas padronizadas de erro
+    │   │   ├── models/                            # Schemas e modelos de dados da aplicação
+    │   │   │   └── __init__.py                    # Definições/exports de modelos de dados
+    │   │   ├── rag/                               # Pipeline de recuperação aumentada por geração (RAG)
+    │   │   │   ├── README.md                      # Documentação técnica do módulo RAG
+    │   │   │   ├── __init__.py                    # Inicializador do módulo rag
+    │   │   │   ├── armazenamento.py               # Persistência/gerenciamento de índices e artefatos RAG
+    │   │   │   ├── chunking.py                    # Divisão e preparo de textos/documentos em chunks
+    │   │   │   ├── config.py                      # Parâmetros específicos de configuração do RAG
+    │   │   │   ├── embeddings.py                  # Geração de embeddings vetoriais
+    │   │   │   ├── modelos.py                     # Estruturas de dados e configurações de modelos LLM/RAG
+    │   │   │   └── servico.py                     # Orquestração principal da consulta e geração via RAG
+    │   │   ├── services/                          # Regras de negócio e integrações externas
+    │   │   │   ├── __init__.py                    # Inicializador do pacote services
+    │   │   │   ├── extracao.py                    # Extração de texto de arquivos e fontes de entrada
+    │   │   │   ├── oci.py                         # Integração com OCI Object Storage
+    │   │   │   ├── pipeline.py                    # Fluxo completo de processamento e adaptação de conteúdo
+    │   │   │   └── repositorio.py                 # Acesso a dados e persistência de registros
+    │   │   └── workers/                           # Processamento em segundo plano / assíncrono
+    │   │       ├── __init__.py                    # Inicializador do pacote workers
+    │   │       └── job_worker.py                  # Worker responsável por executar jobs de geração
+    │   ├── data/                                  # Dados de apoio e exemplos
+    │   │   └── exemplos/                          # Materiais base de demonstração
+    │   │       ├── git_versionamento.md           # Exemplo de conteúdo técnico sobre Git
+    │   │       ├── http_apis_rest.md              # Exemplo de conteúdo técnico sobre APIs REST
+    │   │       └── sql_consultas.md               # Exemplo de conteúdo técnico sobre SQL
+    │   ├── scripts/                               # Scripts utilitários de apoio e validação
+    │   │   ├── demo_rag.py                      # Script para testar/demonstrar o pipeline RAG
+    │   │   └── verificar_ambiente.py              # Verificação de dependências e ambiente do backend
+    │   └── tests/                                 # Suíte de testes automatizados do backend (pytest)
+    │       ├── conftest.py                        # Fixtures e configurações globais de testes
+    │       ├── api/                               # Testes de endpoints e contratos da API
+    │       │   ├── __init__.py                    # Inicializador dos testes de API
+    │       │   └── test_rotas.py                  # Testes das rotas REST da aplicação
+    │       └── rag/                               # Testes unitários e de integração do módulo RAG
+    │           ├── conftest.py                    # Fixtures específicas para testes de RAG
+    │           ├── falsos.py                      # Dublês/mocks de componentes para testes isolados
+    │           ├── test_armazenamento.py          # Testes de armazenamento/índice RAG
+    │           ├── test_chunking.py               # Testes da divisão de documentos em chunks
+    │           ├── test_embeddings.py             # Testes da camada de embeddings
+    │           ├── test_exemplos.py               # Testes usando os documentos de exemplo
+    │           └── test_servico.py                # Testes do serviço de geração RAG
+    ├── docs/                                      # Documentação técnica, specs e proposta do projeto
+    │   ├── Especificação do backend fastapi.md    # Especificação funcional/técnica da API FastAPI
+    │   ├── Especificações frontend-design.md      # Diretrizes e especificações de design do frontend
+    │   ├── master_prompt_superpowers_novamente_frontend.md # Prompt mestre de referência do frontend
+    │   ├── proposta.md                            # Documento de proposta do projeto
+    │   └── superpowers/                           # Especificações detalhadas de design e arquitetura
+    │       └── specs/                             # Documentos de especificação versionados
+    │           └── 2026-10-21-novamente-frontend-design.md # Especificação de design do frontend (21/10/2026)
+    ├── frontend/                                  # Aplicação web Next.js, testes e Storybook
+    │   ├── README.md                              # Documentação específica do frontend
+    │   ├── AGENTS.md                              # Instruções/convenções para agentes de código no frontend
+    │   ├── components.json                        # Configuração de componentes UI (ex.: shadcn/ui)
+    │   ├── eslint.config.mjs                      # Configuração do ESLint (linting e qualidade de código)
+    │   ├── next.config.ts                         # Configuração do Next.js
+    │   ├── package.json                           # Dependências e scripts NPM do frontend
+    │   ├── playwright.config.ts                   # Configuração dos testes end-to-end com Playwright
+    │   ├── tsconfig.json                          # Configuração do TypeScript
+    │   ├── vitest.config.mts                      # Configuração do Vitest (testes unitários/componentes)
+    │   ├── vitest.shims.d.ts                      # Tipagens auxiliares para o ambiente de testes Vitest
+    │   ├── .env.example                           # Modelo de variáveis de ambiente do frontend
+    │   ├── .npmrc                                 # Configurações do NPM
+    │   ├── e2e/                                   # Testes end-to-end automatizados (Playwright)
+    │   │   ├── 1-gerar-flashcards.spec.ts         # Fluxo E2E de geração de flashcards
+    │   │   ├── 2-upload-quiz.spec.ts              # Fluxo E2E de upload e geração de quiz
+    │   │   ├── 3-historico-exportacao.spec.ts     # Fluxo E2E de histórico e exportação de materiais
+    │   │   └── 4-acessibilidade.spec.ts           # Verificações automatizadas de acessibilidade
+    │   ├── public/                                # Arquivos estáticos públicos
+    │   │   └── mockServiceWorker.js               # Service worker do MSW para interceptar requisições em mock
+    │   ├── src/                                   # Código-fonte da aplicação frontend
+    │   │   ├── app/                               # Rotas e páginas do Next.js (App Router)
+    │   │   │   ├── globals.css                    # Estilos globais da aplicação
+    │   │   │   ├── layout.tsx                     # Layout raiz compartilhado entre as páginas
+    │   │   │   ├── page.tsx                       # Página inicial / geração de conteúdo
+    │   │   │   ├── providers.tsx                  # Providers globais (QueryClient, tema, mocks, etc.)
+    │   │   │   ├── historico/                     # Rota de histórico de adaptações
+    │   │   │   │   └── page.tsx                   # Tela de listagem e filtros do histórico
+    │   │   │   └── resultado/                     # Rota dinâmica de visualização do material gerado
+    │   │   │       └── [id]/                      # Parâmetro dinâmico pelo ID da adaptação
+    │   │   │           └── page.tsx               # Tela de detalhe, visualização, OCI e exportação
+    │   │   ├── components/                        # Componentes visuais reutilizáveis e de telas
+    │   │   │   ├── forms/                         # Formulários de ingestão e parametrização
+    │   │   │   │   ├── Cenarios.test.tsx            # Testes do componente de cenários prontos
+    │   │   │   │   ├── Cenarios.tsx               # Atalhos/cenários pré-configurados de demonstração
+    │   │   │   │   ├── IngestionForm.test.tsx     # Testes do formulário principal de ingestão
+    │   │   │   │   ├── IngestionForm.tsx          # Formulário de envio de documento e parâmetros
+    │   │   │   │   └── campos/                    # Subcampos especializados do formulário
+    │   │   │   │       ├── FonteDocumento.tsx     # Campo de seleção de arquivo ou texto de origem
+    │   │   │   │       └── ParametrosFields.tsx   # Campos de perfil, formato, nicho e nível de detalhe
+    │   │   │   ├── layout/                        # Estrutura de layout, navegação e status
+    │   │   │   │   ├── AppShell.tsx               # Estrutura base de layout das páginas
+    │   │   │   │   ├── Header.tsx                 # Cabeçalho e navegação superior
+    │   │   │   │   ├── HealthBanner.test.tsx      # Testes do banner de status da API
+    │   │   │   │   ├── HealthBanner.tsx           # Indicador visual de saúde/disponibilidade da API
+    │   │   │   │   ├── SkinSwitcher.test.tsx      # Testes do seletor de tema/skin
+    │   │   │   │   └── SkinSwitcher.tsx           # Controle para alternar tema/skin visual
+    │   │   │   ├── ui/                            # Componentes base de interface (design system)
+    │   │   │   │   ├── badge.tsx                  # Componente visual de badge/etiqueta
+    │   │   │   │   ├── button.test.tsx            # Testes do componente de botão
+    │   │   │   │   ├── button.tsx                 # Componente de botão reutilizável
+    │   │   │   │   ├── card.tsx                   # Componente de cartão/container visual
+    │   │   │   │   ├── dropdown-menu.tsx          # Menu suspenso acessível
+    │   │   │   │   ├── Dropzone.test.tsx          # Testes da área de arrastar e soltar arquivos
+    │   │   │   │   ├── Dropzone.tsx               # Componente de upload via drag-and-drop
+    │   │   │   │   ├── progress.tsx               # Barra de progresso visual
+    │   │   │   │   ├── select.tsx                 # Campo de seleção suspensa (select)
+    │   │   │   │   ├── separator.tsx              # Divisor visual horizontal/vertical
+    │   │   │   │   ├── skeleton.tsx               # Placeholder de carregamento (skeleton loading)
+    │   │   │   │   ├── tabs.tsx                   # Componente de abas (tabs)
+    │   │   │   │   └── tooltip.tsx                # Dica flutuante ao passar/focar (tooltip)
+    │   │   │   └── views/                         # Visualizações completas e renderizadores de conteúdo
+    │   │   │       ├── ContentRenderer.test.tsx   # Testes do seletor/renderizador de formatos
+    │   │   │       ├── ContentRenderer.tsx        # Renderiza o conteúdo conforme o formato escolhido
+    │   │   │       ├── ExportMenu.tsx             # Menu de exportação (PDF, Markdown, JSON, CSV etc.)
+    │   │   │       ├── FlashcardCard.tsx          # Cartão individual de flashcard (frente/verso)
+    │   │   │       ├── FlashcardDeck.reduzido.test.tsx # Teste de deck de flashcards em cenário reduzido
+    │   │   │       ├── FlashcardDeck.stories.tsx  # Stories do Storybook para FlashcardDeck
+    │   │   │       ├── FlashcardDeck.test.tsx     # Testes unitários de FlashcardDeck
+    │   │   │       ├── FlashcardDeck.tsx          # Deck interativo de flashcards
+    │   │   │       ├── GerarView.test.tsx         # Testes da view de geração de material
+    │   │   │       ├── GerarView.tsx            # View principal de criação e execução de jobs
+    │   │   │       ├── HistoricoView.test.tsx     # Testes da view de histórico
+    │   │   │       ├── HistoricoView.tsx        # View de histórico de adaptações geradas
+    │   │   │       ├── InteractiveQuiz.stories.tsx # Stories do Storybook para InteractiveQuiz
+    │   │   │       ├── InteractiveQuiz.test.tsx   # Testes unitários de InteractiveQuiz
+    │   │   │       ├── InteractiveQuiz.tsx        # Quiz interativo com correção/feedback
+    │   │   │       ├── JobProgress.test.tsx       # Testes do componente de progresso de job
+    │   │   │       ├── JobProgress.tsx          # Exibe etapas e progresso do processamento assíncrono
+    │   │   │       ├── MarkdownView.stories.tsx   # Stories do Storybook para MarkdownView
+    │   │   │       ├── MarkdownView.tsx           # Renderizador formatado de documentos Markdown
+    │   │   │       ├── OCIPanel.stories.tsx       # Stories do Storybook para OCIPanel
+    │   │   │       ├── OCIPanel.test.tsx        # Testes unitários de OCIPanel
+    │   │   │       ├── OCIPanel.tsx             # Painel com metadados e status do OCI Object Storage
+    │   │   │       ├── ResultadoHeader.tsx        # Cabeçalho da tela de resultado com metadados/ações
+    │   │   │       ├── ResultadoView.test.tsx     # Testes da view de resultado
+    │   │   │       ├── ResultadoView.tsx        # View completa do material gerado e exportações
+    │   │   │       └── ScoreGauge.tsx           # Indicador visual de métricas/qualidade (ex.: ancoragem)
+    │   │   ├── features/                          # Hooks e lógica de domínio encapsulada por feature
+    │   │   │   ├── adaptations/                   # Feature de adaptações de conteúdo
+    │   │   │   │   ├── useAdaptation.ts           # Hook para buscar/gerenciar uma adaptação específica
+    │   │   │   │   ├── useAdaptationForm.ts       # Hook para estado e validação do formulário
+    │   │   │   │   ├── useAdaptationHistory.ts    # Hook para consulta e filtros do histórico
+    │   │   │   │   ├── useCreateAdaptation.ts     # Hook de mutação para criar/iniciar adaptação
+    │   │   │   │   ├── useExport.test.tsx         # Testes do hook de exportação
+    │   │   │   │   └── useExport.ts               # Hook para disparar e baixar exportações
+    │   │   │   ├── health/                        # Feature de monitoramento de saúde da API
+    │   │   │   │   └── useHealth.ts               # Hook de consulta ao status da API
+    │   │   │   ├── jobs/                          # Feature de jobs assíncronos
+    │   │   │   │   ├── useAdaptationJob.test.tsx  # Testes do hook de acompanhamento de job
+    │   │   │   │   └── useAdaptationJob.ts        # Hook de polling de status e progresso de job
+    │   │   │   ├── oci/                           # Feature de integração/status OCI
+    │   │   │   │   ├── useOciStatus.test.tsx      # Testes do hook de status do OCI
+    │   │   │   │   └── useOciStatus.ts            # Hook para consultar status/metadados do bucket OCI
+    │   │   │   └── theme/                         # Feature de temas e skins visuais
+    │   │   │       ├── SkinProvider.tsx           # Contexto/provider de persistência e aplicação de skin
+    │   │   │       └── useSkin.ts                 # Hook para ler e alterar o tema/skin ativo
+    │   │   ├── lib/                               # Utilitários, constantes, formatações e mensagens
+    │   │   │   ├── cn.test.ts                   # Testes do utilitário de classes CSS (`cn`)
+    │   │   │   ├── cn.ts                        # Helper para combinar classes Tailwind/clsx
+    │   │   │   ├── constants.ts                   # Constantes da aplicação (formatos, perfis, limites)
+    │   │   │   ├── formatadores.test.ts           # Testes das funções de formatação
+    │   │   │   ├── formatadores.ts                # Formatadores de datas, textos e valores
+    │   │   │   ├── mensagens.ts                   # Mensagens padronizadas de interface/erro/feedback
+    │   │   │   └── utils.ts                       # Funções utilitárias genéricas
+    │   │   ├── mocks/                           # Simulação de API e dados fictícios (MSW / fixtures)
+    │   │   │   ├── browser.ts                     # Configuração do MSW para ambiente de navegador
+    │   │   │   ├── estadoJobs.ts                  # Simulação de estados de progresso de jobs
+    │   │   │   ├── fixtures.test.ts               # Testes de validação das fixtures JSON
+    │   │   │   ├── handlers.test.ts               # Testes dos handlers HTTP de mock
+    │   │   │   ├── MockGate.tsx                   # Controle condicional para ativar/exibir modo mock
+    │   │   │   ├── MockProvider.tsx               # Provider que inicializa o ambiente de mocks
+    │   │   │   ├── server.ts                      # Configuração do MSW para testes (Node/Vitest)
+    │   │   │   ├── fixtures/                      # Exemplos de payloads adaptados em JSON
+    │   │   │   │   ├── flashcards-vcn-iniciante.json # Fixture de flashcards sobre VCN (nível iniciante)
+    │   │   │   │   ├── quiz-vcn-desenvolvedor.json # Fixture de quiz sobre VCN (nível desenvolvedor)
+    │   │   │   │   ├── resumo-vcn-gestor.json     # Fixture de resumo sobre VCN (nível gestor)
+    │   │   │   │   └── tutorial-vcn-lider.json    # Fixture de tutorial sobre VCN (nível líder)
+    │   │   │   └── handlers/                      # Handlers mockados por endpoint da API
+    │   │   │       ├── adaptacoes.ts              # Mock das rotas de adaptações
+    │   │   │       ├── health.ts                  # Mock da rota de health check
+    │   │   │       ├── index.ts                   # Agrega e exporta todos os handlers MSW
+    │   │   │       ├── jobs.ts                    # Mock das rotas de jobs assíncronos
+    │   │   │       └── oci.ts                     # Mock das rotas relacionadas ao OCI
+    │   │   ├── services/                          # Camada de comunicação externa e cliente HTTP
+    │   │   │   └── api/                           # Cliente da API backend
+    │   │   │       ├── ApiProvider.tsx            # Provider de contexto para injeção/acesso à API
+    │   │   │       ├── download.test.ts           # Testes do utilitário de download de arquivos
+    │   │   │       ├── download.ts                # Dis
 
 ```
 
@@ -266,8 +453,3 @@ npm test
 ### Licença
 
 Este projeto foi desenvolvido para fins educacionais e de avaliação no âmbito do Hackathon ONE G10 (Oracle Next Education & Alura) sob a licença MIT.
-
-
-
-
-
